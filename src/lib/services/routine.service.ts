@@ -1,5 +1,11 @@
 import apiClient from '../api-client';
-import type { Routine, CreateRoutineDto } from '../types';
+import type {
+  Routine,
+  CreateRoutineDto,
+  GenerateRoutineDto,
+  AdviseRoutineDto,
+  AIAdviceResponse,
+} from '../types';
 
 export const routineService = {
   async create(data: CreateRoutineDto): Promise<Routine> {
@@ -7,8 +13,8 @@ export const routineService = {
     return res.data;
   },
 
-  async generateAI(): Promise<Routine> {
-    const res = await apiClient.post<Routine>('/routines/generate');
+  async generateAI(data?: GenerateRoutineDto): Promise<Routine> {
+    const res = await apiClient.post<Routine>('/routines/generate', data || { type: 'AM' });
     return res.data;
   },
 
@@ -43,7 +49,7 @@ export const routineService = {
   },
 
   async completeStep(id: string, stepOrder: number): Promise<Routine> {
-    const res = await apiClient.patch<Routine>(`/routines/${id}/steps/${stepOrder}/complete`);
+    const res = await apiClient.patch<Routine>(`/routines/${id}/steps/${stepOrder}/complete`, { isCompleted: true });
     return res.data;
   },
 
@@ -62,8 +68,8 @@ export const routineService = {
     return res.data;
   },
 
-  async reorderSteps(id: string, stepOrders: number[]): Promise<Routine> {
-    const res = await apiClient.patch<Routine>(`/routines/${id}/reorder`, { stepOrders });
+  async reorderSteps(id: string, newOrder: number[]): Promise<Routine> {
+    const res = await apiClient.patch<Routine>(`/routines/${id}/reorder`, { newOrder });
     return res.data;
   },
 
@@ -74,5 +80,10 @@ export const routineService = {
 
   async delete(id: string): Promise<void> {
     await apiClient.delete(`/routines/${id}`);
+  },
+
+  async adviseOnChange(routineId: string, data: AdviseRoutineDto): Promise<AIAdviceResponse> {
+    const res = await apiClient.post<AIAdviceResponse>(`/routines/${routineId}/advise`, data);
+    return res.data;
   },
 };

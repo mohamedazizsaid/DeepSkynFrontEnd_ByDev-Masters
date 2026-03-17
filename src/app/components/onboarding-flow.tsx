@@ -130,46 +130,123 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       onBack={prevStep}
       onSubmit={handleComplete}
       isSubmitting={isSubmitting}
-    />
+    />,
   ];
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 overflow-hidden">
-      <ProgressBar currentStep={currentStep + 1} totalSteps={totalSteps} steps={stepLabels} />
+    <div className="relative min-h-screen overflow-hidden">
+      {/* ═══ FULLSCREEN ANIMATED BACKGROUND ═══ */}
+      <div
+        className="fixed inset-0 w-screen h-screen overflow-hidden pointer-events-none"
+        style={{ zIndex: 0 }}
+      >
+        {/* Base gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0f0c29] via-[#1a1a3e] to-[#24243e]" />
 
-      <div className="max-w-4xl mx-auto px-6 py-12 relative min-h-[600px]">
-        {/* Back button logic (Redundant if steps implement their own, but kept for Welcome/Profile/Summary if needed) 
-            Actually steps like Quiz implement their own Back button. 
-            Welcome has no back.
-            ProfileSetup no back (can add later).
-            Summary has Back.
-            So global back is maybe not needed if components have it, but for ProfileSetup it's useful.
-            However, ProfileSetup usually doesn't have Back in local component.
-            Let's keep global Back for Step > 0 (Profile) if Profile component doesn't have it.
-        */}
-        {currentStep === 1 && (
-          <button
-            onClick={prevStep}
-            className="absolute top-0 left-6 flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors z-10 font-medium"
-          >
-            ← Retour
-          </button>
-        )}
-
-        <AnimatePresence mode="wait" custom={direction}>
+        {/* Animated gradient mesh blobs */}
+        {[...Array(8)].map((_, i) => (
           <motion.div
-            key={currentStep}
-            custom={direction}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="w-full"
-          >
-            {steps[currentStep]}
-          </motion.div>
-        </AnimatePresence>
+            key={`blob-${i}`}
+            className="absolute rounded-full"
+            style={{
+              width: 200 + i * 80,
+              height: 200 + i * 80,
+              background: `radial-gradient(circle, ${
+                i % 3 === 0
+                  ? 'rgba(14,165,233,0.15)'
+                  : i % 3 === 1
+                  ? 'rgba(139,92,246,0.12)'
+                  : 'rgba(6,182,212,0.1)'
+              }, transparent 70%)`,
+              left: `${(i * 17 + 5) % 90}%`,
+              top: `${(i * 23 + 10) % 80}%`,
+              filter: 'blur(40px)',
+            }}
+            animate={{
+              y: [0, -40 - i * 10, 0],
+              x: [0, 20 + i * 5, 0],
+              scale: [1, 1.3, 1],
+              opacity: [0.3, 0.6, 0.3],
+            }}
+            transition={{
+              duration: 6 + i * 1.5,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              delay: i * 0.7,
+            }}
+          />
+        ))}
+
+        {/* Floating particles */}
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={`particle-${i}`}
+            className="absolute rounded-full"
+            style={{
+              width: 2 + (i % 4) * 2,
+              height: 2 + (i % 4) * 2,
+              background: i % 2 === 0 ? '#0EA5E9' : '#8B5CF6',
+              left: `${(i * 5 + 3) % 100}%`,
+              top: `${(i * 7 + 5) % 100}%`,
+            }}
+            animate={{
+              y: [0, -60 - i * 5, 0],
+              opacity: [0, 0.8, 0],
+            }}
+            transition={{
+              duration: 3 + (i % 5),
+              repeat: Infinity,
+              ease: 'easeInOut',
+              delay: i * 0.4,
+            }}
+          />
+        ))}
+
+        {/* Subtle grid overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px',
+          }}
+        />
+      </div>
+
+      {/* ═══ FOREGROUND CONTENT ═══ */}
+      <div className="relative" style={{ zIndex: 1 }}>
+        {/* Progress bar with adapted dark theme */}
+        <div className="pt-6 px-6">
+          <ProgressBar currentStep={currentStep + 1} totalSteps={totalSteps} steps={stepLabels} />
+        </div>
+
+        <div className="max-w-4xl mx-auto px-6 py-12 relative min-h-[600px]">
+          {currentStep === 1 && (
+            <button
+              onClick={prevStep}
+              className="absolute top-0 left-6 flex items-center gap-2 text-white/60 hover:text-white transition-colors z-10 font-medium"
+            >
+              ← Retour
+            </button>
+          )}
+
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={currentStep}
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="w-full"
+            >
+              {steps[currentStep]}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
