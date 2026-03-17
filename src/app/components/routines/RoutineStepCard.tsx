@@ -79,8 +79,8 @@ export function RoutineStepCard({
         layout
         className={`relative overflow-hidden rounded-2xl border-2 cursor-grab active:cursor-grabbing transition-all duration-300 ${
           isHighlighted
-            ? 'border-[#D4AF37] bg-[#D4AF37]/5 shadow-lg shadow-[#D4AF37]/10'
-            : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-md'
+            ? 'border-[#0EA5E9] bg-blue-50/50 shadow-md shadow-[#0EA5E9]/10'
+            : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'
         }`}
         style={{
           backdropFilter: 'blur(12px)',
@@ -89,7 +89,7 @@ export function RoutineStepCard({
         animate={
           isHighlighted
             ? {
-                borderColor: ['rgba(212,175,55,0.5)', 'rgba(212,175,55,1)', 'rgba(212,175,55,0.5)'],
+                borderColor: ['rgba(14,165,233,0.3)', 'rgba(14,165,233,0.8)', 'rgba(14,165,233,0.3)'],
               }
             : {}
         }

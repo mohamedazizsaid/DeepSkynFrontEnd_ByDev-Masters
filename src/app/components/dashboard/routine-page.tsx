@@ -246,13 +246,13 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a1a] via-[#111128] to-[#0a0a1a] -m-4 sm:-m-6 lg:-m-8 -mt-24 pt-24 pb-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="animate-fade-in w-full pb-12">
+      <div className="max-w-7xl mx-auto">
         {/* ═══ Header ═══ */}
-        <div className="mb-8 pt-8">
+        <div className="mb-8">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-white/40 hover:text-[#D4AF37] mb-6 transition-colors"
+            className="flex items-center gap-2 text-gray-500 hover:text-[#0EA5E9] mb-6 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm">Retour au Dashboard</span>
@@ -260,13 +260,13 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
 
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-1 tracking-tight">
+              <h1 className="text-3xl font-bold text-gray-900 mb-1 tracking-tight">
                 Ma Routine{' '}
-                <span className="bg-gradient-to-r from-[#D4AF37] to-[#F5D76E] bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent">
                   Soins
                 </span>
               </h1>
-              <p className="text-white/40 text-sm">
+              <p className="text-gray-500 text-sm">
                 Personnalisée par l'IA pour votre peau
               </p>
             </div>
@@ -277,7 +277,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 whileTap={{ scale: 0.95 }}
                 onClick={generateAIRoutine}
                 disabled={generating}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all disabled:opacity-40"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border border-[#0EA5E9]/30 text-[#0EA5E9] hover:bg-[#0EA5E9]/10 transition-all disabled:opacity-40"
               >
                 {generating ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -293,8 +293,8 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 onClick={() => setShow3D(!show3D)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
                   show3D
-                    ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]'
-                    : 'border-white/10 text-white/40 hover:text-white/60'
+                    ? 'border-[#0EA5E9] bg-[#0EA5E9]/10 text-[#0EA5E9]'
+                    : 'border-gray-200 text-gray-500 hover:text-gray-900 bg-white shadow-sm'
                 }`}
               >
                 {show3D ? <Box className="w-4 h-4" /> : <List className="w-4 h-4" />}
@@ -310,8 +310,8 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
             onClick={() => setActiveTab('am')}
             className={`flex-1 px-6 py-4 rounded-2xl font-semibold text-sm transition-all duration-300 ${
               activeTab === 'am'
-                ? 'bg-gradient-to-r from-[#D4AF37]/90 to-[#F5D76E]/80 text-black shadow-lg shadow-[#D4AF37]/20'
-                : 'bg-white/5 border border-white/10 text-white/40 hover:text-white/60 hover:border-white/20'
+                ? 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white shadow-lg shadow-[#0EA5E9]/20'
+                : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300 shadow-sm'
             }`}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -327,7 +327,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
             className={`flex-1 px-6 py-4 rounded-2xl font-semibold text-sm transition-all duration-300 ${
               activeTab === 'pm'
                 ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-lg shadow-[#6366F1]/20'
-                : 'bg-white/5 border border-white/10 text-white/40 hover:text-white/60 hover:border-white/20'
+                : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300 shadow-sm'
             }`}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -344,28 +344,24 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
           {/* ─── Steps List ─── */}
           <div className={show3D ? '' : 'lg:col-span-2'}>
             <div
-              className="rounded-2xl border border-white/10 p-5 overflow-hidden"
-              style={{
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))',
-                backdropFilter: 'blur(20px)',
-              }}
+              className="rounded-2xl border border-gray-200 bg-white p-5 overflow-hidden shadow-sm"
             >
               {/* Section header */}
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
-                  <h3 className="font-bold text-white text-base">
+                  <h3 className="font-bold text-gray-900 text-base">
                     {activeTab === 'am' ? '☀️ Étapes Matin' : '🌙 Étapes Soir'}
                   </h3>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 text-white/40 border border-white/10">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#0EA5E9]/10 text-[#0EA5E9]">
                     {currentSteps.length} étapes
                   </span>
                 </div>
               </div>
 
               {/* Info tip */}
-              <div className="flex items-start gap-2 p-3 rounded-xl bg-white/3 border border-white/5 mb-4">
-                <Info className="w-4 h-4 text-[#D4AF37] flex-shrink-0 mt-0.5" />
-                <p className="text-[11px] text-white/30">
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-[#0EA5E9]/5 border border-[#0EA5E9]/10 mb-4">
+                <Info className="w-4 h-4 text-[#0EA5E9] flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] text-[#0EA5E9]">
                   Glissez-déposez pour réorganiser. Chaque modification déclenche un avis IA expert.
                 </p>
               </div>
@@ -392,8 +388,8 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 </Reorder.Group>
               ) : (
                 <div className="text-center py-12">
-                  <Sparkles className="w-10 h-10 text-white/10 mx-auto mb-3" />
-                  <p className="text-white/30 text-sm">Aucune étape. Générez une routine IA !</p>
+                  <Sparkles className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">Aucune étape. Générez une routine IA !</p>
                 </div>
               )}
 
@@ -427,10 +423,10 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
             {show3D ? (
               <Suspense
                 fallback={
-                  <div className="w-full h-[400px] rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                  <div className="w-full h-[400px] rounded-2xl bg-white border border-gray-200 shadow-sm flex items-center justify-center">
                     <div className="text-center">
-                      <Loader2 className="w-8 h-8 text-[#D4AF37] animate-spin mx-auto mb-2" />
-                      <p className="text-white/30 text-xs">Chargement du modèle 3D...</p>
+                      <Loader2 className="w-8 h-8 text-[#0EA5E9] animate-spin mx-auto mb-2" />
+                      <p className="text-gray-500 text-xs">Chargement du modèle 3D...</p>
                     </div>
                   </div>
                 }
@@ -478,20 +474,16 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
 function InfoCard({ title, items }: { title: string; items: string[] }) {
   return (
     <div
-      className="rounded-2xl border border-white/10 p-5"
-      style={{
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))',
-        backdropFilter: 'blur(20px)',
-      }}
+      className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
     >
-      <h3 className="font-bold text-white text-sm mb-3">{title}</h3>
+      <h3 className="font-bold text-gray-900 text-sm mb-3">{title}</h3>
       <div className="space-y-2">
         {items.map((item, i) => (
           <div key={i} className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-[#D4AF37]/10 flex items-center justify-center text-[10px] font-bold text-[#D4AF37] border border-[#D4AF37]/20">
+            <div className="w-6 h-6 rounded-full bg-[#0EA5E9]/10 flex items-center justify-center text-[10px] font-bold text-[#0EA5E9]">
               {i + 1}
             </div>
-            <span className="text-xs text-white/50">{item}</span>
+            <span className="text-xs text-gray-600">{item}</span>
           </div>
         ))}
       </div>
@@ -509,18 +501,14 @@ function TipsCard() {
 
   return (
     <div
-      className="rounded-2xl border border-white/10 p-5"
-      style={{
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))',
-        backdropFilter: 'blur(20px)',
-      }}
+      className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
     >
-      <h3 className="font-bold text-white text-sm mb-3">💡 Conseils Pro</h3>
+      <h3 className="font-bold text-gray-900 text-sm mb-3">💡 Conseils Pro</h3>
       <div className="space-y-2">
         {tips.map((tip, i) => (
           <div key={i} className="flex items-start gap-2">
             <span className="text-[#10B981] text-xs mt-0.5">✓</span>
-            <span className="text-xs text-white/40 leading-relaxed">{tip}</span>
+            <span className="text-xs text-gray-600 leading-relaxed">{tip}</span>
           </div>
         ))}
       </div>

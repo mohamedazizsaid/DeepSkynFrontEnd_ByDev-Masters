@@ -94,14 +94,14 @@ export function AIAdviceModal({ isOpen, onClose, advice, isLoading }: AIAdviceMo
                     transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                     className="w-12 h-12 mx-auto mb-4"
                   >
-                    <Sparkles className="w-12 h-12 text-[#D4AF37]" />
+                    <Sparkles className="w-12 h-12 text-[#0EA5E9]" />
                   </motion.div>
                   <p className="text-gray-500 text-sm">L'IA analyse votre modification...</p>
                   <div className="flex justify-center gap-1 mt-3">
                     {[0, 1, 2].map((i) => (
                       <motion.div
                         key={i}
-                        className="w-2 h-2 rounded-full bg-[#D4AF37]"
+                        className="w-2 h-2 rounded-full bg-[#0EA5E9]"
                         animate={{ opacity: [0.3, 1, 0.3] }}
                         transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
                       />
@@ -149,7 +149,7 @@ export function AIAdviceModal({ isOpen, onClose, advice, isLoading }: AIAdviceMo
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={onClose}
-                    className="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#D4AF37] to-[#B8972E] text-black shadow-lg shadow-[#D4AF37]/20 hover:shadow-xl hover:shadow-[#D4AF37]/30 transition-all"
+                    className="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white shadow-lg shadow-[#0EA5E9]/20 hover:shadow-xl hover:shadow-[#0EA5E9]/30 transition-all"
                   >
                     Compris ✨
                   </motion.button>

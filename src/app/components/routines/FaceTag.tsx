@@ -26,12 +26,11 @@ export function FaceTag({ zone, matchedProducts, isActive, onClick }: FaceTagPro
           isActive ? 'scale-110' : 'hover:scale-105'
         }`}
       >
-        {/* Tag pill */}
         <div
-          className={`relative px-3 py-1.5 rounded-full text-[10px] font-semibold whitespace-nowrap shadow-lg ${
+          className={`relative px-3 py-1.5 rounded-full text-[10px] font-semibold whitespace-nowrap shadow-sm ${
             isActive
-              ? 'bg-[#D4AF37] text-black shadow-[#D4AF37]/40 font-bold'
-              : 'bg-black/80 text-white/90 border border-white/20 shadow-black/30'
+              ? 'bg-[#0EA5E9] text-white shadow-[#0EA5E9]/40 font-bold'
+              : 'bg-white/90 text-gray-700 border border-gray-200 shadow-black/5'
           }`}
           style={{ backdropFilter: 'blur(8px)' }}
         >
@@ -39,7 +38,7 @@ export function FaceTag({ zone, matchedProducts, isActive, onClick }: FaceTagPro
             {/* Pulsing dot */}
             <span
               className={`w-1.5 h-1.5 rounded-full ${
-                isActive ? 'bg-black/50' : 'bg-[#D4AF37]'
+                isActive ? 'bg-white/90' : 'bg-[#0EA5E9]'
               }`}
               style={{
                 animation: isActive ? 'none' : 'pulse 2s infinite',
@@ -55,12 +54,12 @@ export function FaceTag({ zone, matchedProducts, isActive, onClick }: FaceTagPro
         {/* Connector line */}
         <div
           className={`w-px h-3 mx-auto transition-colors ${
-            isActive ? 'bg-[#D4AF37]' : 'bg-white/30'
+            isActive ? 'bg-[#0EA5E9]' : 'bg-gray-300'
           }`}
         />
         <div
           className={`w-2 h-2 rounded-full mx-auto transition-colors ${
-            isActive ? 'bg-[#D4AF37] shadow-lg shadow-[#D4AF37]/50' : 'bg-white/40'
+            isActive ? 'bg-[#0EA5E9] shadow-md shadow-[#0EA5E9]/50' : 'bg-white border border-gray-300'
           }`}
         />
       </div>

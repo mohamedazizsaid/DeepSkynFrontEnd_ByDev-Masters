@@ -53,7 +53,7 @@ export function AddStepForm({ onAdd }: AddStepFormProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsOpen(true)}
-            className="w-full py-4 rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#D4AF37]/40 text-gray-400 hover:text-[#D4AF37] flex items-center justify-center gap-2 transition-all duration-300 hover:bg-[#D4AF37]/5"
+            className="w-full py-4 rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#0EA5E9]/40 text-gray-400 hover:text-[#0EA5E9] flex items-center justify-center gap-2 transition-all duration-300 hover:bg-[#0EA5E9]/5"
           >
             <Plus className="w-5 h-5" />
             <span className="font-medium text-sm">Ajouter une étape</span>
@@ -66,11 +66,7 @@ export function AddStepForm({ onAdd }: AddStepFormProps) {
             exit={{ opacity: 0, y: -10, height: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             onSubmit={handleSubmit}
-            className="relative overflow-hidden rounded-2xl border border-gray-100 p-5 bg-white shadow-md"
-            style={{
-              background: 'linear-gradient(135deg, rgba(212,175,55,0.02), rgba(255,255,255,1))',
-              backdropFilter: 'blur(20px)',
-            }}
+            className="relative overflow-hidden rounded-2xl border border-gray-100 p-5 bg-white shadow-sm"
           >
             {/* Close button */}
             <button
@@ -92,7 +88,7 @@ export function AddStepForm({ onAdd }: AddStepFormProps) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ex: Sérum Vitamine C"
-                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:border-[#D4AF37]/50 focus:ring-1 focus:ring-[#D4AF37]/30 transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:border-[#0EA5E9]/50 focus:ring-1 focus:ring-[#0EA5E9]/30 transition-all"
                   autoFocus
                 />
               </div>
@@ -103,7 +99,7 @@ export function AddStepForm({ onAdd }: AddStepFormProps) {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 text-sm focus:outline-none focus:border-[#D4AF37]/50 focus:ring-1 focus:ring-[#D4AF37]/30 transition-all appearance-none"
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 text-sm focus:outline-none focus:border-[#0EA5E9]/50 focus:ring-1 focus:ring-[#0EA5E9]/30 transition-all appearance-none"
                   style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(0,0,0,0.5)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
                     backgroundRepeat: 'no-repeat',
@@ -126,7 +122,7 @@ export function AddStepForm({ onAdd }: AddStepFormProps) {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Ex: Appliquer sur peau propre"
-                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:border-[#D4AF37]/50 focus:ring-1 focus:ring-[#D4AF37]/30 transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:border-[#0EA5E9]/50 focus:ring-1 focus:ring-[#0EA5E9]/30 transition-all"
                 />
               </div>
 
@@ -139,7 +135,7 @@ export function AddStepForm({ onAdd }: AddStepFormProps) {
                   onChange={(e) => setDuration(parseInt(e.target.value) || 30)}
                   min={5}
                   max={3600}
-                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 text-sm focus:outline-none focus:border-[#D4AF37]/50 focus:ring-1 focus:ring-[#D4AF37]/30 transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 text-sm focus:outline-none focus:border-[#0EA5E9]/50 focus:ring-1 focus:ring-[#0EA5E9]/30 transition-all"
                 />
               </div>
             </div>
@@ -150,7 +146,7 @@ export function AddStepForm({ onAdd }: AddStepFormProps) {
               disabled={!name.trim()}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full mt-4 py-3 rounded-xl font-semibold text-sm transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-[#D4AF37] to-[#B8972E] text-black shadow-lg shadow-[#D4AF37]/20 hover:shadow-xl hover:shadow-[#D4AF37]/30"
+              className="w-full mt-4 py-3 rounded-xl font-semibold text-sm transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white shadow-lg shadow-[#0EA5E9]/20 hover:shadow-xl hover:shadow-[#0EA5E9]/30"
             >
               <span className="flex items-center justify-center gap-2">
                 <Plus className="w-4 h-4" />
