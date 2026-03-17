@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Html } from '@react-three/drei';
 import { FaceZoneData } from './Face3DViewer';
 
@@ -12,16 +12,33 @@ interface FaceTagProps {
 export function FaceTag({ zone, matchedProducts, isActive, onClick }: FaceTagProps) {
   if (matchedProducts.length === 0) return null;
 
+  // Prevent events from propagating beyond the tag and causing layout shifts
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      onClick();
+    },
+    [onClick]
+  );
+
   return (
     <Html
       position={zone.position}
       center
       distanceFactor={4}
-      style={{ pointerEvents: 'auto' }}
+      sprite
+      style={{
+        pointerEvents: 'auto',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+      }}
       zIndexRange={[100, 0]}
     >
       <div
-        onClick={onClick}
+        onClick={handleClick}
+        onPointerDown={(e) => e.stopPropagation()}
+        onPointerUp={(e) => e.stopPropagation()}
         className={`cursor-pointer select-none transition-all duration-300 group ${
           isActive ? 'scale-110' : 'hover:scale-105'
         }`}

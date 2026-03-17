@@ -42,7 +42,7 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
           setSkinProfile(profile.value);
           setFormData(prev => ({
             ...prev,
-            age: profile.value.skinAge?.toString() || prev.age,
+            age: profile.value?.skinAge?.toString() || prev.age,
           }));
         }
         if (stats.status === 'fulfilled') {

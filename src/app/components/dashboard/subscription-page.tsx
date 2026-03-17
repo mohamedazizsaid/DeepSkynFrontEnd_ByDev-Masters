@@ -47,7 +47,7 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
     } catch { /* handle */ } finally { setCancelling(false); }
   };
 
-  const isPremium = currentSub?.plan === 'PREMIUM' || currentSub?.plan === 'premium';
+  const isPremium = currentSub?.plan === 'premium' || currentSub?.plan === 'premium_yearly';
   const displayPlans = [
     {
       name: 'Free',
