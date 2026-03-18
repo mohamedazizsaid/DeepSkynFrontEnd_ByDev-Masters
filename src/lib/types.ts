@@ -50,6 +50,7 @@ export interface UserProfile {
   family_name: string;
   email: string;
   avatar?: string;
+  avatar3D?: string;
   gender?: string;
   dateOfBirth?: string;
   createdAt?: string;

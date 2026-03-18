@@ -4,6 +4,8 @@ import { OrbitControls, Environment, ContactShadows, useGLTF, Html } from '@reac
 import * as THREE from 'three';
 import { AlertTriangle, Download, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useAuthStore } from '../../../stores/auth.store';
+import { usersService } from '../../../lib/services/users.service';
 
 // ─── Face Zone Definitions ───
 export interface FaceZoneData {
@@ -98,14 +100,22 @@ function ProceduralFace() {
 // ─── GLB Model Loader ───
 function FaceGLBModel({ url, onError }: { url: string; onError: () => void }) {
   const { scene } = useGLTF(url);
+  const modelRef = useRef<THREE.Object3D>(null);
 
   useEffect(() => {
     if (!scene) onError();
   }, [scene, onError]);
 
+  useFrame((state) => {
+    if (modelRef.current) {
+      modelRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.05;
+      modelRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.01;
+    }
+  });
+
   if (!scene) return null;
 
-  return <primitive object={scene} position={[0, 0, 0]} scale={1} />;
+  return <primitive ref={modelRef} object={scene} position={[0, 0, 0]} scale={1} />;
 }
 
 // ─── Face Tag Component (HTML overlay in 3D) ───
@@ -249,9 +259,45 @@ interface Face3DViewerProps {
 }
 
 export function Face3DViewer({ steps, highlightedZone, onZoneClick, glbUrl = '/models/face.glb' }: Face3DViewerProps) {
+  const { user, setUser } = useAuthStore();
   const [showInstructions, setShowInstructions] = useState(false);
   const [useGlbModel, setUseGlbModel] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [dbUser, setDbUser] = useState<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    usersService.getMe().then(setDbUser).catch(console.error);
+  }, []);
+
+  const profile = dbUser || user;
+  const isFemale = profile?.gender?.toLowerCase() === 'female' || profile?.gender?.toLowerCase() === 'femme';
+  const resolvedGlbUrl = profile?.avatar3D || (isFemale ? '/models/femme.glb' : '/models/homme.glb');
+  const finalGlbUrl = glbUrl && glbUrl !== '/models/face.glb' ? glbUrl : resolvedGlbUrl;
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.glb')) {
+      toast.error('Seuls les fichiers .glb sont acceptés');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const updatedUser = await usersService.uploadAvatar3D(file);
+      setDbUser(updatedUser);
+      setUser({ ...user, avatar3D: updatedUser.avatar3D } as any);
+      toast.success('Avatar 3D mis à jour !');
+    } catch (error) {
+      console.error(error);
+      toast.error("Échec de l'upload");
+    } finally {
+      setIsUploading(false);
+      setShowInstructions(false);
+    }
+  };
 
   const handleContainerClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -275,10 +321,10 @@ export function Face3DViewer({ steps, highlightedZone, onZoneClick, glbUrl = '/m
 
   // Preload GLB
   useEffect(() => {
-    if (glbUrl) {
-      try { useGLTF.preload(glbUrl); } catch { /* ignore */ }
+    if (finalGlbUrl) {
+      try { useGLTF.preload(finalGlbUrl); } catch { /* ignore */ }
     }
-  }, [glbUrl]);
+  }, [finalGlbUrl]);
 
   return (
     <div
@@ -311,8 +357,24 @@ export function Face3DViewer({ steps, highlightedZone, onZoneClick, glbUrl = '/m
           <h4 className="font-bold text-[#0EA5E9] mb-2 text-sm flex items-center gap-2">
             <Sparkles className="w-4 h-4" /> Importez votre avatar réaliste
           </h4>
-          <p className="mb-2 text-gray-600">Placez votre fichier <code className="bg-gray-100 px-1 py-0.5 rounded">.glb</code> dans <code className="bg-gray-100 px-1 py-0.5 rounded">public/models/face.glb</code></p>
-          <p className="text-gray-500">Sources: <a href="https://readyplayer.me/" target="_blank" rel="noreferrer" className="text-[#0EA5E9] hover:underline">ReadyPlayer.me</a> · <a href="https://sketchfab.com/tags/face-scan" target="_blank" rel="noreferrer" className="text-[#0EA5E9] hover:underline">Sketchfab</a></p>
+          <p className="mb-3 text-gray-600 leading-relaxed">
+            Va dans <a href="https://avaturn.me" target="_blank" rel="noreferrer" className="text-[#0EA5E9] font-bold hover:underline">Avaturn.me</a>, crée ton avatar, télécharge-le au format .glb puis uploade-le ici :
+          </p>
+          <div className="flex items-center gap-3">
+            <label className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                isUploading ? 'bg-gray-100 text-gray-400' : 'bg-[#0EA5E9]/10 text-[#0EA5E9] hover:bg-[#0EA5E9]/20'
+              }`}>
+              {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {isUploading ? 'Upload en cours...' : 'Uploader fichier .glb'}
+              <input 
+                type="file"
+                accept=".glb"
+                onChange={handleFileUpload}
+                disabled={isUploading}
+                className="hidden"
+              />
+            </label>
+          </div>
         </div>
       )}
 
@@ -346,7 +408,7 @@ export function Face3DViewer({ steps, highlightedZone, onZoneClick, glbUrl = '/m
             {/* Face model */}
             <Suspense fallback={<LoadingFallback />}>
               {useGlbModel ? (
-                <FaceGLBModel url={glbUrl} onError={handleGlbError} />
+                <FaceGLBModel url={finalGlbUrl} onError={handleGlbError} />
               ) : (
                 <ProceduralFace />
               )}

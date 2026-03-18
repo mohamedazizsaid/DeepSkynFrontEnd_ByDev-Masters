@@ -12,6 +12,7 @@ export interface User {
     email: string;
     name?: string;
     avatar?: string;
+    avatar3D?: string;
     dateOfBirth?: string;
     gender?: string;
     preferredLanguage?: string;
@@ -26,6 +27,17 @@ export const usersService = {
 
     async updateMe(data: UpdateUserDto): Promise<User> {
         const res = await apiClient.patch<User>('/users/me', data);
+        return res.data;
+    },
+
+    async uploadAvatar3D(file: File): Promise<User> {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await apiClient.post<User>('/users/avatar3d', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return res.data;
     }
 };
