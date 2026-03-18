@@ -31,13 +31,7 @@ export const usersService = {
     },
 
     async uploadAvatar3D(file: File): Promise<User> {
-        const formData = new FormData();
-        formData.append('file', file);
-        const res = await apiClient.post<User>('/users/avatar3d', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
+        const res = await apiClient.postForm<User>('/users/avatar3d', { file });
         return res.data;
     }
 };
