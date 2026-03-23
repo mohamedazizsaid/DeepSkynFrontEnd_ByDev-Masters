@@ -58,9 +58,9 @@ const WMO_CODES: { [key: number]: { condition: string; icon: string; description
   82: { condition: 'heavy_rain_showers', icon: '⛈️', description: 'Averses violentes' },
   85: { condition: 'light_snow_showers', icon: '🌨️', description: 'Averses de neige légères' },
   86: { condition: 'heavy_snow_showers', icon: '🌨️', description: 'Averses de neige intenses' },
-  80: { condition: 'thunderstorm', icon: '⛈️', description: 'Orage' },
-  82: { condition: 'thunderstorm_heavy', icon: '⛈️', description: 'Orage violent' },
-  85: { condition: 'thunderstorm_hail', icon: '⛈️', description: 'Orage avec grêle' },
+  95: { condition: 'thunderstorm', icon: '⛈️', description: 'Orage' },
+  96: { condition: 'thunderstorm_hail', icon: '⛈️', description: 'Orage avec grêle' },
+  99: { condition: 'thunderstorm_heavy', icon: '⛈️', description: 'Orage violent' },
 };
 
 /**
