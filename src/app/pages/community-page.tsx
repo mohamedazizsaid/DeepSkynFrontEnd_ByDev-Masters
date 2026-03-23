@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'motion/react';
 import {
-  ArrowLeft, Loader2, Users
+  ArrowLeft, Loader2, Users, Camera
 } from 'lucide-react';
 import { Button } from '../components/button';
 import { postsService } from '../../lib/services/posts.service';
@@ -18,7 +18,7 @@ interface CommunityPageProps {
 }
 
 export function CommunityPage({ onBack }: CommunityPageProps) {
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
@@ -28,6 +28,11 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
   const [commentLoading, setCommentLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [loadingCover, setLoadingCover] = useState(false);
+  const [loadingAvatar, setLoadingAvatar] = useState(false);
+  const [communityImage, setCommunityImage] = useState<string | null>(user?.coverPhoto || null);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
 
   const loadPosts = useCallback(async (pageNum = 1) => {
     try {
@@ -46,9 +51,139 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
     }
   }, []);
 
+  const handleCoverPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('La photo doit faire moins de 5MB');
+      return;
+    }
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Seul JPG, PNG et WEBP sont acceptés');
+      return;
+    }
+
+    setLoadingCover(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+        await handleCoverPhotoUpload(base64);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error('Erreur lors du téléchargement de la photo');
+      console.error(error);
+    } finally {
+      setLoadingCover(false);
+    }
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('L\'avatar doit faire moins de 5MB');
+      return;
+    }
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Seul JPG, PNG et WEBP sont acceptés');
+      return;
+    }
+
+    setLoadingAvatar(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+        await handleAvatarUpload(base64);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error('Erreur lors du téléchargement de l\'avatar');
+      console.error(error);
+    } finally {
+      setLoadingAvatar(false);
+    }
+  };
+
+  const handleCoverPhotoUpload = async (base64: string) => {
+    try {
+      setLoadingCover(true);
+      // Call the backend API to update cover photo
+      const response = await fetch('http://localhost:3000/auth/profile/cover', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: JSON.stringify({ coverPhotoUrl: base64 }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la mise à jour de la couverture');
+      }
+
+      const updatedUser = await response.json();
+      // Update auth store with new user data
+      setUser({ ...user, coverPhoto: updatedUser.coverPhoto });
+      setCommunityImage(updatedUser.coverPhoto);
+      toast.success('Photo de couverture mise à jour');
+    } catch (error) {
+      toast.error('Erreur lors de la mise à jour de la photo');
+      console.error(error);
+    } finally {
+      setLoadingCover(false);
+    }
+  };
+
+  const handleAvatarUpload = async (base64: string) => {
+    try {
+      setLoadingAvatar(true);
+      // Call the backend API to update avatar
+      const response = await fetch('http://localhost:3000/auth/profile/avatar', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: JSON.stringify({ avatarUrl: base64 }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la mise à jour de l\'avatar');
+      }
+
+      const updatedUser = await response.json();
+      // Update auth store with new user data
+      setUser({ ...user, avatar: updatedUser.avatar });
+      toast.success('Avatar mis à jour');
+    } catch (error) {
+      toast.error('Erreur lors de la mise à jour de l\'avatar');
+      console.error(error);
+    } finally {
+      setLoadingAvatar(false);
+    }
+  };
+
   useEffect(() => {
     loadPosts(1);
   }, [loadPosts]);
+
+  // Sync cover photo when user changes
+  useEffect(() => {
+    if (user?.coverPhoto) {
+      setCommunityImage(user.coverPhoto);
+    }
+  }, [user?.coverPhoto]);
 
   const handleCreatePost = async (content: string, media?: string) => {
     if (!content.trim()) return;
@@ -160,20 +295,74 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
               className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6"
             >
               {/* Cover Photo */}
-              <div className="relative h-48 bg-gradient-to-r from-[#F9A8D4] to-[#FED7AA]">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Users className="w-24 h-24 text-white/30" />
+              <div 
+                className="relative h-48 bg-gradient-to-r from-[#F9A8D4] to-[#FED7AA] cursor-pointer group"
+                onClick={() => coverInputRef.current?.click()}
+              >
+                {communityImage && (
+                  <img 
+                    src={communityImage} 
+                    alt="Community cover" 
+                    className="w-full h-full object-cover"
+                  />
+                )}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/50 transition-all">
+                  {loadingCover ? (
+                    <Loader2 className="w-8 h-8 animate-spin text-white" />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Camera className="w-8 h-8 text-white" />
+                      <span className="text-white text-sm font-medium">Modifier la couverture</span>
+                    </div>
+                  )}
                 </div>
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleCoverPhotoChange}
+                  className="hidden"
+                />
               </div>
 
               {/* Profile Content */}
               <div className="px-8 pb-8">
                 <div className="flex items-end gap-6 mb-6">
                   {/* Avatar */}
-                  <div className="relative -mt-16 flex-shrink-0">
-                    <div className="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-br from-[#F9A8D4] to-[#FED7AA] overflow-hidden shadow-lg flex items-center justify-center text-5xl font-bold text-white">
-                      <Users className="w-16 h-16" />
+                  <div 
+                    className="relative -mt-16 flex-shrink-0 cursor-pointer group"
+                  >
+                    <div 
+                      onClick={() => avatarInputRef.current?.click()}
+                      className="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-br from-[#F9A8D4] to-[#FED7AA] overflow-hidden shadow-lg flex items-center justify-center text-5xl font-bold text-white group-hover:opacity-80 transition-opacity"
+                    >
+                      {user?.avatar ? (
+                        <img 
+                          src={user.avatar} 
+                          alt={user?.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Users className="w-16 h-16" />
+                      )}
                     </div>
+                    <button
+                      onClick={() => avatarInputRef.current?.click()}
+                      className="absolute bottom-0 right-0 p-2.5 bg-[#0EA5E9] text-white rounded-full hover:bg-[#0284C7] transition-colors shadow-lg"
+                    >
+                      {loadingAvatar ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Camera className="w-5 h-5" />
+                      )}
+                    </button>
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
                   </div>
 
                   <div className="flex-1"></div>
