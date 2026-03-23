@@ -81,7 +81,7 @@ export const authService = {
     return res.data;
   },
 
-  async updateProfile(data: { name?: string; avatar?: string; gender?: string; dateOfBirth?: string }): Promise<UserProfile> {
+  async updateProfile(data: { name?: string; avatar?: string; gender?: string; dateOfBirth?: string; preferredLanguage?: string }): Promise<UserProfile> {
     const res = await apiClient.patch<UserProfile>('/auth/profile', data);
     return res.data;
   },
@@ -109,6 +109,11 @@ export const authService = {
 
   async validateResetToken(token: string): Promise<{ valid: boolean }> {
     const res = await apiClient.get(`/auth/reset-password/validate?token=${token}`);
+    return res.data;
+  },
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<any> {
+    const res = await apiClient.post('/auth/change-password', { currentPassword, newPassword });
     return res.data;
   },
 

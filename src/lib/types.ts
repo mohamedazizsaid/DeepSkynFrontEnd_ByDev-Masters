@@ -53,6 +53,7 @@ export interface UserProfile {
   avatar3D?: string;
   gender?: string;
   dateOfBirth?: string;
+  preferredLanguage?: string;
   createdAt?: string;
 }
 

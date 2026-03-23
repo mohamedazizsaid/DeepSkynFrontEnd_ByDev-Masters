@@ -1,6 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { ArrowLeft, Camera, Mail, Calendar, User as UserIcon, Edit2, Save, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  ArrowLeft,
+  Camera,
+  Mail,
+  Calendar,
+  User as UserIcon,
+  Edit2,
+  Save,
+  Loader2,
+  Sparkles,
+  Shield,
+  Activity,
+  Droplets,
+  Sun,
+  Clock,
+  Award,
+  X,
+  ChevronRight,
+  ChevronDown,
+  Check,
+  Scan,
+  Heart,
+} from 'lucide-react';
 import { Button } from '../button';
 import { Card } from '../card';
 import { Input } from '../input';
@@ -22,6 +44,19 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
   const [analysisCount, setAnalysisCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGenderOpen, setIsGenderOpen] = useState(false);
+  const genderRef = useRef<HTMLDivElement>(null);
+
+  // Close gender dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (genderRef.current && !genderRef.current.contains(event.target as Node)) {
+        setIsGenderOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -66,9 +101,8 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // 1. Update basic user profile (name, gender, dateOfBirth, avatar)
       const year = formData.age ? new Date().getFullYear() - parseInt(formData.age) : null;
-      const dateOfBirth = year ? `${year}-01-01` : undefined;
+      const dateOfBirth = year ? `${year}-01-01T00:00:00Z` : undefined;
 
       await authService.updateProfile({
         name: formData.name,
@@ -77,7 +111,6 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
         dateOfBirth: dateOfBirth
       });
 
-      // 2. Update skin profile if needed
       if (skinProfile) {
         await skinProfileService.update({
           skinAge: formData.age ? parseInt(formData.age) : undefined,
@@ -105,191 +138,430 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
     }
   };
 
-  const stats = [
-    { label: 'Analyses Completed', value: analysisCount.toString() || '0' },
-    { label: 'Skin Type', value: skinProfile?.skinType || 'N/A' },
-    { label: 'Skin Health Score', value: skinProfile?.healthScore ? `${skinProfile.healthScore}/100` : 'N/A' },
-    { label: 'Skin Age', value: skinProfile?.skinAge ? `${skinProfile.skinAge} years` : 'N/A' }
-  ];
-
-  const skinProfileData = [
-    { label: 'Fitzpatrick Type', value: skinProfile?.fitzpatrickType || 'N/A' },
-    { label: 'Main Concerns', value: skinProfile?.concerns?.join(', ') || 'N/A' },
-    { label: 'Skin Health Score', value: skinProfile?.healthScore ? `${skinProfile.healthScore}/100` : 'N/A' },
-    { label: 'Skin Age', value: skinProfile?.skinAge ? `${skinProfile.skinAge} years` : 'N/A' },
-    { label: 'Member Since', value: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A' }
-  ];
+  const memberSince = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+    : 'N/A';
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
       {/* Header */}
-      <div className="mb-8">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-[#6B7280] hover:text-[#0EA5E9] mb-4 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back to Dashboard</span>
-        </button>
-        <h1 className="text-3xl font-bold">Profile</h1>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Profile Card */}
-        <div className="lg:col-span-1">
-          <Card>
-            <div className="text-center">
-              <div className="relative inline-block mb-4">
-                <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center border-4 border-white shadow-lg">
-                  {formData.avatar ? (
-                    <img src={formData.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <UserIcon className="w-16 h-16 text-white" />
-                  )}
-                </div>
-                {isEditing && (
-                  <label className="absolute bottom-0 right-0 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-[#E5E7EB] hover:border-[#0EA5E9] transition-colors cursor-pointer">
-                    <Camera className="w-5 h-5 text-[#6B7280]" />
-                    <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} />
-                  </label>
-                )}
-              </div>
-
-              <h2 className="text-2xl font-bold mb-1">{formData.name}</h2>
-              <p className="text-[#6B7280] mb-4">{formData.email}</p>
-
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white rounded-full text-sm font-medium">
-                <span>Premium Member</span>
-              </div>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between mb-8 lg:mb-10"
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center shadow-lg shadow-[#0EA5E9]/20">
+              <UserIcon className="w-6 h-6 lg:w-7 lg:h-7 text-white" />
             </div>
-
-            <div className="mt-6 pt-6 border-t border-[#E5E7EB] space-y-3">
-              {stats.map((stat, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm text-[#6B7280]">{stat.label}</span>
-                  <span className="text-sm font-bold text-[#0EA5E9]">{stat.value}</span>
-                </div>
-              ))}
+            <div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#111827]">Mon Profil</h1>
+              <p className="text-sm text-[#6B7280] hidden sm:block">Gérez vos informations personnelles</p>
             </div>
-          </Card>
-
-          <Card className="mt-6">
-            <h3 className="font-bold mb-4">Skin Profile Summary</h3>
-            <div className="space-y-3">
-              {skinProfileData.map((item, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <span className="text-[#6B7280]">{item.label}:</span>
-                  <span className="font-medium text-[#374151]">{item.value}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
+          </div>
         </div>
 
-        {/* Details */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Personal Information */}
-          <Card>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold">Personal Information</h3>
-              {!isEditing ? (
-                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                  <Edit2 className="w-4 h-4" />
-                  Edit
-                </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
-                    Cancel
-                  </Button>
-                  <Button size="sm" onClick={handleSave}>
-                    <Save className="w-4 h-4" />
-                    Save
-                  </Button>
+        {/* Edit / Save buttons — top right on desktop */}
+        <div className="hidden sm:flex items-center gap-3">
+          {!isEditing ? (
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+              <Edit2 className="w-4 h-4" />
+              Modifier
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
+                <X className="w-4 h-4" />
+                Annuler
+              </Button>
+              <Button size="sm" onClick={handleSave} loading={isSaving}>
+                <Save className="w-4 h-4" />
+                Enregistrer
+              </Button>
+            </>
+          )}
+        </div>
+      </motion.div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+
+        {/* ═══════════════════════════════════════════════════════
+            LEFT COLUMN — Profile Card + Stats + Skin Summary
+            ═══════════════════════════════════════════════════════ */}
+        <div className="lg:col-span-1 flex flex-col gap-6">
+
+          {/* Profile Avatar Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card>
+              {/* Gradient Banner */}
+              <div className="-mx-6 -mt-6 h-24 sm:h-28 rounded-t-2xl bg-gradient-to-br from-[#0EA5E9] via-[#06B6D4] to-[#8B5CF6] relative overflow-hidden">
+                <div className="absolute inset-0 opacity-20">
+                  <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/20" />
+                  <div className="absolute -bottom-12 -left-6 w-32 h-32 rounded-full bg-white/10" />
                 </div>
-              )}
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <Input
-                label="Full Name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                icon={<UserIcon className="w-5 h-5" />}
-                disabled={!isEditing}
-              />
-
-              <Input
-                label="Email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                icon={<Mail className="w-5 h-5" />}
-                disabled={!isEditing}
-              />
-
-              <Input
-                label="Age"
-                type="number"
-                value={formData.age}
-                onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                icon={<Calendar className="w-5 h-5" />}
-                disabled={!isEditing}
-              />
-
-              <div>
-                <label className="block mb-2 text-sm text-[#374151]">Gender</label>
-                <select
-                  value={formData.gender}
-                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  disabled={!isEditing}
-                  className={`w-full px-4 py-3 bg-[#F9FAFB] border-2 border-[#E5E7EB] rounded-xl 
-                    text-[#111827] focus:outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/20
-                    transition-all duration-200 ${!isEditing ? 'opacity-60' : ''}`}
-                >
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Non-binary">Non-binary</option>
-                  <option value="Prefer not to say">Prefer not to say</option>
-                </select>
               </div>
-            </div>
-          </Card>
 
-          {/* Activity History */}
-          <Card>
-            <h3 className="text-lg font-bold mb-6">Recent Activity</h3>
-            <div className="space-y-4">
+              {/* Avatar */}
+              <div className="flex flex-col items-center -mt-14 relative z-10">
+                <div className="relative">
+                  <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] p-[3px] shadow-xl shadow-[#0EA5E9]/20">
+                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                      {formData.avatar ? (
+                        <img src={formData.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <UserIcon className="w-14 h-14 text-gray-300" />
+                      )}
+                    </div>
+                  </div>
+                  {isEditing && (
+                    <label className="absolute bottom-1 right-1 w-9 h-9 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-[#E5E7EB] hover:border-[#0EA5E9] transition-colors cursor-pointer group">
+                      <Camera className="w-4 h-4 text-[#6B7280] group-hover:text-[#0EA5E9] transition-colors" />
+                      <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} />
+                    </label>
+                  )}
+                </div>
+
+                <h2 className="text-xl font-bold text-[#111827] mt-4">{formData.name || 'Utilisateur'}</h2>
+                <p className="text-sm text-[#6B7280] mt-0.5">{formData.email}</p>
+
+                <div className="mt-3 flex items-center gap-2 flex-wrap justify-center">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-[#0EA5E9]/10 to-[#06B6D4]/10 text-[#0EA5E9]">
+                    <Sparkles className="w-3 h-3" />
+                    Membre Premium
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#6B7280]">
+                    <Clock className="w-3 h-3" />
+                    Depuis {memberSince}
+                  </span>
+                </div>
+              </div>
+
+              {/* Mobile edit buttons */}
+              <div className="flex sm:hidden items-center gap-2 mt-5">
+                {!isEditing ? (
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => setIsEditing(true)}>
+                    <Edit2 className="w-4 h-4" />
+                    Modifier
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => setIsEditing(false)}>
+                      Annuler
+                    </Button>
+                    <Button size="sm" className="flex-1" onClick={handleSave} loading={isSaving}>
+                      <Save className="w-4 h-4" />
+                      Sauvegarder
+                    </Button>
+                  </>
+                )}
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* Quick Stats Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.08 }}
+          >
+            <div className="grid grid-cols-2 gap-3">
               {[
-                { action: 'Completed skin analysis', date: '2 hours ago', type: 'analysis' },
-                { action: 'Updated morning routine', date: 'Yesterday', type: 'routine' },
-                { action: 'Chatted with AI coach', date: '2 days ago', type: 'chat' },
-                { action: 'Uploaded new photos', date: '3 days ago', type: 'upload' },
-                { action: 'Achieved 14-day streak', date: '1 week ago', type: 'achievement' }
-              ].map((activity, index) => (
+                {
+                  label: 'Analyses',
+                  value: analysisCount.toString() || '0',
+                  icon: Scan,
+                  color: 'from-[#0EA5E9] to-[#06B6D4]',
+                  bg: 'bg-[#0EA5E9]/10',
+                  textColor: 'text-[#0EA5E9]',
+                },
+                {
+                  label: 'Type de peau',
+                  value: skinProfile?.skinType || 'N/A',
+                  icon: Droplets,
+                  color: 'from-[#8B5CF6] to-[#6366F1]',
+                  bg: 'bg-[#8B5CF6]/10',
+                  textColor: 'text-[#8B5CF6]',
+                },
+                {
+                  label: 'Score santé',
+                  value: skinProfile?.healthScore ? `${skinProfile.healthScore}/100` : 'N/A',
+                  icon: Heart,
+                  color: 'from-[#EC4899] to-[#F43F5E]',
+                  bg: 'bg-[#EC4899]/10',
+                  textColor: 'text-[#EC4899]',
+                },
+                {
+                  label: 'Âge cutané',
+                  value: skinProfile?.skinAge ? `${skinProfile.skinAge} ans` : 'N/A',
+                  icon: Activity,
+                  color: 'from-[#10B981] to-[#06B6D4]',
+                  bg: 'bg-[#10B981]/10',
+                  textColor: 'text-[#10B981]',
+                },
+              ].map((stat, index) => (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-center gap-4 p-4 bg-[#F9FAFB] rounded-xl"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.15 + index * 0.05 }}
+                  className="bg-white rounded-2xl p-4 border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow duration-200"
                 >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${activity.type === 'analysis' ? 'bg-[#0EA5E9]/10 text-[#0EA5E9]' :
-                    activity.type === 'routine' ? 'bg-[#F9A8D4]/10 text-[#F9A8D4]' :
-                      activity.type === 'chat' ? 'bg-[#FBBF24]/10 text-[#FBBF24]' :
-                        activity.type === 'achievement' ? 'bg-[#10B981]/10 text-[#10B981]' :
-                          'bg-[#6B7280]/10 text-[#6B7280]'
-                    }`}>
-                    <div className="w-2 h-2 rounded-full bg-current" />
+                  <div className={`w-9 h-9 rounded-xl ${stat.bg} flex items-center justify-center mb-2.5`}>
+                    <stat.icon className={`w-4.5 h-4.5 ${stat.textColor}`} />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-[#374151]">{activity.action}</p>
-                    <p className="text-sm text-[#6B7280]">{activity.date}</p>
-                  </div>
+                  <p className={`text-lg font-bold ${stat.textColor}`}>{stat.value}</p>
+                  <p className="text-xs text-[#6B7280] mt-0.5">{stat.label}</p>
                 </motion.div>
               ))}
             </div>
-          </Card>
+          </motion.div>
+
+          {/* Skin Profile Summary */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.16 }}
+          >
+            <Card>
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#F9A8D4] to-[#FED7AA] flex items-center justify-center">
+                  <Sun className="w-4 h-4 text-white" />
+                </div>
+                <h3 className="text-base font-bold text-[#111827]">Résumé cutané</h3>
+              </div>
+
+              <div className="space-y-3.5">
+                {[
+                  { label: 'Phototype Fitzpatrick', value: skinProfile?.fitzpatrickType || 'N/A' },
+                  { label: 'Préoccupations', value: skinProfile?.concerns?.join(', ') || 'N/A' },
+                  { label: 'Score de santé', value: skinProfile?.healthScore ? `${skinProfile.healthScore}/100` : 'N/A' },
+                  { label: 'Âge cutané', value: skinProfile?.skinAge ? `${skinProfile.skinAge} ans` : 'N/A' },
+                ].map((item, index) => (
+                  <div key={index} className="flex items-start justify-between gap-3">
+                    <span className="text-sm text-[#6B7280] shrink-0">{item.label}</span>
+                    <span className="text-sm font-semibold text-[#374151] text-right">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* ═══════════════════════════════════════════════════════
+            RIGHT COLUMN — Personal Info + Activity
+            ═══════════════════════════════════════════════════════ */}
+        <div className="lg:col-span-2 flex flex-col gap-6 lg:gap-8">
+
+          {/* Personal Information */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <Card>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center shadow-sm">
+                    <UserIcon className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-[#111827]">Informations personnelles</h3>
+                    <p className="text-xs text-[#6B7280] hidden sm:block">Vos données de base</p>
+                  </div>
+                </div>
+                {/* Desktop action already in header */}
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-5">
+                <Input
+                  label="Nom complet"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  icon={<UserIcon className="w-5 h-5" />}
+                  disabled={!isEditing}
+                />
+
+                <Input
+                  label="Adresse email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  icon={<Mail className="w-5 h-5" />}
+                  disabled={!isEditing}
+                />
+
+                <Input
+                  label="Âge"
+                  type="number"
+                  value={formData.age}
+                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                  icon={<Calendar className="w-5 h-5" />}
+                  disabled={!isEditing}
+                />
+
+                <div className="w-full" ref={genderRef}>
+                  <label className="block mb-2 text-sm text-[#374151]">Genre</label>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => isEditing && setIsGenderOpen(!isGenderOpen)}
+                      disabled={!isEditing}
+                      className={`w-full flex items-center pl-10 pr-10 py-3 bg-[#F9FAFB] border-2 rounded-xl 
+                        text-left transition-all duration-200
+                        ${isGenderOpen ? 'border-[#0EA5E9] ring-2 ring-[#0EA5E9]/20' : 'border-[#E5E7EB]'}
+                        ${!isEditing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      <span className={formData.gender ? 'text-[#111827]' : 'text-[#9CA3AF]'}>
+                        {formData.gender
+                          ? { Male: 'Homme', Female: 'Femme', 'Non-binary': 'Non-binaire', 'Prefer not to say': 'Préfère ne pas dire' }[formData.gender] || formData.gender
+                          : 'Sélectionner'}
+                      </span>
+                    </button>
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none">
+                      <UserIcon className="w-5 h-5" />
+                    </div>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isGenderOpen ? 'rotate-180' : ''}`} />
+                    </div>
+
+                    <AnimatePresence>
+                      {isGenderOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white rounded-xl border border-[#E5E7EB] shadow-xl overflow-hidden"
+                        >
+                          {[
+                            { value: 'Male', label: 'Homme' },
+                            { value: 'Female', label: 'Femme' },
+                            { value: 'Non-binary', label: 'Non-binaire' },
+                            { value: 'Prefer not to say', label: 'Préfère ne pas dire' },
+                          ].map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => {
+                                setFormData({ ...formData, gender: option.value });
+                                setIsGenderOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-between px-4 py-3 text-sm transition-colors duration-150
+                                ${formData.gender === option.value
+                                  ? 'bg-[#0EA5E9]/5 text-[#0EA5E9] font-semibold'
+                                  : 'text-[#374151] hover:bg-[#F9FAFB]'
+                                }`}
+                            >
+                              <span>{option.label}</span>
+                              {formData.gender === option.value && (
+                                <Check className="w-4 h-4 text-[#0EA5E9]" />
+                              )}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* Security Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.18 }}
+          >
+            <Card>
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-[#6366F1] flex items-center justify-center shadow-sm">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-[#111827]">Sécurité du compte</h3>
+                  <p className="text-xs text-[#6B7280] hidden sm:block">Protégez votre compte</p>
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="flex items-center gap-4 p-4 bg-[#F9FAFB] rounded-xl border border-[#E5E7EB] hover:border-[#8B5CF6]/30 transition-colors duration-200 group">
+                  <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-[#8B5CF6]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[#111827]">Authentification 2FA</p>
+                    <p className="text-xs text-[#6B7280]">Protection supplémentaire</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#8B5CF6] transition-colors" />
+                </div>
+
+                <div className="flex items-center gap-4 p-4 bg-[#F9FAFB] rounded-xl border border-[#E5E7EB] hover:border-[#0EA5E9]/30 transition-colors duration-200 group">
+                  <div className="w-10 h-10 rounded-xl bg-[#0EA5E9]/10 flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-[#0EA5E9]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[#111827]">Email vérifié</p>
+                    <p className="text-xs text-[#10B981] font-medium">✓ Confirmé</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#0EA5E9] transition-colors" />
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* Recent Activity */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.24 }}
+          >
+            <Card>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#10B981] to-[#06B6D4] flex items-center justify-center shadow-sm">
+                    <Activity className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-[#111827]">Activité récente</h3>
+                    <p className="text-xs text-[#6B7280] hidden sm:block">Votre historique d'activité</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  { action: 'Analyse de peau effectuée', date: 'Il y a 2 heures', type: 'analysis', color: '#0EA5E9', bg: 'bg-[#0EA5E9]/10' },
+                  { action: 'Routine matinale mise à jour', date: 'Hier', type: 'routine', color: '#F9A8D4', bg: 'bg-[#F9A8D4]/10' },
+                  { action: 'Discussion avec le coach IA', date: 'Il y a 2 jours', type: 'chat', color: '#FBBF24', bg: 'bg-[#FBBF24]/10' },
+                  { action: 'Nouvelles photos téléversées', date: 'Il y a 3 jours', type: 'upload', color: '#6B7280', bg: 'bg-[#6B7280]/10' },
+                  { action: 'Série de 14 jours atteinte', date: 'Il y a 1 semaine', type: 'achievement', color: '#10B981', bg: 'bg-[#10B981]/10' }
+                ].map((activity, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + index * 0.08 }}
+                    className="flex items-center gap-4 p-3.5 bg-[#F9FAFB] rounded-xl border border-transparent hover:border-[#E5E7EB] hover:shadow-sm transition-all duration-200"
+                  >
+                    <div className={`w-10 h-10 rounded-xl ${activity.bg} flex items-center justify-center shrink-0`}>
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: activity.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[#374151] truncate">{activity.action}</p>
+                      <p className="text-xs text-[#6B7280] mt-0.5">{activity.date}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-[#D1D5DB] shrink-0" />
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
         </div>
       </div>
     </div>

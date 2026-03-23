@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { AccessibilityPanel } from './components/accessibility-panel';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LandingPage } from './components/landing-page';
 import { LoginPage } from './pages/login-page';
@@ -120,7 +120,7 @@ function AppContent() {
           error: { iconTheme: { primary: '#EF4444', secondary: '#fff' } },
         }}
       />
-      <AccessibilityPanel />
+
     </>
   );
 }
