@@ -39,6 +39,7 @@ import {
 import { useNotificationStore } from '../../../stores/notification.store';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
 import { Button } from '../button';
+import WeatherNavbar from '../../../components/weather/weather-navbar';
 
 interface UserNavbarProps {
     currentPage: string;
@@ -158,7 +159,9 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
     }, [resetZoom, resetContrastMode, reduceMotion, toggleReduceMotion, dyslexiaFont, toggleDyslexiaFont, linkHighlight, toggleLinkHighlight, bigCursor, toggleBigCursor, textSpacing, toggleTextSpacing, isSpeaking, stopSpeaking, isListening, stopListening, clearSpokenText, theme, toggleTheme]);
 
     const mainItems = [
-        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+        { id: 'dashboard', label: '', icon: <LayoutDashboard className="w-5 h-5" /> },
+        { id: 'meteo', label: '', icon: <LayoutDashboard className="w-5 h-5" /> },
+
     ];
 
     const rightNavItems = [
@@ -232,6 +235,9 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                 )}
                             </button>
                         )}
+
+                        {/* Weather Widget */}
+                        <WeatherNavbar className="hidden lg:block" />
 
                         {/* Profile Dropdown */}
                         <div className="relative ml-2" ref={dropdownRef}>

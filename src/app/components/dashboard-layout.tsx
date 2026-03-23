@@ -10,6 +10,7 @@ import { SubscriptionPage } from './dashboard/subscription-page';
 import { ProfilePage } from './dashboard/profile-page';
 import { SettingsPage } from '../pages/settings-page';
 import { CommunityPage } from '../pages/community-page';
+import { WeatherPage } from './dashboard/weather-page';
 import { NotificationPanel } from './notification-panel';
 import { useNotificationStore } from '../../stores/notification.store';
 import { useAuthStore } from '../../stores/auth.store';
@@ -18,7 +19,7 @@ interface DashboardLayoutProps {
   onLogout: () => void;
 }
 
-export type DashboardPageType = 'dashboard' | 'analysis' | 'evolution' | 'routine' | 'chat' | 'subscription' | 'profile' | 'settings' | 'community';
+export type DashboardPageType = 'dashboard' | 'analysis' | 'evolution' | 'routine' | 'chat' | 'subscription' | 'profile' | 'settings' | 'community' | 'meteo';
 
 export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
   const [currentPage, setCurrentPage] = useState<DashboardPageType>('dashboard');
@@ -64,6 +65,8 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
         return <SettingsPage />;
       case 'community':
         return <CommunityPage />;
+      case 'meteo':
+        return <WeatherPage {...commonProps} />;
       default:
         return <DashboardPage onNavigate={handleNavigate} />;
     }
