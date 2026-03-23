@@ -84,7 +84,11 @@ export const getLocation = async (): Promise<LocationData> => {
           // Fallback sur le backend pour détection IP
           getLocationFromBackend().then(resolve).catch(reject);
         },
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 3600000 }
+        { 
+          enableHighAccuracy: false, 
+          timeout: 10000,  // Augmenté de 5s à 10s pour laisser le temps à l'utilisateur 
+          maximumAge: 0     // Toujours demander une nouvelle position (pas de cache)
+        }
       );
     } else {
       // Fallback sur le backend si Geolocation non disponible

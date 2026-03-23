@@ -160,7 +160,6 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
 
     const mainItems = [
         { id: 'dashboard', label: '', icon: <LayoutDashboard className="w-5 h-5" /> },
-        { id: 'meteo', label: '', icon: <LayoutDashboard className="w-5 h-5" /> },
 
     ];
 

@@ -12,8 +12,16 @@ interface WeatherNavbarProps {
 }
 
 const WeatherNavbar: React.FC<WeatherNavbarProps> = ({ className = '' }) => {
-  const { weather, advice, loading, error } = useWeather(true);
+  const { weather, advice, loading, error, fetchWeather } = useWeather(false);
   const [showPopup, setShowPopup] = useState(false);
+
+  // Charger météo quand popup s'ouvre
+  const handleOpenPopup = () => {
+    setShowPopup(true);
+    if (!weather && !loading) {
+      fetchWeather();
+    }
+  };
 
   // Mapper le code météo à une icône
   const getWeatherIcon = () => {
@@ -49,7 +57,13 @@ const WeatherNavbar: React.FC<WeatherNavbarProps> = ({ className = '' }) => {
     <div className={`relative ${className}`}>
       {/* Bouton météo compacte */}
       <motion.button
-        onClick={() => setShowPopup(!showPopup)}
+        onClick={() => {
+          if (!showPopup) {
+            handleOpenPopup();
+          } else {
+            setShowPopup(false);
+          }
+        }}
         className={`flex items-center gap-2 px-3 py-2 rounded-lg transition duration-200 ${
           showPopup
             ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'

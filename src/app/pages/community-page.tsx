@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import {
-  Heart, MessageCircle, Send, Image, Plus, Trash2, MoreHorizontal,
   ArrowLeft, Loader2, Users
 } from 'lucide-react';
 import { Button } from '../components/button';
@@ -9,6 +8,10 @@ import { postsService } from '../../lib/services/posts.service';
 import { useAuthStore } from '../../stores/auth.store';
 import type { Post, Comment } from '../../lib/types';
 import toast from 'react-hot-toast';
+import { ProfileHero } from './components/profile-hero';
+import { PostComposer } from './components/post-composer';
+import { PostCard } from './components/post-card';
+import type { PostCardData } from './components/post-card';
 
 interface CommunityPageProps {
   onBack?: () => void;
@@ -18,10 +21,7 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
   const { user } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newPostMessage, setNewPostMessage] = useState('');
-  const [newPostMedia, setNewPostMedia] = useState('');
   const [posting, setPosting] = useState(false);
-  const [showCreatePost, setShowCreatePost] = useState(false);
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -50,18 +50,15 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
     loadPosts(1);
   }, [loadPosts]);
 
-  const handleCreatePost = async () => {
-    if (!newPostMessage.trim()) return;
+  const handleCreatePost = async (content: string, media?: string) => {
+    if (!content.trim()) return;
     setPosting(true);
     try {
       const post = await postsService.create({
-        message: newPostMessage,
-        media: newPostMedia || undefined,
+        message: content,
+        media: media || undefined,
       });
       setPosts((prev) => [post, ...prev]);
-      setNewPostMessage('');
-      setNewPostMedia('');
-      setShowCreatePost(false);
       toast.success('Post publié !');
     } catch {
       toast.error('Erreur lors de la publication');
@@ -72,7 +69,7 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
 
   const handleToggleLike = async (postId: string) => {
     try {
-      const result = await postsService.toggleLike(postId);
+      await postsService.toggleLike(postId);
       setPosts((prev) =>
         prev.map((p) =>
           p.id === postId
@@ -104,6 +101,12 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
   };
 
   const loadComments = async (postId: string) => {
+    if (selectedPost === postId) {
+      setSelectedPost(null);
+      setComments([]);
+      return;
+    }
+    
     setSelectedPost(postId);
     setCommentLoading(true);
     try {
@@ -138,191 +141,218 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
   };
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
-      <button onClick={onBack} className="mb-6 flex items-center gap-2 text-[#6B7280] hover:text-[#0EA5E9] transition-colors">
-        <ArrowLeft className="w-5 h-5" />
-        <span>Retour</span>
-      </button>
+    <div className="min-h-screen bg-[#F9FAFB]">
+      {/* Header */}
+      
 
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#F9A8D4] to-[#FED7AA] flex items-center justify-center">
-            <Users className="w-7 h-7 text-[#111827]" />
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-[#0EA5E9]" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">Communauté</h1>
-            <p className="text-[#6B7280]">Partagez votre parcours skincare</p>
-          </div>
-        </div>
-        <Button onClick={() => setShowCreatePost(true)} size="sm">
-          <Plus className="w-4 h-4" /> Publier
-        </Button>
-      </div>
-
-      {/* Create Post Modal */}
-      <AnimatePresence>
-        {showCreatePost && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mb-6 bg-white rounded-2xl border border-[#E5E7EB] shadow-lg p-6"
-          >
-            <textarea
-              value={newPostMessage}
-              onChange={(e) => setNewPostMessage(e.target.value)}
-              placeholder="Partagez votre expérience skincare..."
-              className="w-full p-3 bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl resize-none h-24 focus:outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/20 transition-all"
-              autoFocus
-            />
-            <input
-              value={newPostMedia}
-              onChange={(e) => setNewPostMedia(e.target.value)}
-              placeholder="URL de l'image (optionnel)"
-              className="w-full mt-3 p-3 bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/20 transition-all text-sm"
-            />
-            <div className="flex justify-end gap-3 mt-4">
-              <Button variant="outline" size="sm" onClick={() => setShowCreatePost(false)}>Annuler</Button>
-              <Button size="sm" onClick={handleCreatePost} loading={posting} disabled={!newPostMessage.trim()}>
-                <Send className="w-4 h-4" /> Publier
-              </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Posts Feed */}
-      {loading && posts.length === 0 ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-[#0EA5E9]" />
-        </div>
-      ) : posts.length === 0 ? (
-        <div className="text-center py-12">
-          <Users className="w-16 h-16 mx-auto mb-4 text-[#D1D5DB]" />
-          <h3 className="text-lg font-semibold text-[#6B7280]">Aucun post pour le moment</h3>
-          <p className="text-sm text-[#9CA3AF]">Soyez le premier à partager !</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {posts.map((post) => (
+        ) : (
+          <>
+            {/* Community Hero Section */}
             <motion.div
-              key={post.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden"
+              className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6"
             >
-              {/* Post Header */}
-              <div className="flex items-center justify-between p-4 pb-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center text-white font-bold text-sm">
-                    {post.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-sm">{post.user?.name || 'Utilisateur'}</h4>
-                    <p className="text-xs text-[#9CA3AF]">{new Date(post.createdAt).toLocaleDateString('fr-FR')}</p>
-                  </div>
+              {/* Cover Photo */}
+              <div className="relative h-48 bg-gradient-to-r from-[#F9A8D4] to-[#FED7AA]">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Users className="w-24 h-24 text-white/30" />
                 </div>
-                {post.userId === user?.sub && (
-                  <button
-                    onClick={() => handleDeletePost(post.id)}
-                    className="p-2 hover:bg-[#FEF2F2] rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4 text-[#EF4444]" />
-                  </button>
-                )}
               </div>
 
-              {/* Post Content */}
-              <div className="px-4 pb-3">
-                <p className="text-[#374151] whitespace-pre-wrap">{post.message}</p>
-              </div>
-
-              {post.media && (
-                <div className="px-4 pb-3">
-                  <img src={post.media} alt="Post media" className="w-full rounded-xl object-cover max-h-96" />
-                </div>
-              )}
-
-              {/* Post Actions */}
-              <div className="flex items-center gap-6 px-4 py-3 border-t border-[#E5E7EB]">
-                <button
-                  onClick={() => handleToggleLike(post.id)}
-                  className={`flex items-center gap-2 text-sm transition-colors ${
-                    post.isLiked ? 'text-[#EF4444]' : 'text-[#6B7280] hover:text-[#EF4444]'
-                  }`}
-                >
-                  <Heart className={`w-5 h-5 ${post.isLiked ? 'fill-current' : ''}`} />
-                  <span>{post._count?.likes || 0}</span>
-                </button>
-                <button
-                  onClick={() => loadComments(post.id)}
-                  className="flex items-center gap-2 text-sm text-[#6B7280] hover:text-[#0EA5E9] transition-colors"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  <span>{post._count?.comments || 0}</span>
-                </button>
-              </div>
-
-              {/* Comments Section */}
-              {selectedPost === post.id && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="border-t border-[#E5E7EB] p-4 space-y-3 bg-[#F9FAFB]"
-                >
-                  {commentLoading ? (
-                    <div className="flex justify-center py-4">
-                      <Loader2 className="w-5 h-5 animate-spin text-[#0EA5E9]" />
+              {/* Profile Content */}
+              <div className="px-8 pb-8">
+                <div className="flex items-end gap-6 mb-6">
+                  {/* Avatar */}
+                  <div className="relative -mt-16 flex-shrink-0">
+                    <div className="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-br from-[#F9A8D4] to-[#FED7AA] overflow-hidden shadow-lg flex items-center justify-center text-5xl font-bold text-white">
+                      <Users className="w-16 h-16" />
                     </div>
-                  ) : (
-                    <>
-                      {comments.map((comment) => (
-                        <div key={comment.id} className="flex gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#E5E7EB] flex items-center justify-center text-xs font-bold text-[#6B7280]">
-                            {comment.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                          </div>
-                          <div className="flex-1 bg-white rounded-xl p-3 border border-[#E5E7EB]">
-                            <span className="text-xs font-medium text-[#374151]">{comment.user?.name || 'Utilisateur'}</span>
-                            <p className="text-sm text-[#4B5563] mt-1">{comment.comment}</p>
-                          </div>
+                  </div>
+
+                  <div className="flex-1"></div>
+                </div>
+
+                {/* Community Info */}
+                <div className="mb-4">
+                  <h1 className="text-3xl font-bold text-[#111827]">DeepSkyn Communauté</h1>
+                  <p className="text-[#6B7280]">Partagez votre parcours skincare</p>
+                </div>
+
+                {/* Description */}
+                <p className="text-[#374151] mb-6 leading-relaxed">
+                  Bienvenue dans la communauté DeepSkyn ! Ici, partage tes expériences skincare, tes routines, tes avant/après et tes conseils avec le reste de la communauté. 💙
+                </p>
+
+                {/* Stats */}
+                <div className="flex gap-8 pt-4 border-t border-[#E5E7EB]">
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className="cursor-pointer"
+                  >
+                    <p className="font-bold text-[#111827]">{posts.length}</p>
+                    <p className="text-sm text-[#6B7280]">Publications</p>
+                  </motion.div>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className="cursor-pointer"
+                  >
+                    <p className="font-bold text-[#111827]">1.2K</p>
+                    <p className="text-sm text-[#6B7280]">Membres</p>
+                  </motion.div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Post Composer */}
+            <PostComposer
+              userAvatar={user?.avatar}
+              userName={user?.name || 'Utilisateur'}
+              onSubmit={handleCreatePost}
+              isLoading={posting}
+            />
+
+            {/* Posts Feed */}
+            {posts.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center py-16 bg-white rounded-2xl border border-[#E5E7EB]"
+              >
+                <Users className="w-16 h-16 mx-auto mb-4 text-[#D1D5DB]" />
+                <h3 className="text-lg font-semibold text-[#6B7280]">Aucun post pour le moment</h3>
+                <p className="text-sm text-[#9CA3AF]">Soyez le premier à partager !</p>
+              </motion.div>
+            ) : (
+              <div className="space-y-6">
+                {posts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={{
+                      id: post.id,
+                      userId: post.userId,
+                      userName: post.user?.name || 'Utilisateur',
+                      userAvatar: post.user?.avatar,
+                      content: post.message,
+                      media: post.media,
+                      createdAt: post.createdAt,
+                      likes: post._count?.likes || 0,
+                      comments: post._count?.comments || 0,
+                      shares: 0,
+                      isLiked: post.isLiked || false,
+                      isByCurrentUser: post.userId === user?.sub,
+                    }}
+                    onLike={handleToggleLike}
+                    onComment={loadComments}
+                    onDelete={handleDeletePost}
+                  />
+                ))}
+
+                {/* Comments Section */}
+                {selectedPost && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden mt-6"
+                  >
+                    <div className="p-6">
+                      <h3 className="text-lg font-bold text-[#111827] mb-4">Commentaires</h3>
+
+                      {commentLoading ? (
+                        <div className="flex justify-center py-8">
+                          <Loader2 className="w-6 h-6 animate-spin text-[#0EA5E9]" />
                         </div>
-                      ))}
-                      <div className="flex gap-2">
+                      ) : comments.length === 0 ? (
+                        <p className="text-[#6B7280] text-center py-6">Aucun commentaire pour le moment</p>
+                      ) : (
+                        <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
+                          {comments.map((comment) => (
+                            <motion.div
+                              key={comment.id}
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="flex gap-3 pb-4 border-b border-[#E5E7EB] last:border-b-0"
+                            >
+                              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                                {comment.user?.avatar ? (
+                                  <img
+                                    src={comment.user.avatar}
+                                    alt={comment.user?.name}
+                                    className="w-full h-full object-cover rounded-full"
+                                  />
+                                ) : (
+                                  comment.user?.name?.charAt(0).toUpperCase() || 'U'
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <span className="text-xs font-semibold text-[#111827]">
+                                  {comment.user?.name || 'Utilisateur'}
+                                </span>
+                                <p className="text-sm text-[#4B5563] mt-1">{comment.comment}</p>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Comment Input */}
+                      <div className="flex gap-2 pt-4 border-t border-[#E5E7EB]">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                          {user?.avatar ? (
+                            <img
+                              src={user.avatar}
+                              alt={user?.name}
+                              className="w-full h-full object-cover rounded-full"
+                            />
+                          ) : (
+                            user?.name?.charAt(0).toUpperCase() || 'U'
+                          )}
+                        </div>
                         <input
                           value={newComment}
                           onChange={(e) => setNewComment(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
                           placeholder="Ajouter un commentaire..."
-                          className="flex-1 p-2.5 bg-white border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/20 transition-all"
+                          className="flex-1 px-4 py-2.5 bg-[#F9FAFB] border border-[#E5E7EB] rounded-full text-sm focus:outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/20 transition-all"
                         />
-                        <button
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                           onClick={handleAddComment}
                           disabled={!newComment.trim()}
-                          className="p-2.5 bg-[#0EA5E9] text-white rounded-xl hover:bg-[#0284C7] disabled:opacity-50 transition-colors"
+                          className="px-4 py-2.5 bg-[#0EA5E9] text-white rounded-full hover:bg-[#0284C7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
                         >
-                          <Send className="w-4 h-4" />
-                        </button>
+                          Envoyer
+                        </motion.button>
                       </div>
-                    </>
-                  )}
-                </motion.div>
-              )}
-            </motion.div>
-          ))}
+                    </div>
+                  </motion.div>
+                )}
 
-          {hasMore && (
-            <div className="text-center pt-4">
-              <Button
-                variant="outline"
-                onClick={() => { setPage((p) => p + 1); loadPosts(page + 1); }}
-                loading={loading}
-              >
-                Charger plus
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
+                {/* Load More */}
+                {hasMore && (
+                  <div className="text-center pt-6">
+                    <Button
+                      variant="outline"
+                      onClick={() => { setPage((p) => p + 1); loadPosts(page + 1); }}
+                      loading={loading}
+                    >
+                      Charger plus
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
+

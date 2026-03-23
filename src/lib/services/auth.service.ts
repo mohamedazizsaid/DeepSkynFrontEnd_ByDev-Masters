@@ -81,7 +81,19 @@ export const authService = {
     return res.data;
   },
 
-  async updateProfile(data: { name?: string; avatar?: string; gender?: string; dateOfBirth?: string; preferredLanguage?: string }): Promise<UserProfile> {
+  async updateProfile(data: { 
+    name?: string; 
+    avatar?: string; 
+    gender?: string; 
+    dateOfBirth?: string; 
+    preferredLanguage?: string;
+    address?: string;
+    city?: string;
+    zipCode?: string;
+    country?: string;
+    latitude?: number;
+    longitude?: number;
+  }): Promise<UserProfile> {
     const res = await apiClient.patch<UserProfile>('/auth/profile', data);
     return res.data;
   },

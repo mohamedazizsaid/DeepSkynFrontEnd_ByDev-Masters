@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { MapPin, Mail, User, Calendar, Share2, Check, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { MapPin, Mail, User, Calendar, Share2, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth.store';
 import { authService } from '../../lib/services/auth.service';
+import { addressService, AddressData } from '../../lib/services/address.service';
+import { AddressMapPicker } from '../../components/location/address-map-picker';
 import { Button } from '../components/button';
 import { Input } from '../components/input';
 import toast from 'react-hot-toast';
@@ -15,23 +17,57 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
   const { user, loadUser } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+  const [isGenderOpen, setIsGenderOpen] = useState(false);
+  const genderRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     dateOfBirth: user?.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : '',
     gender: user?.gender || '',
-    phone: '',
   });
+  const [selectedAddress, setSelectedAddress] = useState<AddressData | null>(null);
 
-  const handleCopyEmail = () => {
-    navigator.clipboard.writeText(user?.email || '');
-    setCopied(true);
-    toast.success('Email copié');
-    setTimeout(() => setCopied(false), 2000);
+  // Close gender dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (genderRef.current && !genderRef.current.contains(event.target as Node)) {
+        setIsGenderOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Load address on component mount
+  useEffect(() => {
+    loadUserAddress();
+  }, []);
+
+  const loadUserAddress = async () => {
+    setIsLoadingAddress(true);
+    try {
+      const addressData = await addressService.getUserAddress();
+      if (addressData.address && addressData.latitude && addressData.longitude) {
+        setSelectedAddress({
+          address: addressData.address || '',
+          city: addressData.city || '',
+          zipCode: addressData.zipCode || '',
+          country: addressData.country || '',
+          latitude: addressData.latitude || 0,
+          longitude: addressData.longitude || 0,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading address:', error);
+    } finally {
+      setIsLoadingAddress(false);
+    }
   };
 
-  const handleSave = async () => {
+  const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
       const dateOfBirth = formData.dateOfBirth ? `${formData.dateOfBirth}T00:00:00Z` : undefined;
@@ -47,6 +83,33 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
       toast.error(error?.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleAddressSelected = async (address: AddressData) => {
+    setIsSavingAddress(true);
+    try {
+      await addressService.updateUserAddress(address);
+      setSelectedAddress(address);
+      setIsEditingAddress(false);
+      await loadUser();
+      toast.success('Adresse mise à jour avec succès');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Erreur lors de la mise à jour de l\'adresse');
+    } finally {
+      setIsSavingAddress(false);
+    }
+  };
+
+  const handleDeleteAddress = async () => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer votre adresse ?')) {
+      try {
+        await addressService.deleteUserAddress();
+        setSelectedAddress(null);
+        toast.success('Adresse supprimée');
+      } catch (error: any) {
+        toast.error(error?.response?.data?.message || 'Erreur lors de la suppression');
+      }
     }
   };
 
@@ -88,7 +151,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
               <Button variant="outline" onClick={() => setIsEditing(false)} size="sm">
                 Annuler
               </Button>
-              <Button onClick={handleSave} loading={isSaving} size="sm">
+              <Button onClick={handleSaveProfile} loading={isSaving} size="sm">
                 Enregistrer
               </Button>
             </>
@@ -134,47 +197,182 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
             icon={<Calendar className="w-5 h-5" />}
           />
 
-          <Input
-            label="Genre"
-            value={formData.gender}
-            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-            disabled={!isEditing}
-            icon={<User className="w-5 h-5" />}
-          />
+          <div className="w-full" ref={genderRef}>
+            <label className="block mb-2 text-sm text-[#374151]">Genre</label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => isEditing && setIsGenderOpen(!isGenderOpen)}
+                disabled={!isEditing}
+                className={`w-full flex items-center pl-10 pr-10 py-3 bg-[#F9FAFB] border-2 rounded-xl text-left transition-all duration-200 ${
+                  isGenderOpen ? 'border-[#0EA5E9] ring-2 ring-[#0EA5E9]/20' : 'border-[#E5E7EB]'
+                } ${
+                  !isEditing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+                }`}
+              >
+                <span className={formData.gender ? 'text-[#111827]' : 'text-[#9CA3AF]'}>
+                  {formData.gender
+                    ? { Male: 'Homme', Female: 'Femme', 'Non-binary': 'Non-binaire', 'Prefer not to say': 'Préfère ne pas dire' }[formData.gender] || formData.gender
+                    : 'Sélectionner'}
+                </span>
+              </button>
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none">
+                <User className="w-5 h-5" />
+              </div>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isGenderOpen ? 'rotate-180' : ''}`} />
+              </div>
+
+              <AnimatePresence>
+                {isGenderOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white rounded-xl border border-[#E5E7EB] shadow-xl overflow-hidden"
+                  >
+                    {[
+                      { value: 'Male', label: 'Homme' },
+                      { value: 'Female', label: 'Femme' },
+                      { value: 'Non-binary', label: 'Non-binaire' },
+                      { value: 'Prefer not to say', label: 'Préfère ne pas dire' },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, gender: option.value });
+                          setIsGenderOpen(false);
+                        }}
+                        className={`w-full px-4 py-3 text-left text-sm transition-colors ${
+                          formData.gender === option.value
+                            ? 'bg-[#0EA5E9] text-white font-medium'
+                            : 'hover:bg-[#F3F4F6] text-[#111827]'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
       </motion.div>
 
-      {/* Location Map Placeholder */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden"
-      >
-        <div className="h-64 bg-gradient-to-br from-[#F3F4F6] to-[#E5E7EB] flex items-center justify-center">
-          <div className="text-center text-[#6B7280]">
-            <MapPin className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p className="font-medium">Localisation</p>
-            <p className="text-sm opacity-75">Intégration Google Maps en cours</p>
+      {/* Address Section */}
+      {!isEditingAddress ? (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6 space-y-4"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center shadow-lg shadow-[#10B981]/20">
+                <MapPin className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[#111827]">Votre localisation</h3>
+                <p className="text-xs text-[#6B7280]">Adresse enregistrée</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => setIsEditingAddress(true)}
+              size="sm"
+              variant="outline"
+            >
+              Modifier
+            </Button>
           </div>
-        </div>
-        <div className="p-6">
-          <h3 className="text-lg font-bold text-[#111827] mb-4 flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-[#0EA5E9]" />
-            Votre localisation
-          </h3>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Input label="Adresse" disabled value="À compléter" />
-            <Input label="Ville" disabled value="À compléter" />
+
+          {selectedAddress ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
+              <div className="sm:col-span-2 p-4 rounded-xl bg-[#F0FDF4] border border-[#10B981]/20">
+                <p className="text-xs text-[#047857] uppercase tracking-wider font-semibold">Adresse</p>
+                <p className="text-sm font-medium text-[#111827] mt-1 line-clamp-2">
+                  {selectedAddress.address}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB]">
+                <p className="text-xs text-[#6B7280] uppercase tracking-wider font-semibold">Ville</p>
+                <p className="text-sm font-medium text-[#111827] mt-1">{selectedAddress.city}</p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB]">
+                <p className="text-xs text-[#6B7280] uppercase tracking-wider font-semibold">Code postal</p>
+                <p className="text-sm font-medium text-[#111827] mt-1">{selectedAddress.zipCode}</p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB]">
+                <p className="text-xs text-[#6B7280] uppercase tracking-wider font-semibold">Pays</p>
+                <p className="text-sm font-medium text-[#111827] mt-1">{selectedAddress.country}</p>
+              </div>
+
+              <div className="sm:col-span-2 p-3 rounded-xl bg-[#F0F9FF] border border-[#0EA5E9]/20 text-center">
+                <p className="text-xs text-[#0369A1] font-medium">
+                  📍 {selectedAddress.latitude.toFixed(4)}, {selectedAddress.longitude.toFixed(4)}
+                </p>
+              </div>
+
+              <div className="sm:col-span-2">
+                <button
+                  onClick={handleDeleteAddress}
+                  className="w-full py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  Supprimer l'adresse
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="pt-4 p-4 rounded-xl bg-[#FEF3C7] border border-[#FCD34D]">
+              <p className="text-sm text-[#92400E]">
+                💡 Vous n'avez pas encore d'adresse enregistrée. Cliquez sur "Modifier" pour en ajouter une.
+              </p>
+            </div>
+          )}
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+          className="space-y-4"
+        >
+          <AddressMapPicker
+            initialAddress={selectedAddress || undefined}
+            onAddressSelect={handleAddressSelected}
+            isLoading={isSavingAddress}
+          />
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setIsEditingAddress(false)}
+              className="flex-1"
+            >
+              Annuler
+            </Button>
+            {selectedAddress && !isSavingAddress && (
+              <Button
+                onClick={() => setIsEditingAddress(false)}
+                className="flex-1"
+              >
+                ✓ Confirmé
+              </Button>
+            )}
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* Privacy & Sharing */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.15 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
         className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6"
       >
         <h3 className="text-lg font-bold text-[#111827] mb-4 flex items-center gap-2">
