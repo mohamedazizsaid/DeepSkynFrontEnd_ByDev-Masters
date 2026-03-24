@@ -15,7 +15,7 @@ export function AuthLayout({ children, title, subtitle, imageSrc }: AuthLayoutPr
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-[#F9FAFB]">
+        <div className="min-h-screen relative" style={{ zIndex: 1 }}>
             {/* Navbar */}
             <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-[#E5E7EB]">
                 <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">

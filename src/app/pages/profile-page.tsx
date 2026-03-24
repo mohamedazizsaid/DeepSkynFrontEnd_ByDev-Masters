@@ -133,7 +133,7 @@ export function ProfilePage({ onBack, userId }: ProfilePageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB]">
+    <div className="min-h-screen relative" style={{ zIndex: 1 }}>
       {/* Header */}
       <div className="sticky top-0 z-50 bg-white border-b border-[#E5E7EB] shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">

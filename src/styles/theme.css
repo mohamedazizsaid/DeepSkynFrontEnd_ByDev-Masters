@@ -320,17 +320,24 @@
 
 /* --- Text overrides --- */
 .dark [class*="text-[#111827]"],
-.dark [class*="text-[#1F2937]"] {
+.dark [class*="text-[#1F2937]"],
+.dark [class*="text-gray-900"],
+.dark [class*="text-gray-800"],
+.dark [class*="text-black"] {
   color: #e2e8f0 !important;
 }
 
 .dark [class*="text-[#374151]"],
-.dark [class*="text-[#4B5563]"] {
+.dark [class*="text-[#4B5563]"],
+.dark [class*="text-gray-700"],
+.dark [class*="text-gray-600"] {
   color: #cbd5e1 !important;
 }
 
 .dark [class*="text-[#6B7280]"],
-.dark [class*="text-[#9CA3AF]"] {
+.dark [class*="text-[#9CA3AF]"],
+.dark [class*="text-gray-500"],
+.dark [class*="text-gray-400"] {
   color: #94a3b8 !important;
 }
 
@@ -446,12 +453,19 @@
 }
 
 .high-contrast-medium:not(.dark) [class*="text-[#6B7280]"],
-.high-contrast-medium:not(.dark) [class*="text-[#9CA3AF]"] {
+.high-contrast-medium:not(.dark) [class*="text-[#9CA3AF]"],
+.high-contrast-medium:not(.dark) [class*="text-gray-500"],
+.high-contrast-medium:not(.dark) [class*="text-gray-400"] {
   color: #3d3d3d !important;
 }
 
 .high-contrast-medium:not(.dark) [class*="text-[#374151]"],
-.high-contrast-medium:not(.dark) [class*="text-[#4B5563]"] {
+.high-contrast-medium:not(.dark) [class*="text-[#4B5563]"],
+.high-contrast-medium:not(.dark) [class*="text-gray-900"],
+.high-contrast-medium:not(.dark) [class*="text-gray-800"],
+.high-contrast-medium:not(.dark) [class*="text-gray-700"],
+.high-contrast-medium:not(.dark) [class*="text-gray-600"],
+.high-contrast-medium:not(.dark) [class*="text-black"] {
   color: #000000 !important;
 }
 
@@ -498,7 +512,16 @@
 }
 
 .high-contrast-medium.dark [class*="text-[#6B7280]"],
-.high-contrast-medium.dark [class*="text-[#9CA3AF]"] {
+.high-contrast-medium.dark [class*="text-[#9CA3AF]"],
+.high-contrast-medium.dark [class*="text-gray-500"],
+.high-contrast-medium.dark [class*="text-gray-400"],
+.high-contrast-medium.dark [class*="text-[#374151]"],
+.high-contrast-medium.dark [class*="text-[#4B5563]"],
+.high-contrast-medium.dark [class*="text-gray-900"],
+.high-contrast-medium.dark [class*="text-gray-800"],
+.high-contrast-medium.dark [class*="text-gray-700"],
+.high-contrast-medium.dark [class*="text-gray-600"],
+.high-contrast-medium.dark [class*="text-black"] {
   color: #c0c0c0 !important;
 }
 
@@ -575,7 +598,14 @@
 .high-contrast-high [class*="text-[#374151]"],
 .high-contrast-high [class*="text-[#4B5563]"],
 .high-contrast-high [class*="text-[#6B7280]"],
-.high-contrast-high [class*="text-[#9CA3AF]"] {
+.high-contrast-high [class*="text-[#9CA3AF]"],
+.high-contrast-high [class*="text-gray-900"],
+.high-contrast-high [class*="text-gray-800"],
+.high-contrast-high [class*="text-gray-700"],
+.high-contrast-high [class*="text-gray-600"],
+.high-contrast-high [class*="text-gray-500"],
+.high-contrast-high [class*="text-gray-400"],
+.high-contrast-high [class*="text-black"] {
   color: #ffffff !important;
 }
 
@@ -639,6 +669,13 @@
 .high-contrast-high [class*="hover:bg-[#F9FAFB]"]:hover,
 .high-contrast-high [class*="hover:bg-white"]:hover {
   background-color: #1a1a00 !important;
+}
+
+.high-contrast-high [class*="text-transparent"] {
+  color: #00ffff !important;
+  background-clip: border-box !important;
+  -webkit-background-clip: border-box !important;
+  background: none !important;
 }
 
 .high-contrast-high a {
@@ -738,4 +775,127 @@
 
 .text-spacing p {
   margin-bottom: 1.5em !important;
+}
+
+/* ── Focus Highlight (WCAG 2.4.7) ────────────────────────────────────── */
+.focus-highlight *:focus-visible {
+  outline: 3px solid #0EA5E9 !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 6px rgba(14, 165, 233, 0.25) !important;
+  border-radius: 4px;
+}
+
+.focus-highlight.dark *:focus-visible {
+  outline-color: #38bdf8 !important;
+  box-shadow: 0 0 0 6px rgba(56, 189, 248, 0.3) !important;
+}
+
+.high-contrast-high.focus-highlight *:focus-visible {
+  outline: 3px solid #FFD700 !important;
+  box-shadow: 0 0 0 6px rgba(255, 215, 0, 0.35) !important;
+}
+
+/* ── Reading Guide (follows mouse — JS adds a pseudo-overlay) ─────── */
+.reading-guide {
+  cursor: crosshair;
+}
+
+/* ── Color Blind Filters (WCAG 1.4.1 — Use of Color) ────────────────── */
+.cb-protanopia {
+  filter: url('#protanopia-filter') !important;
+}
+
+.cb-deuteranopia {
+  filter: url('#deuteranopia-filter') !important;
+}
+
+.cb-tritanopia {
+  filter: url('#tritanopia-filter') !important;
+}
+
+.cb-achromatopsia {
+  filter: grayscale(100%) !important;
+}
+
+/* ── Skip-to-content link (WCAG 2.4.1) ──────────────────────────────── */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding: 12px 24px;
+  border-radius: 0 0 8px 8px;
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 99999;
+  transition: top 0.2s ease;
+  text-decoration: none;
+}
+
+.skip-to-content:focus {
+  top: 0;
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE — TEXT CONTRAST FIXES
+   Ensure all colored indicator/status texts remain readable in dark mode
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Yellow indicators (contrast info, warnings) */
+.dark .text-yellow-700 {
+  color: #fbbf24 !important;
+}
+
+.dark .text-yellow-600 {
+  color: #fcd34d !important;
+}
+
+/* Rose indicators (listening status) */
+.dark .text-rose-600 {
+  color: #fb7185 !important;
+}
+
+/* Violet indicators (speaking status) */
+.dark .text-violet-600 {
+  color: #a78bfa !important;
+}
+
+/* Emerald indicators */
+.dark .text-emerald-600 {
+  color: #34d399 !important;
+}
+
+/* Purple indicators */
+.dark .text-purple-600 {
+  color: #c084fc !important;
+}
+
+/* Indigo indicators */
+.dark .text-indigo-600 {
+  color: #818cf8 !important;
+}
+
+/* Range input styling for dark mode */
+.dark input[type="range"] {
+  background-color: oklch(0.269 0 0) !important;
+  border: none !important;
+}
+
+/* Ensure contrast info banner text stays readable in dark */
+.dark .bg-yellow-500\/5 .text-yellow-700 {
+  color: #fde68a !important;
+}
+
+/* Ensure rose listening banner text stays readable in dark */
+.dark .bg-rose-500\/5 .text-rose-600 {
+  color: #fda4af !important;
+}
+
+/* Ensure violet speaking banner text stays readable in dark */
+.dark .bg-violet-500\/5 .text-violet-600 {
+  color: #c4b5fd !important;
 }

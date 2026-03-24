@@ -123,10 +123,7 @@ export function LoginPage() {
   // ─── 2FA Verification Screen (Keep centered/focused) ───
   if (show2FA || requiresTwoFactor) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#F9FAFB] via-white to-[#F9FAFB] flex items-center justify-center px-6 py-12 relative overflow-hidden">
-        {/* Decorative blobs */}
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#0EA5E9]/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#8B5CF6]/5 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+      <div className="min-h-screen flex items-center justify-center px-6 py-12 relative overflow-hidden" style={{ zIndex: 1 }}>
 
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}

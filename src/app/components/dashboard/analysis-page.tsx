@@ -21,6 +21,7 @@ import type { Analysis, AnalysisStats, GeminiAnalysisResult } from '../../../lib
 import type { DetailedScoreItem } from '../../../lib/analysis-helpers';
 import { CameraScanModal } from './camera-scan-modal';
 import toast from 'react-hot-toast';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 interface AnalysisPageProps {
   onBack: () => void;
@@ -48,6 +49,8 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
   const [adviceLoading, setAdviceLoading] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { theme, contrastMode } = useAccessibilityStore();
 
   // ─── Load latest analysis + stats + advice ───
   const loadData = async () => {
@@ -109,6 +112,28 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
   const radarData = buildRadarData(results);
   const detailedScores = extractDetailedScores(results);
   const hasAnalysis = analysis !== null && analysis.status === 'completed';
+
+  // ─── Dynamic accessibility colors ───
+  const isDark = theme === 'dark';
+  const isHcHigh = contrastMode === 'high';
+  const isHcMedium = contrastMode === 'medium';
+  
+  const getGridStroke = () => {
+    if (isHcHigh) return '#FFD700';
+    if (isHcMedium) return isDark ? '#c9a227' : '#8B6914';
+    return isDark ? '#334155' : '#E5E7EB';
+  };
+  
+  const getAxisStroke = () => {
+    if (isHcHigh) return '#ffffff';
+    if (isHcMedium) return isDark ? '#c0c0c0' : '#3d3d3d';
+    return isDark ? '#94a3b8' : '#6B7280';
+  };
+  
+  const getRadarStroke = () => {
+    if (isHcHigh) return '#00ffff';
+    return '#0EA5E9';
+  };
 
   // ─── Loading skeleton ───
   if (loading) {
@@ -249,10 +274,10 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart data={radarData}>
-                    <PolarGrid stroke="#E5E7EB" />
-                    <PolarAngleAxis dataKey="category" stroke="#6B7280" tick={{ fontSize: 12 }} />
-                    <PolarRadiusAxis angle={90} domain={[0, 100]} stroke="#6B7280" />
-                    <Radar name="Score" dataKey="value" stroke="#0EA5E9" fill="#0EA5E9" fillOpacity={0.3} strokeWidth={2} />
+                    <PolarGrid stroke={getGridStroke()} />
+                    <PolarAngleAxis dataKey="category" stroke={getAxisStroke()} tick={{ fontSize: 12 }} />
+                    <PolarRadiusAxis angle={90} domain={[0, 100]} stroke={getAxisStroke()} />
+                    <Radar name="Score" dataKey="value" stroke={getRadarStroke()} fill={getRadarStroke()} fillOpacity={isHcHigh ? 0 : 0.3} strokeWidth={isHcHigh ? 3 : 2} />
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
@@ -324,7 +349,7 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
                     <div className="flex items-center gap-3">
                       <div
                         className="w-12 h-12 rounded-xl flex items-center justify-center"
-                        style={{ backgroundColor: `${item.color}20`, color: item.color }}
+                        style={{ backgroundColor: isHcHigh || isHcMedium ? 'transparent' : `${item.color}20`, color: isHcHigh ? '#00ffff' : item.color, border: isHcHigh || isHcMedium ? `2px solid ${isHcHigh ? '#FFD700' : item.color}` : 'none' }}
                       >
                         {METRIC_ICONS[item.key] ?? <Eye className="w-6 h-6" />}
                       </div>

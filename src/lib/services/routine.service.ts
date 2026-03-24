@@ -5,6 +5,8 @@ import type {
   GenerateRoutineDto,
   AdviseRoutineDto,
   AIAdviceResponse,
+  RecommendProductDto,
+  ProductRecommendation,
 } from '../types';
 
 export const routineService = {
@@ -84,6 +86,11 @@ export const routineService = {
 
   async adviseOnChange(routineId: string, data: AdviseRoutineDto): Promise<AIAdviceResponse> {
     const res = await apiClient.post<AIAdviceResponse>(`/routines/${routineId}/advise`, data);
+    return res.data;
+  },
+
+  async recommendProduct(data: RecommendProductDto): Promise<ProductRecommendation> {
+    const res = await apiClient.post<ProductRecommendation>('/routines/recommend-product', data);
     return res.data;
   },
 };

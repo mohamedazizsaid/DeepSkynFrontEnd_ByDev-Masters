@@ -20,6 +20,7 @@ type SpeechRecognitionInstance = {
 
 // ── Store interface ─────────────────────────────────────────────────────
 type ContrastMode = 'off' | 'medium' | 'high';
+type ColorBlindFilter = 'none' | 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia';
 
 interface AccessibilityState {
     // State
@@ -35,6 +36,10 @@ interface AccessibilityState {
     isListening: boolean;
     spokenText: string;
     isPanelOpen: boolean;
+    focusHighlight: boolean;
+    colorBlindFilter: ColorBlindFilter;
+    readingGuide: boolean;
+    speechRate: number;
 
     // Actions
     toggleTheme: () => void;
@@ -46,20 +51,46 @@ interface AccessibilityState {
     toggleLinkHighlight: () => void;
     toggleBigCursor: () => void;
     toggleTextSpacing: () => void;
+    toggleFocusHighlight: () => void;
+    setColorBlindFilter: (filter: ColorBlindFilter) => void;
+    toggleReadingGuide: () => void;
+    setSpeechRate: (rate: number) => void;
     zoomIn: () => void;
     zoomOut: () => void;
     resetZoom: () => void;
     speak: (text: string) => void;
+    speakPage: () => void;
     stopSpeaking: () => void;
     startListening: () => void;
     stopListening: () => void;
     clearSpokenText: () => void;
+    processVoiceCommand: (command: string) => void;
     togglePanel: () => void;
     closePanel: () => void;
 }
 
 // Keep recognition instance outside React lifecycle
 let recognitionInstance: SpeechRecognitionInstance | null = null;
+
+// ── ARIA Live Region for screen reader announcements ────────────────────
+function announce(message: string) {
+    let el = document.getElementById('a11y-live-announcer');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'a11y-live-announcer';
+        el.setAttribute('role', 'status');
+        el.setAttribute('aria-live', 'polite');
+        el.setAttribute('aria-atomic', 'true');
+        el.style.cssText =
+            'position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);border:0;';
+        document.body.appendChild(el);
+    }
+    // Force re-announce by toggling content
+    el.textContent = '';
+    requestAnimationFrame(() => {
+        el!.textContent = message;
+    });
+}
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 function applyTheme(theme: 'light' | 'dark') {
@@ -94,6 +125,36 @@ function toggleCssClass(className: string, enabled: boolean) {
     }
 }
 
+function applyColorBlindFilter(filter: ColorBlindFilter) {
+    const root = document.documentElement;
+    root.classList.remove('cb-protanopia', 'cb-deuteranopia', 'cb-tritanopia', 'cb-achromatopsia');
+    if (filter !== 'none') {
+        root.classList.add(`cb-${filter}`);
+    }
+}
+
+// ── Extract page text for TTS ───────────────────────────────────────────
+function getPageText(): string {
+    const main = document.querySelector('main') || document.body;
+    const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT, {
+        acceptNode: (node) => {
+            const el = node.parentElement;
+            if (!el) return NodeFilter.FILTER_REJECT;
+            const tag = el.tagName.toLowerCase();
+            if (['script', 'style', 'noscript', 'svg'].includes(tag)) return NodeFilter.FILTER_REJECT;
+            const style = window.getComputedStyle(el);
+            if (style.display === 'none' || style.visibility === 'hidden') return NodeFilter.FILTER_REJECT;
+            if ((node.textContent || '').trim().length === 0) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+        },
+    });
+    const parts: string[] = [];
+    while (walker.nextNode()) {
+        parts.push((walker.currentNode.textContent || '').trim());
+    }
+    return parts.join('. ');
+}
+
 // ── Store ───────────────────────────────────────────────────────────────
 export const useAccessibilityStore = create<AccessibilityState>()(
     persist(
@@ -110,11 +171,16 @@ export const useAccessibilityStore = create<AccessibilityState>()(
             isListening: false,
             spokenText: '',
             isPanelOpen: false,
+            focusHighlight: false,
+            colorBlindFilter: 'none' as ColorBlindFilter,
+            readingGuide: false,
+            speechRate: 1,
 
             toggleTheme: () => {
                 const newTheme = get().theme === 'light' ? 'dark' : 'light';
                 applyTheme(newTheme);
                 set({ theme: newTheme });
+                announce(newTheme === 'dark' ? 'Mode sombre activé' : 'Mode clair activé');
             },
 
             setTheme: (theme) => {
@@ -125,6 +191,8 @@ export const useAccessibilityStore = create<AccessibilityState>()(
             setContrastMode: (mode) => {
                 applyContrast(mode);
                 set({ contrastMode: mode });
+                const labels = { off: 'Normal', medium: 'Moyen', high: 'Élevé' };
+                announce(`Contraste ${labels[mode]} activé`);
             },
 
             resetContrastMode: () => {
@@ -136,12 +204,14 @@ export const useAccessibilityStore = create<AccessibilityState>()(
                 const next = !get().reduceMotion;
                 toggleCssClass('reduce-motion', next);
                 set({ reduceMotion: next });
+                announce(next ? 'Animations réduites' : 'Animations activées');
             },
 
             toggleDyslexiaFont: () => {
                 const next = !get().dyslexiaFont;
                 toggleCssClass('dyslexia-font', next);
                 set({ dyslexiaFont: next });
+                announce(next ? 'Police dyslexie activée' : 'Police dyslexie désactivée');
             },
 
             toggleLinkHighlight: () => {
@@ -162,34 +232,89 @@ export const useAccessibilityStore = create<AccessibilityState>()(
                 set({ textSpacing: next });
             },
 
+            toggleFocusHighlight: () => {
+                const next = !get().focusHighlight;
+                toggleCssClass('focus-highlight', next);
+                set({ focusHighlight: next });
+                announce(next ? 'Indicateur de focus activé' : 'Indicateur de focus désactivé');
+            },
+
+            setColorBlindFilter: (filter) => {
+                applyColorBlindFilter(filter);
+                set({ colorBlindFilter: filter });
+                const labels: Record<ColorBlindFilter, string> = {
+                    none: 'Aucun filtre',
+                    protanopia: 'Protanopie',
+                    deuteranopia: 'Deutéranopie',
+                    tritanopia: 'Tritanopie',
+                    achromatopsia: 'Achromatopsie',
+                };
+                announce(`Filtre daltonisme: ${labels[filter]}`);
+            },
+
+            toggleReadingGuide: () => {
+                const next = !get().readingGuide;
+                toggleCssClass('reading-guide', next);
+                set({ readingGuide: next });
+                announce(next ? 'Guide de lecture activé' : 'Guide de lecture désactivé');
+            },
+
+            setSpeechRate: (rate) => {
+                set({ speechRate: rate });
+            },
+
             zoomIn: () => {
                 const next = Math.min(get().zoomLevel + 10, 150);
                 applyZoom(next);
                 set({ zoomLevel: next });
+                announce(`Zoom ${next}%`);
             },
 
             zoomOut: () => {
                 const next = Math.max(get().zoomLevel - 10, 75);
                 applyZoom(next);
                 set({ zoomLevel: next });
+                announce(`Zoom ${next}%`);
             },
 
             resetZoom: () => {
                 applyZoom(100);
                 set({ zoomLevel: 100 });
+                announce('Zoom réinitialisé à 100%');
             },
 
             // ── Text-to-Speech ────────────────────────────────────────────
             speak: (text: string) => {
-                if (!('speechSynthesis' in window)) return;
+                if (!('speechSynthesis' in window)) {
+                    announce('La synthèse vocale n\'est pas supportée par votre navigateur');
+                    return;
+                }
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'fr-FR'; // Default to French for DeepSkyn
-                utterance.rate = 0.95;
+                utterance.lang = 'fr-FR';
+                utterance.rate = get().speechRate;
+                utterance.pitch = 1;
+                utterance.volume = 1;
+
+                // Try to pick a French voice
+                const voices = window.speechSynthesis.getVoices();
+                const frenchVoice = voices.find(v => v.lang.startsWith('fr'));
+                if (frenchVoice) utterance.voice = frenchVoice;
+
                 utterance.onend = () => set({ isSpeaking: false });
                 utterance.onerror = () => set({ isSpeaking: false });
                 window.speechSynthesis.speak(utterance);
                 set({ isSpeaking: true });
+                announce('Lecture vocale démarrée');
+            },
+
+            speakPage: () => {
+                const text = getPageText();
+                if (text.length > 0) {
+                    get().speak(text);
+                } else {
+                    announce('Aucun contenu à lire sur cette page');
+                }
             },
 
             stopSpeaking: () => {
@@ -197,15 +322,19 @@ export const useAccessibilityStore = create<AccessibilityState>()(
                     window.speechSynthesis.cancel();
                 }
                 set({ isSpeaking: false });
+                announce('Lecture vocale arrêtée');
             },
 
-            // ── Speech-to-Text ────────────────────────────────────────────
+            // ── Speech-to-Text with voice command processing ─────────────
             startListening: () => {
                 const SpeechRecognition =
                     (window as any).SpeechRecognition ||
                     (window as any).webkitSpeechRecognition;
 
-                if (!SpeechRecognition) return;
+                if (!SpeechRecognition) {
+                    announce('La reconnaissance vocale n\'est pas supportée par votre navigateur');
+                    return;
+                }
 
                 // Stop existing instance if any
                 if (recognitionInstance) {
@@ -218,16 +347,29 @@ export const useAccessibilityStore = create<AccessibilityState>()(
                 recognition.lang = 'fr-FR';
 
                 recognition.onresult = (event: SpeechRecognitionEvent) => {
-                    let transcript = '';
+                    let finalTranscript = '';
+                    let interimTranscript = '';
                     for (let i = event.resultIndex; i < event.results.length; i++) {
-                        transcript += event.results[i][0].transcript;
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript;
+                        } else {
+                            interimTranscript += transcript;
+                        }
                     }
-                    set({ spokenText: transcript });
+
+                    set({ spokenText: finalTranscript || interimTranscript });
+
+                    // Process voice commands when final
+                    if (finalTranscript) {
+                        get().processVoiceCommand(finalTranscript.toLowerCase().trim());
+                    }
                 };
 
                 recognition.onerror = () => {
                     set({ isListening: false });
                     recognitionInstance = null;
+                    announce('Erreur de reconnaissance vocale');
                 };
 
                 recognition.onend = () => {
@@ -238,6 +380,7 @@ export const useAccessibilityStore = create<AccessibilityState>()(
                 recognitionInstance = recognition;
                 recognition.start();
                 set({ isListening: true, spokenText: '' });
+                announce('Écoute en cours. Dites une commande.');
             },
 
             stopListening: () => {
@@ -246,9 +389,115 @@ export const useAccessibilityStore = create<AccessibilityState>()(
                     recognitionInstance = null;
                 }
                 set({ isListening: false });
+                announce('Écoute arrêtée');
             },
 
             clearSpokenText: () => set({ spokenText: '' }),
+
+            // ── Voice Command Processing ──────────────────────────────────
+            processVoiceCommand: (command: string) => {
+                const state = get();
+
+                // Navigation commands
+                if (command.includes('accueil') || command.includes('tableau de bord') || command.includes('dashboard')) {
+                    announce('Navigation vers le tableau de bord');
+                    const navEvent = new CustomEvent('a11y-navigate', { detail: { page: 'dashboard' } });
+                    window.dispatchEvent(navEvent);
+                    return;
+                }
+
+                if (command.includes('analyse') || command.includes('analyser')) {
+                    announce('Navigation vers l\'analyse');
+                    const navEvent = new CustomEvent('a11y-navigate', { detail: { page: 'analysis' } });
+                    window.dispatchEvent(navEvent);
+                    return;
+                }
+
+                if (command.includes('routine') || command.includes('routines')) {
+                    announce('Navigation vers les routines');
+                    const navEvent = new CustomEvent('a11y-navigate', { detail: { page: 'routine' } });
+                    window.dispatchEvent(navEvent);
+                    return;
+                }
+
+                if (command.includes('profil')) {
+                    announce('Navigation vers le profil');
+                    const navEvent = new CustomEvent('a11y-navigate', { detail: { page: 'profile' } });
+                    window.dispatchEvent(navEvent);
+                    return;
+                }
+
+                if (command.includes('communauté') || command.includes('communaute')) {
+                    announce('Navigation vers la communauté');
+                    const navEvent = new CustomEvent('a11y-navigate', { detail: { page: 'community' } });
+                    window.dispatchEvent(navEvent);
+                    return;
+                }
+
+                if (command.includes('météo') || command.includes('meteo') || command.includes('temps')) {
+                    announce('Navigation vers la météo');
+                    const navEvent = new CustomEvent('a11y-navigate', { detail: { page: 'meteo' } });
+                    window.dispatchEvent(navEvent);
+                    return;
+                }
+
+                if (command.includes('paramètre') || command.includes('réglage') || command.includes('settings')) {
+                    announce('Navigation vers les paramètres');
+                    const navEvent = new CustomEvent('a11y-navigate', { detail: { page: 'settings' } });
+                    window.dispatchEvent(navEvent);
+                    return;
+                }
+
+                // Feature toggle commands
+                if (command.includes('mode sombre') || command.includes('mode noir') || command.includes('dark mode')) {
+                    if (state.theme !== 'dark') state.toggleTheme();
+                    return;
+                }
+                if (command.includes('mode clair') || command.includes('mode jour') || command.includes('light mode')) {
+                    if (state.theme !== 'light') state.toggleTheme();
+                    return;
+                }
+
+                if (command.includes('zoom plus') || command.includes('agrandir') || command.includes('plus grand')) {
+                    state.zoomIn();
+                    return;
+                }
+                if (command.includes('zoom moins') || command.includes('réduire') || command.includes('plus petit')) {
+                    state.zoomOut();
+                    return;
+                }
+
+                if (command.includes('lire la page') || command.includes('lis la page') || command.includes('lecture page')) {
+                    state.speakPage();
+                    return;
+                }
+
+                if (command.includes('arrêter') || command.includes('stop') || command.includes('arrête')) {
+                    if (state.isSpeaking) state.stopSpeaking();
+                    return;
+                }
+
+                if (command.includes('contraste élevé') || command.includes('haut contraste')) {
+                    state.setContrastMode('high');
+                    return;
+                }
+                if (command.includes('contraste moyen')) {
+                    state.setContrastMode('medium');
+                    return;
+                }
+                if (command.includes('contraste normal')) {
+                    state.setContrastMode('off');
+                    return;
+                }
+
+                if (command.includes('aide') || command.includes('commandes')) {
+                    announce('Commandes disponibles: accueil, analyse, routine, profil, communauté, météo, mode sombre, mode clair, zoom plus, zoom moins, lire la page, arrêter, contraste élevé, contraste moyen, contraste normal');
+                    return;
+                }
+
+                // If no command matched
+                announce(`Commande non reconnue: ${command}. Dites "aide" pour la liste des commandes.`);
+            },
 
             togglePanel: () => set({ isPanelOpen: !get().isPanelOpen }),
             closePanel: () => set({ isPanelOpen: false }),
@@ -264,6 +513,10 @@ export const useAccessibilityStore = create<AccessibilityState>()(
                 linkHighlight: state.linkHighlight,
                 bigCursor: state.bigCursor,
                 textSpacing: state.textSpacing,
+                focusHighlight: state.focusHighlight,
+                colorBlindFilter: state.colorBlindFilter,
+                readingGuide: state.readingGuide,
+                speechRate: state.speechRate,
             }),
         }
     )
@@ -284,6 +537,9 @@ try {
             if (state.linkHighlight) toggleCssClass('link-highlight', true);
             if (state.bigCursor) toggleCssClass('big-cursor', true);
             if (state.textSpacing) toggleCssClass('text-spacing', true);
+            if (state.focusHighlight) toggleCssClass('focus-highlight', true);
+            if (state.colorBlindFilter && state.colorBlindFilter !== 'none') applyColorBlindFilter(state.colorBlindFilter);
+            if (state.readingGuide) toggleCssClass('reading-guide', true);
         }
     }
 } catch {

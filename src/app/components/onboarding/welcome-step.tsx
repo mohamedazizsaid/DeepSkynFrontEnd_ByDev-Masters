@@ -41,35 +41,6 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
 
   return (
     <div className="relative overflow-hidden">
-      {/* Animated background particles */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(6)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute rounded-full opacity-20"
-            style={{
-              width: 80 + i * 40,
-              height: 80 + i * 40,
-              background: `radial-gradient(circle, ${i % 2 === 0 ? '#0EA5E9' : '#8B5CF6'}, transparent)`,
-              left: `${15 + i * 14}%`,
-              top: `${10 + (i % 3) * 25}%`,
-            }}
-            animate={{
-              y: [0, -30, 0],
-              x: [0, 15, 0],
-              scale: [1, 1.2, 1],
-              opacity: [0.15, 0.25, 0.15],
-            }}
-            transition={{
-              duration: 4 + i,
-              repeat: Infinity,
-              ease: 'easeInOut',
-              delay: i * 0.5,
-            }}
-          />
-        ))}
-      </div>
-
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -94,9 +65,9 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
           </div>
         </motion.div>
 
-        {/* Title with stagger */}
+        {/* Title */}
         <motion.h1
-          className="text-4xl lg:text-5xl font-extrabold mb-4 leading-tight"
+          className="text-4xl lg:text-5xl font-extrabold mb-4 leading-tight text-[#111827]"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.6 }}
@@ -118,8 +89,8 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
           <span className="text-[#0EA5E9] font-medium">En quelques étapes simples</span>, nous allons comprendre votre peau pour vous offrir les meilleurs soins.
         </motion.p>
 
-        {/* Feature cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 mb-14">
+        {/* Feature cards — equal width via grid + h-full */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-14">
           {features.map((feature, index) => (
             <motion.div
               key={index}
@@ -134,7 +105,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
                 className="absolute -inset-1 rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500"
                 style={{ background: feature.bgGlow }}
               />
-              <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50 hover:border-[#0EA5E9]/30 transition-all duration-300">
+              <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50 hover:border-[#0EA5E9]/30 transition-all duration-300 h-full flex flex-col items-center">
                 <div className={`w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center text-white shadow-lg`}>
                   {feature.icon}
                 </div>

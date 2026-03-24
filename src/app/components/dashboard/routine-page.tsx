@@ -10,12 +10,16 @@ import {
   RotateCcw,
   Box,
   List,
+  Bell,
 } from 'lucide-react';
 import { RoutineStepCard } from '../routines/RoutineStepCard';
 import { AddStepForm } from '../routines/AddStepForm';
 import { AIAdviceModal } from '../routines/AIAdviceModal';
+import { AIProductRecommendModal } from '../routines/AIProductRecommendModal';
 import { routineService } from '../../../lib/services/routine.service';
-import type { Routine, RoutineStep, AIAdviceResponse } from '../../../lib/types';
+import { usersService } from '../../../lib/services/users.service';
+import type { Routine, RoutineStep, AIAdviceResponse, ProductRecommendation } from '../../../lib/types';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 // Lazy load 3D viewer for performance
 const Face3DViewer = lazy(() =>
@@ -59,6 +63,17 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
   const [highlightedStep, setHighlightedStep] = useState<string | null>(null);
   const [highlightedZone, setHighlightedZone] = useState<string | null>(null);
   const [show3D, setShow3D] = useState(true);
+
+  // Product recommendation state
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [productLoading, setProductLoading] = useState(false);
+  const [currentRecommendation, setCurrentRecommendation] = useState<ProductRecommendation | null>(null);
+  const [recommendStepName, setRecommendStepName] = useState<string>('');
+
+  const { theme, contrastMode } = useAccessibilityStore();
+  const isHcHigh = contrastMode === 'high';
+  const isHcMedium = contrastMode === 'medium';
+  const isDark = theme === 'dark';
 
   const [amSteps, setAmSteps] = useState<StepItem[]>([]);
   const [pmSteps, setPmSteps] = useState<StepItem[]>([]);
@@ -228,6 +243,28 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
     }
   };
 
+  // ─── Handle product recommendation ───
+  const handleRecommendProduct = useCallback(async (step: StepItem) => {
+    setRecommendStepName(step.name);
+    setProductLoading(true);
+    setShowProductModal(true);
+    setCurrentRecommendation(null);
+
+    try {
+      const recommendation = await routineService.recommendProduct({
+        stepName: step.name,
+        stepCategory: step.category,
+        stepDescription: step.description || undefined,
+      });
+      setCurrentRecommendation(recommendation);
+    } catch {
+      // Provide a graceful fallback
+      setCurrentRecommendation(null);
+    } finally {
+      setProductLoading(false);
+    }
+  }, []);
+
   // ─── Loading State ───
   if (loading) {
     return (
@@ -262,7 +299,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-1 tracking-tight">
                 Ma Routine{' '}
-                <span className="bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent">
+                <span className={isHcHigh ? 'text-cyan-400' : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent'}>
                   Soins
                 </span>
               </h1>
@@ -310,7 +347,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
             onClick={() => setActiveTab('am')}
             className={`flex-1 px-6 py-4 rounded-2xl font-semibold text-sm transition-all duration-300 ${
               activeTab === 'am'
-                ? 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white shadow-lg shadow-[#0EA5E9]/20'
+                ? isHcHigh ? 'bg-black text-cyan-400 border-2 border-yellow-400' : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white shadow-lg shadow-[#0EA5E9]/20'
                 : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300 shadow-sm'
             }`}
             whileHover={{ scale: 1.02 }}
@@ -326,7 +363,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
             onClick={() => setActiveTab('pm')}
             className={`flex-1 px-6 py-4 rounded-2xl font-semibold text-sm transition-all duration-300 ${
               activeTab === 'pm'
-                ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-lg shadow-[#6366F1]/20'
+                ? isHcHigh ? 'bg-black text-[#8B5CF6] border-2 border-yellow-400' : 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-lg shadow-[#6366F1]/20'
                 : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300 shadow-sm'
             }`}
             whileHover={{ scale: 1.02 }}
@@ -362,7 +399,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
               <div className="flex items-start gap-2 p-3 rounded-xl bg-[#0EA5E9]/5 border border-[#0EA5E9]/10 mb-4">
                 <Info className="w-4 h-4 text-[#0EA5E9] flex-shrink-0 mt-0.5" />
                 <p className="text-[11px] text-[#0EA5E9]">
-                  Glissez-déposez pour réorganiser. Chaque modification déclenche un avis IA expert.
+                  Glissez-déposez pour réorganiser. Cliquez sur ✨ pour une recommandation produit IA.
                 </p>
               </div>
 
@@ -382,6 +419,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                         index={index}
                         isHighlighted={highlightedStep === step.id}
                         onRemove={() => handleRemoveStep(step.id)}
+                        onRecommend={() => handleRecommendProduct(step)}
                       />
                     ))}
                   </AnimatePresence>
@@ -440,7 +478,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
             ) : null}
 
             {/* Info Cards */}
-            <div className={show3D ? 'grid sm:grid-cols-2 gap-4' : ''}>
+            <div className={show3D ? 'grid sm:grid-cols-2 gap-4' : 'space-y-4'}>
               <InfoCard
                 title="Ordre d'application"
                 items={[
@@ -453,6 +491,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 ]}
               />
               <TipsCard />
+              <RoutineReminderCard />
             </div>
           </div>
         </div>
@@ -463,6 +502,15 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
           onClose={() => setShowAdvice(false)}
           advice={currentAdvice}
           isLoading={adviceLoading}
+        />
+
+        {/* ═══ AI Product Recommendation Modal ═══ */}
+        <AIProductRecommendModal
+          isOpen={showProductModal}
+          onClose={() => setShowProductModal(false)}
+          recommendation={currentRecommendation}
+          isLoading={productLoading}
+          stepName={recommendStepName}
         />
       </div>
     </div>
@@ -511,6 +559,119 @@ function TipsCard() {
             <span className="text-xs text-gray-600 leading-relaxed">{tip}</span>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function RoutineReminderCard() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [reminders, setReminders] = useState({
+    morningEnabled: false,
+    morningTime: '08:00',
+    eveningEnabled: false,
+    eveningTime: '21:00'
+  });
+
+  useEffect(() => {
+    usersService.getMe().then(user => {
+      if (user.settings?.reminders) {
+        setReminders(user.settings.reminders);
+      }
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  const handleUpdate = async (newReminders: typeof reminders) => {
+    setReminders(newReminders);
+    setSaving(true);
+    try {
+      const user = await usersService.getMe();
+      await usersService.updateMe({
+        settings: {
+          ...user.settings,
+          reminders: newReminders
+        }
+      });
+      
+      // If deployed in a PWA/Mobile context with actual push notifications, 
+      // here you would request browser Notification permissions
+      if ((newReminders.morningEnabled || newReminders.eveningEnabled) && 'Notification' in window) {
+        if (Notification.permission === 'default') {
+          Notification.requestPermission();
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 flex justify-center py-8">
+      <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+    </div>
+  );
+
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div className="flex items-center gap-2 mb-4">
+        <Bell className="w-4 h-4 text-[#8B5CF6]" />
+        <h3 className="font-bold text-gray-900 text-sm">Rappels de Routine</h3>
+      </div>
+
+      <div className="space-y-4">
+        {/* Morning */}
+        <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${reminders.morningEnabled ? 'bg-[#0EA5E9]/10 text-[#0EA5E9]' : 'bg-gray-200 text-gray-400'}`}>
+              <Sun className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-900">Matin</p>
+              <input 
+                type="time" 
+                value={reminders.morningTime}
+                onChange={(e) => handleUpdate({ ...reminders, morningTime: e.target.value })}
+                className={`text-[11px] bg-transparent border-none p-0 focus:ring-0 cursor-pointer transition-opacity ${!reminders.morningEnabled ? 'text-gray-400 opacity-60' : 'text-gray-900 font-medium'}`}
+              />
+            </div>
+          </div>
+          <button 
+            onClick={() => handleUpdate({ ...reminders, morningEnabled: !reminders.morningEnabled })}
+            className={`w-10 h-6 rounded-full transition-colors relative ${reminders.morningEnabled ? 'bg-[#0EA5E9]' : 'bg-gray-300'}`}
+          >
+            <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${reminders.morningEnabled ? 'translate-x-4' : ''}`} />
+          </button>
+        </div>
+
+        {/* Evening */}
+        <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${reminders.eveningEnabled ? 'bg-[#8B5CF6]/10 text-[#8B5CF6]' : 'bg-gray-200 text-gray-400'}`}>
+              <Moon className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-900">Soir</p>
+              <input 
+                type="time" 
+                value={reminders.eveningTime}
+                onChange={(e) => handleUpdate({ ...reminders, eveningTime: e.target.value })}
+                className={`text-[11px] bg-transparent border-none p-0 focus:ring-0 cursor-pointer transition-opacity ${!reminders.eveningEnabled ? 'text-gray-400 opacity-60' : 'text-gray-900 font-medium'}`}
+              />
+            </div>
+          </div>
+          <button 
+            onClick={() => handleUpdate({ ...reminders, eveningEnabled: !reminders.eveningEnabled })}
+            className={`w-10 h-6 rounded-full transition-colors relative ${reminders.eveningEnabled ? 'bg-[#8B5CF6]' : 'bg-gray-300'}`}
+          >
+            <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${reminders.eveningEnabled ? 'translate-x-4' : ''}`} />
+          </button>
+        </div>
+        
+        {saving && <p className="text-[10px] text-gray-400 text-center animate-pulse">Enregistrement...</p>}
       </div>
     </div>
   );

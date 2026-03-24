@@ -65,7 +65,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F9FAFB] to-white">
+    <div className="min-h-screen relative" style={{ zIndex: 1 }}>
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-[#E5E7EB]">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -188,7 +188,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-6 bg-white">
+      <section className="py-20 px-6 bg-white/70 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto">
           <motion.div
             className="text-center mb-16"
@@ -278,7 +278,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 px-6 bg-gradient-to-b from-[#F9FAFB] to-white">
+      <section className="py-20 px-6">
         <div className="max-w-7xl mx-auto">
           <motion.div
             className="text-center mb-16"

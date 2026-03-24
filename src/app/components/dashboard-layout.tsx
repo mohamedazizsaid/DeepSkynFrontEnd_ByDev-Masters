@@ -35,6 +35,18 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
     }
   }, [user?.sub]);
 
+  // Listen for voice navigation commands from accessibility assistant
+  useEffect(() => {
+    function handleA11yNavigate(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.page) {
+        setCurrentPage(detail.page as DashboardPageType);
+      }
+    }
+    window.addEventListener('a11y-navigate', handleA11yNavigate);
+    return () => window.removeEventListener('a11y-navigate', handleA11yNavigate);
+  }, []);
+
   const handleNavigate = (page: string) => setCurrentPage(page as DashboardPageType);
 
   // Check if user is admin
@@ -75,7 +87,7 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
   // Admin Layout (Sidebar)
   if (isAdmin) {
     return (
-      <div className="flex h-screen bg-[#F9FAFB]">
+      <div className="flex h-screen relative" style={{ zIndex: 1 }}>
         <Sidebar
           currentPage={currentPage}
           onNavigate={handleNavigate}
@@ -95,7 +107,7 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
 
   // User Layout (Navbar)
   return (
-    <div className="min-h-screen bg-[#F9FAFB]">
+    <div className="min-h-screen relative" style={{ zIndex: 1 }}>
       <UserNavbar
         currentPage={currentPage}
         onNavigate={handleNavigate}

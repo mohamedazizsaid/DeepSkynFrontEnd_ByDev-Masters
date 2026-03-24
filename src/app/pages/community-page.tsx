@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import {
   ArrowLeft, Loader2, Users, Camera
 } from 'lucide-react';
+import { useAccessibilityStore } from '../../stores/accessibility.store';
 import { Button } from '../components/button';
 import { postsService } from '../../lib/services/posts.service';
 import { useAuthStore } from '../../stores/auth.store';
@@ -33,6 +34,11 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
   const [communityImage, setCommunityImage] = useState<string | null>(user?.coverPhoto || null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
+
+  const { theme, contrastMode } = useAccessibilityStore();
+  const isHcHigh = contrastMode === 'high';
+  const isHcMedium = contrastMode === 'medium';
+  const isDark = theme === 'dark';
 
   const loadPosts = useCallback(async (pageNum = 1) => {
     try {
@@ -276,7 +282,7 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB]">
+    <div className="min-h-screen relative" style={{ zIndex: 1 }}>
       {/* Header */}
       
 
@@ -292,11 +298,15 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6"
+              className={`rounded-2xl shadow-sm overflow-hidden mb-6 ${
+                isHcHigh ? 'border-2 border-yellow-400 bg-black' : isDark ? 'bg-[#16213e]' : 'bg-white'
+              }`}
             >
               {/* Cover Photo */}
               <div 
-                className="relative h-48 bg-gradient-to-r from-[#F9A8D4] to-[#FED7AA] cursor-pointer group"
+                className={`relative h-48 cursor-pointer group ${
+                  isHcHigh ? 'bg-black border-b-2 border-yellow-400' : 'bg-gradient-to-r from-[#F9A8D4] to-[#FED7AA]'
+                }`}
                 onClick={() => coverInputRef.current?.click()}
               >
                 {communityImage && (
@@ -334,7 +344,9 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
                   >
                     <div 
                       onClick={() => avatarInputRef.current?.click()}
-                      className="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-br from-[#F9A8D4] to-[#FED7AA] overflow-hidden shadow-lg flex items-center justify-center text-5xl font-bold text-white group-hover:opacity-80 transition-opacity"
+                      className={`w-32 h-32 rounded-full border-4 overflow-hidden shadow-lg flex items-center justify-center text-5xl font-bold group-hover:opacity-80 transition-opacity ${
+                        isHcHigh ? 'border-yellow-400 bg-black text-cyan-400' : 'border-white bg-gradient-to-br from-[#F9A8D4] to-[#FED7AA] text-white'
+                      }`}
                     >
                       {user?.avatar ? (
                         <img 
@@ -468,7 +480,9 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
                               animate={{ opacity: 1, y: 0 }}
                               className="flex gap-3 pb-4 border-b border-[#E5E7EB] last:border-b-0"
                             >
-                              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                              <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 ${
+                                isHcHigh ? 'bg-black border border-yellow-400 text-cyan-400' : 'bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] text-white'
+                              }`}>
                                 {comment.user?.avatar ? (
                                   <img
                                     src={comment.user.avatar}
@@ -492,7 +506,9 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
 
                       {/* Comment Input */}
                       <div className="flex gap-2 pt-4 border-t border-[#E5E7EB]">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 ${
+                          isHcHigh ? 'bg-black border border-yellow-400 text-cyan-400' : 'bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] text-white'
+                        }`}>
                           {user?.avatar ? (
                             <img
                               src={user.avatar}

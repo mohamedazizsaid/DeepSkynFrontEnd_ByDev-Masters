@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     Accessibility,
     Sun,
@@ -19,6 +19,15 @@ import {
     Space,
     BookOpen,
     Pause,
+    Focus,
+    Palette,
+    Ruler,
+    Gauge,
+    HelpCircle,
+    Keyboard,
+    ChevronDown,
+    ChevronUp,
+    FileText,
 } from 'lucide-react';
 import { useAccessibilityStore } from '../../stores/accessibility.store';
 
@@ -62,22 +71,36 @@ function ToggleSwitch({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section Header
+// Section Header — collapsible
 // ─────────────────────────────────────────────────────────────────────────────
 function SectionHeader({
     icon: Icon,
     label,
+    isOpen,
+    onToggle,
 }: {
     icon: React.ComponentType<{ size?: number; className?: string }>;
     label: string;
+    isOpen?: boolean;
+    onToggle?: () => void;
 }) {
     return (
-        <div className="flex items-center gap-[8px] mb-[12px]">
+        <button
+            onClick={onToggle}
+            className="flex items-center gap-[8px] mb-[12px] w-full group"
+            aria-expanded={isOpen}
+            type="button"
+        >
             <Icon size={15} className="text-[var(--muted-foreground)]" />
-            <span className="text-[11px] font-bold uppercase tracking-widest text-[var(--muted-foreground)]">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-[var(--muted-foreground)] flex-1 text-left">
                 {label}
             </span>
-        </div>
+            {onToggle && (
+                <span className="text-[var(--muted-foreground)] opacity-60 group-hover:opacity-100 transition-opacity">
+                    {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </span>
+            )}
+        </button>
     );
 }
 
@@ -114,6 +137,24 @@ function FeatureCard({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Voice commands list
+// ─────────────────────────────────────────────────────────────────────────────
+const VOICE_COMMANDS = [
+    { command: '"Accueil" / "Tableau de bord"', desc: 'Aller au tableau de bord' },
+    { command: '"Analyse"', desc: 'Ouvrir l\'analyse' },
+    { command: '"Routine"', desc: 'Ouvrir les routines' },
+    { command: '"Profil"', desc: 'Ouvrir le profil' },
+    { command: '"Communauté"', desc: 'Ouvrir la communauté' },
+    { command: '"Météo"', desc: 'Ouvrir la météo' },
+    { command: '"Mode sombre" / "Mode clair"', desc: 'Changer le thème' },
+    { command: '"Zoom plus" / "Zoom moins"', desc: 'Ajuster la taille' },
+    { command: '"Lire la page"', desc: 'Lecture vocale de la page' },
+    { command: '"Arrêter"', desc: 'Stopper la lecture' },
+    { command: '"Contraste élevé" / "moyen" / "normal"', desc: 'Changer le contraste' },
+    { command: '"Aide"', desc: 'Liste des commandes' },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main component
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -131,6 +172,10 @@ export function AccessibilityPanel() {
         isListening,
         spokenText,
         isPanelOpen,
+        focusHighlight,
+        colorBlindFilter,
+        readingGuide,
+        speechRate,
         toggleTheme,
         setContrastMode,
         resetContrastMode,
@@ -139,10 +184,15 @@ export function AccessibilityPanel() {
         toggleLinkHighlight,
         toggleBigCursor,
         toggleTextSpacing,
+        toggleFocusHighlight,
+        setColorBlindFilter,
+        toggleReadingGuide,
+        setSpeechRate,
         zoomIn,
         zoomOut,
         resetZoom,
         speak,
+        speakPage,
         stopSpeaking,
         startListening,
         stopListening,
@@ -150,6 +200,19 @@ export function AccessibilityPanel() {
         togglePanel,
         closePanel,
     } = useAccessibilityStore();
+
+    // ── Section toggle state ────────────────────────────────────────────
+    const [openSections, setOpenSections] = useState({
+        appearance: true,
+        vision: true,
+        tts: true,
+        voice: true,
+        extras: false,
+    });
+    const [showCommands, setShowCommands] = useState(false);
+
+    const toggle = (key: keyof typeof openSections) =>
+        setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
 
     const handleReadSelected = useCallback(() => {
         const selection = window.getSelection()?.toString().trim();
@@ -166,18 +229,85 @@ export function AccessibilityPanel() {
         if (linkHighlight) toggleLinkHighlight();
         if (bigCursor) toggleBigCursor();
         if (textSpacing) toggleTextSpacing();
+        if (focusHighlight) toggleFocusHighlight();
+        if (readingGuide) toggleReadingGuide();
+        if (colorBlindFilter !== 'none') setColorBlindFilter('none');
         if (isSpeaking) stopSpeaking();
         if (isListening) stopListening();
         clearSpokenText();
         if (theme === 'dark') toggleTheme();
-    }, [resetZoom, resetContrastMode, reduceMotion, toggleReduceMotion, dyslexiaFont, toggleDyslexiaFont, linkHighlight, toggleLinkHighlight, bigCursor, toggleBigCursor, textSpacing, toggleTextSpacing, isSpeaking, stopSpeaking, isListening, stopListening, clearSpokenText, theme, toggleTheme]);
+        setSpeechRate(1);
+    }, [
+        resetZoom, resetContrastMode, reduceMotion, toggleReduceMotion, dyslexiaFont,
+        toggleDyslexiaFont, linkHighlight, toggleLinkHighlight, bigCursor, toggleBigCursor,
+        textSpacing, toggleTextSpacing, focusHighlight, toggleFocusHighlight, readingGuide,
+        toggleReadingGuide, colorBlindFilter, setColorBlindFilter, isSpeaking, stopSpeaking,
+        isListening, stopListening, clearSpokenText, theme, toggleTheme, setSpeechRate,
+    ]);
+
+    // ── Keyboard shortcuts ──────────────────────────────────────────────
+    useEffect(() => {
+        function handleKeyDown(e: KeyboardEvent) {
+            // Alt+A: toggle panel
+            if (e.altKey && e.key === 'a') {
+                e.preventDefault();
+                togglePanel();
+            }
+            // Alt+D: toggle dark mode
+            if (e.altKey && e.key === 'd') {
+                e.preventDefault();
+                toggleTheme();
+            }
+            // Alt+R: read selected text
+            if (e.altKey && e.key === 'r') {
+                e.preventDefault();
+                handleReadSelected();
+            }
+            // Alt+P: read full page
+            if (e.altKey && e.key === 'p') {
+                e.preventDefault();
+                speakPage();
+            }
+            // Alt+S: stop speaking
+            if (e.altKey && e.key === 's') {
+                e.preventDefault();
+                if (isSpeaking) stopSpeaking();
+            }
+            // Alt+M: toggle voice listening
+            if (e.altKey && e.key === 'm') {
+                e.preventDefault();
+                isListening ? stopListening() : startListening();
+            }
+            // Escape: close panel
+            if (e.key === 'Escape' && isPanelOpen) {
+                closePanel();
+            }
+            // Alt+ +: zoom in
+            if (e.altKey && e.key === '+') {
+                e.preventDefault();
+                zoomIn();
+            }
+            // Alt+ -: zoom out
+            if (e.altKey && e.key === '-') {
+                e.preventDefault();
+                zoomOut();
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [
+        togglePanel, toggleTheme, handleReadSelected, speakPage, isSpeaking,
+        stopSpeaking, isListening, stopListening, startListening, isPanelOpen,
+        closePanel, zoomIn, zoomOut,
+    ]);
 
     // ── FAB ────────────────────────────────────────────────────────────────
     if (!isPanelOpen) {
         return (
             <button
                 onClick={togglePanel}
-                aria-label="Ouvrir le panneau d'accessibilité"
+                aria-label="Ouvrir le panneau d'accessibilité (Alt+A)"
                 className="
           fixed bottom-[24px] right-[24px] z-[9999]
           flex items-center justify-center w-[56px] h-[56px]
@@ -202,7 +332,7 @@ export function AccessibilityPanel() {
             style={{ fontSize: '16px' }} // Force fixed base font size to prevent zoom scaling
             className="
         fixed bottom-[24px] right-[24px] z-[9999]
-        w-[340px] max-h-[85vh] overflow-y-auto
+        w-[360px] max-h-[85vh] overflow-y-auto
         rounded-2xl
         bg-[var(--background)]/95 backdrop-blur-2xl
         border border-[var(--border)]
@@ -211,6 +341,7 @@ export function AccessibilityPanel() {
       "
             role="dialog"
             aria-label="Panneau d'accessibilité"
+            aria-modal="false"
         >
             {/* ── Header ──────────────────────────────────────────────────── */}
             <div className="flex items-center justify-between px-[20px] pt-[20px] pb-[16px]">
@@ -223,14 +354,51 @@ export function AccessibilityPanel() {
                         <p className="text-[10px] text-[var(--muted-foreground)]">Personnalisez votre expérience</p>
                     </div>
                 </div>
-                <button
-                    onClick={closePanel}
-                    aria-label="Fermer le panneau"
-                    className="flex items-center justify-center w-[32px] h-[32px] rounded-lg hover:bg-[var(--secondary)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors duration-200"
-                >
-                    <X size={16} />
-                </button>
+                <div className="flex items-center gap-[4px]">
+                    <button
+                        onClick={() => setShowCommands(!showCommands)}
+                        aria-label="Raccourcis clavier"
+                        title="Raccourcis clavier"
+                        className="flex items-center justify-center w-[32px] h-[32px] rounded-lg hover:bg-[var(--secondary)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors duration-200"
+                    >
+                        <Keyboard size={16} />
+                    </button>
+                    <button
+                        onClick={closePanel}
+                        aria-label="Fermer le panneau (Échap)"
+                        className="flex items-center justify-center w-[32px] h-[32px] rounded-lg hover:bg-[var(--secondary)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors duration-200"
+                    >
+                        <X size={16} />
+                    </button>
+                </div>
             </div>
+
+            {/* ── Keyboard shortcuts popover ──────────────────────────────── */}
+            {showCommands && (
+                <div className="mx-[20px] mb-[12px] p-[12px] rounded-xl bg-[var(--secondary)] border border-[var(--border)]">
+                    <p className="text-[11px] font-bold text-[var(--foreground)] mb-[8px] uppercase tracking-wider">Raccourcis clavier</p>
+                    <div className="grid grid-cols-2 gap-[4px]">
+                        {[
+                            { key: 'Alt + A', desc: 'Panneau' },
+                            { key: 'Alt + D', desc: 'Mode sombre' },
+                            { key: 'Alt + R', desc: 'Lire sélection' },
+                            { key: 'Alt + P', desc: 'Lire la page' },
+                            { key: 'Alt + S', desc: 'Stop lecture' },
+                            { key: 'Alt + M', desc: 'Micro' },
+                            { key: 'Alt + +', desc: 'Zoom +' },
+                            { key: 'Alt + -', desc: 'Zoom -' },
+                            { key: 'Échap', desc: 'Fermer' },
+                        ].map((s) => (
+                            <div key={s.key} className="flex items-center gap-[6px]">
+                                <kbd className="px-[6px] py-[2px] rounded bg-[var(--background)] border border-[var(--border)] text-[9px] font-mono font-bold text-[var(--foreground)]">
+                                    {s.key}
+                                </kbd>
+                                <span className="text-[10px] text-[var(--muted-foreground)]">{s.desc}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <div className="h-px bg-[var(--border)] mx-[20px]" />
 
@@ -240,322 +408,490 @@ export function AccessibilityPanel() {
             APPEARANCE
            ══════════════════════════════════════════════════════════════ */}
                 <section>
-                    <SectionHeader icon={Eye} label="Apparence" />
+                    <SectionHeader icon={Eye} label="Apparence" isOpen={openSections.appearance} onToggle={() => toggle('appearance')} />
 
-                    {/* Theme */}
-                    <FeatureCard
-                        icon={theme === 'dark' ? Moon : Sun}
-                        iconBg={theme === 'dark' ? 'bg-indigo-500' : 'bg-amber-400'}
-                        title="Mode sombre"
-                        description={theme === 'dark' ? 'Thème sombre activé' : 'Thème clair activé'}
-                        action={
-                            <ToggleSwitch
-                                checked={theme === 'dark'}
-                                onChange={toggleTheme}
-                                ariaLabel="Basculer le mode sombre"
+                    {openSections.appearance && (
+                        <>
+                            {/* Theme */}
+                            <FeatureCard
+                                icon={theme === 'dark' ? Moon : Sun}
+                                iconBg={theme === 'dark' ? 'bg-indigo-500' : 'bg-amber-400'}
+                                title="Mode sombre"
+                                description={theme === 'dark' ? 'Thème sombre activé' : 'Thème clair activé'}
+                                action={
+                                    <ToggleSwitch
+                                        checked={theme === 'dark'}
+                                        onChange={toggleTheme}
+                                        ariaLabel="Basculer le mode sombre (Alt+D)"
+                                    />
+                                }
                             />
-                        }
-                    />
 
-                    {/* ── Contrast for low vision ─────────────────────────── */}
-                    <div className="mt-[10px] p-[14px] rounded-xl bg-[var(--card)] border border-[var(--border)]">
-                        <div className="flex items-center gap-[8px] mb-[12px]">
-                            <div className="flex items-center justify-center w-[28px] h-[28px] rounded-lg bg-yellow-500/10">
-                                <Contrast size={15} className="text-yellow-600" />
-                            </div>
-                            <div className="flex-1">
-                                <span className="text-[14px] font-semibold text-[var(--foreground)]">Contraste élevé</span>
-                                <p className="text-[10px] text-[var(--muted-foreground)] leading-snug mt-[1px]">Améliore la lisibilité pour les malvoyants</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-[6px]">
-                            {/* Off */}
-                            <button
-                                onClick={() => setContrastMode('off')}
-                                aria-label="Désactiver le contraste élevé"
-                                aria-pressed={contrastMode === 'off'}
-                                className={`
-                                    flex-1 flex items-center justify-center gap-[5px] py-[8px] rounded-lg text-[11px] font-semibold
-                                    transition-all duration-300 ease-out
-                                    ${contrastMode === 'off'
-                                        ? 'bg-[var(--foreground)] text-[var(--background)] shadow-md scale-[1.02]'
-                                        : 'bg-[var(--secondary)] text-[var(--muted-foreground)] hover:bg-[var(--border)] hover:text-[var(--foreground)]'
-                                    }
-                                `}
-                            >
-                                <span className={`w-[6px] h-[6px] rounded-full transition-colors duration-300 ${contrastMode === 'off' ? 'bg-green-400' : 'bg-[var(--muted-foreground)]/40'
-                                    }`} />
-                                Normal
-                            </button>
-
-                            {/* Medium */}
-                            <button
-                                onClick={() => setContrastMode('medium')}
-                                aria-label="Activer le contraste moyen"
-                                aria-pressed={contrastMode === 'medium'}
-                                className={`
-                                    flex-1 flex items-center justify-center gap-[5px] py-[8px] rounded-lg text-[11px] font-semibold
-                                    transition-all duration-300 ease-out
-                                    ${contrastMode === 'medium'
-                                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 scale-[1.02]'
-                                        : 'bg-[var(--secondary)] text-[var(--muted-foreground)] hover:bg-[var(--border)] hover:text-[var(--foreground)]'
-                                    }
-                                `}
-                            >
-                                <span className={`w-[6px] h-[6px] rounded-full transition-colors duration-300 ${contrastMode === 'medium' ? 'bg-white' : 'bg-[var(--muted-foreground)]/40'
-                                    }`} />
-                                Moyen
-                            </button>
-
-                            {/* High */}
-                            <button
-                                onClick={() => setContrastMode('high')}
-                                aria-label="Activer le contraste élevé maximum"
-                                aria-pressed={contrastMode === 'high'}
-                                className={`
-                                    flex-1 flex items-center justify-center gap-[5px] py-[8px] rounded-lg text-[11px] font-semibold
-                                    transition-all duration-300 ease-out
-                                    ${contrastMode === 'high'
-                                        ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black shadow-md shadow-yellow-400/30 scale-[1.02]'
-                                        : 'bg-[var(--secondary)] text-[var(--muted-foreground)] hover:bg-[var(--border)] hover:text-[var(--foreground)]'
-                                    }
-                                `}
-                            >
-                                <span className={`w-[6px] h-[6px] rounded-full transition-colors duration-300 ${contrastMode === 'high' ? 'bg-black' : 'bg-[var(--muted-foreground)]/40'
-                                    }`} />
-                                Élevé
-                            </button>
-                        </div>
-
-                        {contrastMode !== 'off' && (
-                            <div className="mt-[8px] flex items-center gap-[6px] px-[10px] py-[6px] rounded-lg bg-yellow-500/5 border border-yellow-500/20">
-                                <Contrast size={12} className="text-yellow-600 shrink-0" />
-                                <span className="text-[10px] font-medium text-yellow-700">
-                                    {contrastMode === 'medium' ? 'Contraste moyen activé (ratio ≥ 7:1)' : 'Contraste maximum activé (ratio ≥ 10:1)'}
-                                </span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Zoom */}
-                    <div className="mt-[10px] p-[14px] rounded-xl bg-[var(--card)] border border-[var(--border)]">
-                        <div className="flex items-center justify-between mb-[12px]">
-                            <div className="flex items-center gap-[8px]">
-                                <div className="flex items-center justify-center w-[28px] h-[28px] rounded-lg bg-emerald-500/10">
-                                    <Type size={15} className="text-emerald-600" />
+                            {/* ── Contrast for low vision ─────────────────────────── */}
+                            <div className="mt-[10px] p-[14px] rounded-xl bg-[var(--card)] border border-[var(--border)]">
+                                <div className="flex items-center gap-[8px] mb-[12px]">
+                                    <div className="flex items-center justify-center w-[28px] h-[28px] rounded-lg bg-yellow-500/10">
+                                        <Contrast size={15} className="text-yellow-600 dark:text-yellow-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <span className="text-[14px] font-semibold text-[var(--foreground)]">Contraste élevé</span>
+                                        <p className="text-[10px] text-[var(--muted-foreground)] leading-snug mt-[1px]">Améliore la lisibilité pour les malvoyants</p>
+                                    </div>
                                 </div>
-                                <span className="text-[14px] font-semibold text-[var(--foreground)]">Taille du texte</span>
+
+                                <div className="flex items-center gap-[6px]">
+                                    {/* Off */}
+                                    <button
+                                        onClick={() => setContrastMode('off')}
+                                        aria-label="Désactiver le contraste élevé"
+                                        aria-pressed={contrastMode === 'off'}
+                                        className={`
+                                            flex-1 flex items-center justify-center gap-[5px] py-[8px] rounded-lg text-[11px] font-semibold
+                                            transition-all duration-300 ease-out
+                                            ${contrastMode === 'off'
+                                                ? 'bg-[var(--foreground)] text-[var(--background)] shadow-md scale-[1.02]'
+                                                : 'bg-[var(--secondary)] text-[var(--muted-foreground)] hover:bg-[var(--border)] hover:text-[var(--foreground)]'
+                                            }
+                                        `}
+                                    >
+                                        <span className={`w-[6px] h-[6px] rounded-full transition-colors duration-300 ${contrastMode === 'off' ? 'bg-green-400' : 'bg-[var(--muted-foreground)]/40'
+                                            }`} />
+                                        Normal
+                                    </button>
+
+                                    {/* Medium */}
+                                    <button
+                                        onClick={() => setContrastMode('medium')}
+                                        aria-label="Activer le contraste moyen"
+                                        aria-pressed={contrastMode === 'medium'}
+                                        className={`
+                                            flex-1 flex items-center justify-center gap-[5px] py-[8px] rounded-lg text-[11px] font-semibold
+                                            transition-all duration-300 ease-out
+                                            ${contrastMode === 'medium'
+                                                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 scale-[1.02]'
+                                                : 'bg-[var(--secondary)] text-[var(--muted-foreground)] hover:bg-[var(--border)] hover:text-[var(--foreground)]'
+                                            }
+                                        `}
+                                    >
+                                        <span className={`w-[6px] h-[6px] rounded-full transition-colors duration-300 ${contrastMode === 'medium' ? 'bg-white' : 'bg-[var(--muted-foreground)]/40'
+                                            }`} />
+                                        Moyen
+                                    </button>
+
+                                    {/* High */}
+                                    <button
+                                        onClick={() => setContrastMode('high')}
+                                        aria-label="Activer le contraste élevé maximum"
+                                        aria-pressed={contrastMode === 'high'}
+                                        className={`
+                                            flex-1 flex items-center justify-center gap-[5px] py-[8px] rounded-lg text-[11px] font-semibold
+                                            transition-all duration-300 ease-out
+                                            ${contrastMode === 'high'
+                                                ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black shadow-md shadow-yellow-400/30 scale-[1.02]'
+                                                : 'bg-[var(--secondary)] text-[var(--muted-foreground)] hover:bg-[var(--border)] hover:text-[var(--foreground)]'
+                                            }
+                                        `}
+                                    >
+                                        <span className={`w-[6px] h-[6px] rounded-full transition-colors duration-300 ${contrastMode === 'high' ? 'bg-black' : 'bg-[var(--muted-foreground)]/40'
+                                            }`} />
+                                        Élevé
+                                    </button>
+                                </div>
+
+                                {contrastMode !== 'off' && (
+                                    <div className="mt-[8px] flex items-center gap-[6px] px-[10px] py-[6px] rounded-lg bg-yellow-500/5 border border-yellow-500/20">
+                                        <Contrast size={12} className="text-yellow-600 dark:text-yellow-400 shrink-0" />
+                                        <span className="text-[10px] font-medium text-yellow-700 dark:text-yellow-300">
+                                            {contrastMode === 'medium' ? 'Contraste moyen activé (ratio ≥ 7:1)' : 'Contraste maximum activé (ratio ≥ 10:1)'}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
-                            <span className="text-[12px] font-bold text-[var(--primary)] bg-[var(--primary)]/10 px-[10px] py-[4px] rounded-full">
-                                {zoomLevel}%
-                            </span>
-                        </div>
 
-                        {/* Zoom controls */}
-                        <div className="flex items-center gap-[12px]">
-                            <button
-                                onClick={zoomOut}
-                                disabled={zoomLevel <= 75}
-                                aria-label="Réduire le zoom"
-                                className="flex items-center justify-center w-[36px] h-[36px] rounded-xl bg-[var(--secondary)] text-[var(--foreground)] hover:bg-[var(--border)] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
-                            >
-                                <ZoomOut size={16} />
-                            </button>
+                            {/* Zoom */}
+                            <div className="mt-[10px] p-[14px] rounded-xl bg-[var(--card)] border border-[var(--border)]">
+                                <div className="flex items-center justify-between mb-[12px]">
+                                    <div className="flex items-center gap-[8px]">
+                                        <div className="flex items-center justify-center w-[28px] h-[28px] rounded-lg bg-emerald-500/10">
+                                            <Type size={15} className="text-emerald-600 dark:text-emerald-400" />
+                                        </div>
+                                        <span className="text-[14px] font-semibold text-[var(--foreground)]">Taille du texte</span>
+                                    </div>
+                                    <span className="text-[12px] font-bold text-[var(--primary)] bg-[var(--primary)]/10 px-[10px] py-[4px] rounded-full">
+                                        {zoomLevel}%
+                                    </span>
+                                </div>
 
-                            {/* Progress bar */}
-                            <div className="flex-1 relative h-[8px] rounded-full bg-[var(--secondary)] overflow-hidden">
-                                <div
-                                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] transition-all duration-300 ease-out"
-                                    style={{ width: `${((zoomLevel - 75) / 75) * 100}%` }}
-                                />
+                                {/* Zoom controls */}
+                                <div className="flex items-center gap-[12px]">
+                                    <button
+                                        onClick={zoomOut}
+                                        disabled={zoomLevel <= 75}
+                                        aria-label="Réduire le zoom (Alt+-)"
+                                        className="flex items-center justify-center w-[36px] h-[36px] rounded-xl bg-[var(--secondary)] text-[var(--foreground)] hover:bg-[var(--border)] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
+                                    >
+                                        <ZoomOut size={16} />
+                                    </button>
+
+                                    {/* Progress bar */}
+                                    <div className="flex-1 relative h-[8px] rounded-full bg-[var(--secondary)] overflow-hidden">
+                                        <div
+                                            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] transition-all duration-300 ease-out"
+                                            style={{ width: `${((zoomLevel - 75) / 75) * 100}%` }}
+                                        />
+                                    </div>
+
+                                    <button
+                                        onClick={zoomIn}
+                                        disabled={zoomLevel >= 150}
+                                        aria-label="Augmenter le zoom (Alt++)"
+                                        className="flex items-center justify-center w-[36px] h-[36px] rounded-xl bg-[var(--secondary)] text-[var(--foreground)] hover:bg-[var(--border)] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
+                                    >
+                                        <ZoomIn size={16} />
+                                    </button>
+                                </div>
+
+                                {zoomLevel !== 100 && (
+                                    <button
+                                        onClick={resetZoom}
+                                        className="flex items-center justify-center gap-[6px] mt-[10px] w-full py-[6px] text-[11px] font-medium text-[var(--muted-foreground)] hover:text-[var(--primary)] rounded-lg hover:bg-[var(--secondary)] transition-all duration-200"
+                                        aria-label="Réinitialiser le zoom"
+                                    >
+                                        <RotateCcw size={11} />
+                                        Réinitialiser à 100%
+                                    </button>
+                                )}
                             </div>
-
-                            <button
-                                onClick={zoomIn}
-                                disabled={zoomLevel >= 150}
-                                aria-label="Augmenter le zoom"
-                                className="flex items-center justify-center w-[36px] h-[36px] rounded-xl bg-[var(--secondary)] text-[var(--foreground)] hover:bg-[var(--border)] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
-                            >
-                                <ZoomIn size={16} />
-                            </button>
-                        </div>
-
-                        {zoomLevel !== 100 && (
-                            <button
-                                onClick={resetZoom}
-                                className="flex items-center justify-center gap-[6px] mt-[10px] w-full py-[6px] text-[11px] font-medium text-[var(--muted-foreground)] hover:text-[var(--primary)] rounded-lg hover:bg-[var(--secondary)] transition-all duration-200"
-                                aria-label="Réinitialiser le zoom"
-                            >
-                                <RotateCcw size={11} />
-                                Réinitialiser à 100%
-                            </button>
-                        )}
-                    </div>
+                        </>
+                    )}
                 </section>
 
                 {/* ══════════════════════════════════════════════════════════════
             VISION & LECTURE — WCAG Features
            ══════════════════════════════════════════════════════════════ */}
                 <section>
-                    <SectionHeader icon={BookOpen} label="Vision & lecture" />
+                    <SectionHeader icon={BookOpen} label="Vision & lecture" isOpen={openSections.vision} onToggle={() => toggle('vision')} />
 
-                    <div className="flex flex-col gap-[8px]">
-                        <FeatureCard
-                            icon={Pause}
-                            iconBg={reduceMotion ? 'bg-teal-500' : 'bg-teal-500/60'}
-                            title="Réduire les animations"
-                            description="Désactive les animations et transitions"
-                            action={
-                                <ToggleSwitch
-                                    checked={reduceMotion}
-                                    onChange={toggleReduceMotion}
-                                    ariaLabel="Réduire les animations"
-                                />
-                            }
-                        />
+                    {openSections.vision && (
+                        <div className="flex flex-col gap-[8px]">
+                            <FeatureCard
+                                icon={Pause}
+                                iconBg={reduceMotion ? 'bg-teal-500' : 'bg-teal-500/60'}
+                                title="Réduire les animations"
+                                description="Désactive les animations et transitions (WCAG 2.3.3)"
+                                action={
+                                    <ToggleSwitch
+                                        checked={reduceMotion}
+                                        onChange={toggleReduceMotion}
+                                        ariaLabel="Réduire les animations"
+                                    />
+                                }
+                            />
 
-                        <FeatureCard
-                            icon={BookOpen}
-                            iconBg={dyslexiaFont ? 'bg-pink-500' : 'bg-pink-500/60'}
-                            title="Police dyslexie"
-                            description="Utilise une police adaptée aux dyslexiques"
-                            action={
-                                <ToggleSwitch
-                                    checked={dyslexiaFont}
-                                    onChange={toggleDyslexiaFont}
-                                    ariaLabel="Activer la police dyslexie"
-                                />
-                            }
-                        />
+                            <FeatureCard
+                                icon={BookOpen}
+                                iconBg={dyslexiaFont ? 'bg-pink-500' : 'bg-pink-500/60'}
+                                title="Police dyslexie"
+                                description="Utilise Lexend, adaptée aux dyslexiques (WCAG 1.4.8)"
+                                action={
+                                    <ToggleSwitch
+                                        checked={dyslexiaFont}
+                                        onChange={toggleDyslexiaFont}
+                                        ariaLabel="Activer la police dyslexie"
+                                    />
+                                }
+                            />
 
-                        <FeatureCard
-                            icon={Link}
-                            iconBg={linkHighlight ? 'bg-blue-500' : 'bg-blue-500/60'}
-                            title="Souligner les liens"
-                            description="Rend les liens toujours visibles et soulignés"
-                            action={
-                                <ToggleSwitch
-                                    checked={linkHighlight}
-                                    onChange={toggleLinkHighlight}
-                                    ariaLabel="Souligner les liens"
-                                />
-                            }
-                        />
+                            <FeatureCard
+                                icon={Link}
+                                iconBg={linkHighlight ? 'bg-blue-500' : 'bg-blue-500/60'}
+                                title="Souligner les liens"
+                                description="Rend les liens toujours visibles et soulignés (WCAG 1.4.1)"
+                                action={
+                                    <ToggleSwitch
+                                        checked={linkHighlight}
+                                        onChange={toggleLinkHighlight}
+                                        ariaLabel="Souligner les liens"
+                                    />
+                                }
+                            />
 
-                        <FeatureCard
-                            icon={MousePointer}
-                            iconBg={bigCursor ? 'bg-orange-500' : 'bg-orange-500/60'}
-                            title="Grand curseur"
-                            description="Agrandit le curseur pour plus de visibilité"
-                            action={
-                                <ToggleSwitch
-                                    checked={bigCursor}
-                                    onChange={toggleBigCursor}
-                                    ariaLabel="Activer le grand curseur"
-                                />
-                            }
-                        />
+                            <FeatureCard
+                                icon={MousePointer}
+                                iconBg={bigCursor ? 'bg-orange-500' : 'bg-orange-500/60'}
+                                title="Grand curseur"
+                                description="Agrandit le curseur pour plus de visibilité"
+                                action={
+                                    <ToggleSwitch
+                                        checked={bigCursor}
+                                        onChange={toggleBigCursor}
+                                        ariaLabel="Activer le grand curseur"
+                                    />
+                                }
+                            />
 
-                        <FeatureCard
-                            icon={Space}
-                            iconBg={textSpacing ? 'bg-lime-500' : 'bg-lime-500/60'}
-                            title="Espacement du texte"
-                            description="Augmente l'espacement des lignes et lettres"
-                            action={
-                                <ToggleSwitch
-                                    checked={textSpacing}
-                                    onChange={toggleTextSpacing}
-                                    ariaLabel="Augmenter l'espacement du texte"
-                                />
-                            }
-                        />
-                    </div>
+                            <FeatureCard
+                                icon={Space}
+                                iconBg={textSpacing ? 'bg-lime-500' : 'bg-lime-500/60'}
+                                title="Espacement du texte"
+                                description="Augmente l'espacement des lignes et lettres (WCAG 1.4.12)"
+                                action={
+                                    <ToggleSwitch
+                                        checked={textSpacing}
+                                        onChange={toggleTextSpacing}
+                                        ariaLabel="Augmenter l'espacement du texte"
+                                    />
+                                }
+                            />
+
+                            <FeatureCard
+                                icon={Focus}
+                                iconBg={focusHighlight ? 'bg-cyan-500' : 'bg-cyan-500/60'}
+                                title="Indicateur de focus"
+                                description="Surligne fort l'élément actif au clavier (WCAG 2.4.7)"
+                                action={
+                                    <ToggleSwitch
+                                        checked={focusHighlight}
+                                        onChange={toggleFocusHighlight}
+                                        ariaLabel="Activer l'indicateur de focus"
+                                    />
+                                }
+                            />
+
+                            <FeatureCard
+                                icon={Ruler}
+                                iconBg={readingGuide ? 'bg-emerald-500' : 'bg-emerald-500/60'}
+                                title="Guide de lecture"
+                                description="Bande horizontale suivant la souris pour faciliter la lecture"
+                                action={
+                                    <ToggleSwitch
+                                        checked={readingGuide}
+                                        onChange={toggleReadingGuide}
+                                        ariaLabel="Activer le guide de lecture"
+                                    />
+                                }
+                            />
+
+                            {/* Color Blind Filter */}
+                            <div className="p-[14px] rounded-xl bg-[var(--card)] border border-[var(--border)]">
+                                <div className="flex items-center gap-[8px] mb-[10px]">
+                                    <div className="flex items-center justify-center w-[28px] h-[28px] rounded-lg bg-purple-500/10">
+                                        <Palette size={15} className="text-purple-600 dark:text-purple-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <span className="text-[14px] font-semibold text-[var(--foreground)]">Filtre daltonisme</span>
+                                        <p className="text-[10px] text-[var(--muted-foreground)] leading-snug mt-[1px]">Adapte les couleurs selon votre vision</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-[4px]">
+                                    {([
+                                        { value: 'none', label: 'Aucun' },
+                                        { value: 'protanopia', label: 'Protanopie' },
+                                        { value: 'deuteranopia', label: 'Deutéranopie' },
+                                        { value: 'tritanopia', label: 'Tritanopie' },
+                                        { value: 'achromatopsia', label: 'Achromatopsie' },
+                                    ] as const).map((f) => (
+                                        <button
+                                            key={f.value}
+                                            onClick={() => setColorBlindFilter(f.value)}
+                                            aria-pressed={colorBlindFilter === f.value}
+                                            className={`
+                                                py-[6px] px-[8px] rounded-lg text-[10px] font-semibold transition-all duration-200
+                                                ${colorBlindFilter === f.value
+                                                    ? 'bg-purple-500 text-white shadow-sm'
+                                                    : 'bg-[var(--secondary)] text-[var(--muted-foreground)] hover:bg-[var(--border)] hover:text-[var(--foreground)]'
+                                                }
+                                            `}
+                                        >
+                                            {f.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </section>
 
                 {/* ══════════════════════════════════════════════════════════════
             TEXT-TO-SPEECH
            ══════════════════════════════════════════════════════════════ */}
                 <section>
-                    <SectionHeader icon={Volume2} label="Lecture vocale" />
+                    <SectionHeader icon={Volume2} label="Lecture vocale" isOpen={openSections.tts} onToggle={() => toggle('tts')} />
 
-                    <FeatureCard
-                        icon={isSpeaking ? VolumeX : Volume2}
-                        iconBg={isSpeaking ? 'bg-red-500' : 'bg-violet-500'}
-                        title={isSpeaking ? 'Lecture en cours' : 'Lire le texte'}
-                        description={
-                            isSpeaking
-                                ? 'Cliquez pour arrêter la lecture'
-                                : 'Sélectionnez du texte puis activez'
-                        }
-                        action={
-                            isSpeaking ? (
-                                <button
-                                    onClick={stopSpeaking}
-                                    aria-label="Arrêter la lecture"
-                                    className="flex items-center justify-center w-[36px] h-[36px] rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all duration-200 hover:scale-105 active:scale-95"
-                                >
-                                    <VolumeX size={18} />
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={handleReadSelected}
-                                    aria-label="Lire le texte sélectionné"
-                                    className="flex items-center justify-center w-[36px] h-[36px] rounded-xl bg-violet-500/10 text-violet-500 hover:bg-violet-500/20 transition-all duration-200 hover:scale-105 active:scale-95"
-                                >
-                                    <Volume2 size={18} />
-                                </button>
-                            )
-                        }
-                    />
+                    {openSections.tts && (
+                        <div className="flex flex-col gap-[8px]">
+                            {/* Read selected text */}
+                            <FeatureCard
+                                icon={isSpeaking ? VolumeX : Volume2}
+                                iconBg={isSpeaking ? 'bg-red-500' : 'bg-violet-500'}
+                                title={isSpeaking ? 'Lecture en cours' : 'Lire le texte sélectionné'}
+                                description={
+                                    isSpeaking
+                                        ? 'Cliquez pour arrêter la lecture'
+                                        : 'Sélectionnez du texte puis activez (Alt+R)'
+                                }
+                                action={
+                                    isSpeaking ? (
+                                        <button
+                                            onClick={stopSpeaking}
+                                            aria-label="Arrêter la lecture (Alt+S)"
+                                            className="flex items-center justify-center w-[36px] h-[36px] rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all duration-200 hover:scale-105 active:scale-95"
+                                        >
+                                            <VolumeX size={18} />
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={handleReadSelected}
+                                            aria-label="Lire le texte sélectionné (Alt+R)"
+                                            className="flex items-center justify-center w-[36px] h-[36px] rounded-xl bg-violet-500/10 text-violet-500 hover:bg-violet-500/20 transition-all duration-200 hover:scale-105 active:scale-95"
+                                        >
+                                            <Volume2 size={18} />
+                                        </button>
+                                    )
+                                }
+                            />
+
+                            {/* Read entire page */}
+                            <FeatureCard
+                                icon={FileText}
+                                iconBg="bg-indigo-500"
+                                title="Lire toute la page"
+                                description="Lecture vocale de tout le contenu visible (Alt+P)"
+                                action={
+                                    <button
+                                        onClick={speakPage}
+                                        disabled={isSpeaking}
+                                        aria-label="Lire toute la page (Alt+P)"
+                                        className="flex items-center justify-center w-[36px] h-[36px] rounded-xl bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
+                                    >
+                                        <FileText size={18} />
+                                    </button>
+                                }
+                            />
+
+                            {/* Speech rate */}
+                            <div className="p-[14px] rounded-xl bg-[var(--card)] border border-[var(--border)]">
+                                <div className="flex items-center gap-[8px] mb-[8px]">
+                                    <div className="flex items-center justify-center w-[28px] h-[28px] rounded-lg bg-violet-500/10">
+                                        <Gauge size={15} className="text-violet-600 dark:text-violet-400" />
+                                    </div>
+                                    <span className="text-[13px] font-semibold text-[var(--foreground)] flex-1">Vitesse de lecture</span>
+                                    <span className="text-[11px] font-bold text-violet-600 dark:text-violet-400 bg-violet-500/10 px-[8px] py-[2px] rounded-full">
+                                        {speechRate.toFixed(1)}x
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-[8px]">
+                                    <span className="text-[10px] text-[var(--muted-foreground)]">0.5x</span>
+                                    <input
+                                        type="range"
+                                        min="0.5"
+                                        max="2"
+                                        step="0.1"
+                                        value={speechRate}
+                                        onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+                                        aria-label="Vitesse de lecture vocale"
+                                        className="flex-1 h-[6px] rounded-full appearance-none bg-[var(--secondary)] accent-violet-500 cursor-pointer"
+                                    />
+                                    <span className="text-[10px] text-[var(--muted-foreground)]">2.0x</span>
+                                </div>
+                            </div>
+
+                            {/* Active speaking indicator */}
+                            {isSpeaking && (
+                                <div className="flex items-center gap-[8px] px-[12px] py-[8px] rounded-lg bg-violet-500/5 border border-violet-500/20">
+                                    <span className="relative flex h-[10px] w-[10px]">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                                        <span className="relative inline-flex rounded-full h-[10px] w-[10px] bg-violet-500" />
+                                    </span>
+                                    <span className="text-[11px] font-medium text-violet-600 dark:text-violet-400">Lecture en cours…</span>
+                                    <button
+                                        onClick={stopSpeaking}
+                                        className="ml-auto text-[10px] font-bold text-red-500 hover:text-red-600 transition-colors"
+                                    >
+                                        Arrêter
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </section>
 
                 {/* ══════════════════════════════════════════════════════════════
-            SPEECH-TO-TEXT
+            SPEECH-TO-TEXT / VOICE ASSISTANT
            ══════════════════════════════════════════════════════════════ */}
                 <section>
-                    <SectionHeader icon={Mic} label="Assistant vocal" />
+                    <SectionHeader icon={Mic} label="Assistant vocal" isOpen={openSections.voice} onToggle={() => toggle('voice')} />
 
-                    <FeatureCard
-                        icon={isListening ? MicOff : Mic}
-                        iconBg={isListening ? 'bg-rose-500' : 'bg-sky-500'}
-                        title="Assistant vocal"
-                        description={
-                            isListening
-                                ? 'Dites une commande pour naviguer'
-                                : 'Appuyez pour commencer la dictée'
-                        }
-                        action={
-                            <ToggleSwitch
-                                checked={isListening}
-                                onChange={isListening ? stopListening : startListening}
-                                ariaLabel={isListening ? "Arrêter l'écoute" : "Démarrer l'écoute"}
+                    {openSections.voice && (
+                        <div className="flex flex-col gap-[8px]">
+                            <FeatureCard
+                                icon={isListening ? MicOff : Mic}
+                                iconBg={isListening ? 'bg-rose-500' : 'bg-sky-500'}
+                                title="Assistant vocal"
+                                description={
+                                    isListening
+                                        ? 'Dites une commande pour naviguer'
+                                        : 'Appuyez pour commander par la voix (Alt+M)'
+                                }
+                                action={
+                                    <ToggleSwitch
+                                        checked={isListening}
+                                        onChange={isListening ? stopListening : startListening}
+                                        ariaLabel={isListening ? "Arrêter l'écoute" : "Démarrer l'écoute (Alt+M)"}
+                                    />
+                                }
                             />
-                        }
-                    />
 
-                    {/* Listening indicator */}
-                    {isListening && (
-                        <div className="mt-[8px] flex items-center gap-[8px] px-[12px] py-[8px] rounded-lg bg-rose-500/5 border border-rose-500/20">
-                            <span className="relative flex h-[10px] w-[10px]">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                                <span className="relative inline-flex rounded-full h-[10px] w-[10px] bg-rose-500" />
-                            </span>
-                            <span className="text-[11px] font-medium text-rose-600">Écoute en cours…</span>
-                        </div>
-                    )}
+                            {/* Listening indicator */}
+                            {isListening && (
+                                <div className="flex items-center gap-[8px] px-[12px] py-[8px] rounded-lg bg-rose-500/5 border border-rose-500/20">
+                                    <span className="relative flex h-[10px] w-[10px]">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                                        <span className="relative inline-flex rounded-full h-[10px] w-[10px] bg-rose-500" />
+                                    </span>
+                                    <span className="text-[11px] font-medium text-rose-600 dark:text-rose-400">Écoute en cours…</span>
+                                </div>
+                            )}
 
-                    {/* Transcript */}
-                    {spokenText && (
-                        <div className="relative mt-[8px] p-[12px] rounded-xl bg-[var(--secondary)] border border-[var(--border)]">
-                            <p className="text-[12px] text-[var(--foreground)] leading-relaxed pr-[24px]">{spokenText}</p>
+                            {/* Transcript */}
+                            {spokenText && (
+                                <div className="relative p-[12px] rounded-xl bg-[var(--secondary)] border border-[var(--border)]">
+                                    <p className="text-[12px] text-[var(--foreground)] leading-relaxed pr-[24px]">{spokenText}</p>
+                                    <button
+                                        onClick={clearSpokenText}
+                                        aria-label="Effacer le texte dicté"
+                                        className="absolute top-[8px] right-[8px] w-[20px] h-[20px] flex items-center justify-center rounded-full bg-[var(--background)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+                                    >
+                                        <X size={10} />
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Voice commands list */}
                             <button
-                                onClick={clearSpokenText}
-                                aria-label="Effacer le texte dicté"
-                                className="absolute top-[8px] right-[8px] w-[20px] h-[20px] flex items-center justify-center rounded-full bg-[var(--background)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+                                onClick={() => setShowCommands(!showCommands)}
+                                className="flex items-center gap-[6px] px-[12px] py-[6px] rounded-lg text-[11px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors"
                             >
-                                <X size={10} />
+                                <HelpCircle size={13} />
+                                Commandes vocales disponibles
+                                {showCommands ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                             </button>
+
+                            {showCommands && (
+                                <div className="p-[12px] rounded-xl bg-[var(--secondary)] border border-[var(--border)]">
+                                    <div className="space-y-[6px]">
+                                        {VOICE_COMMANDS.map((vc, i) => (
+                                            <div key={i} className="flex items-start gap-[8px]">
+                                                <span className="text-[10px] font-mono font-bold text-[var(--primary)] shrink-0 mt-[1px]">»</span>
+                                                <div>
+                                                    <span className="text-[10px] font-semibold text-[var(--foreground)]">{vc.command}</span>
+                                                    <span className="text-[10px] text-[var(--muted-foreground)]"> — {vc.desc}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </section>

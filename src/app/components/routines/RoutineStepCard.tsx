@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, Reorder } from 'motion/react';
-import { GripVertical, Check, X, Clock, AlertTriangle } from 'lucide-react';
+import { GripVertical, Check, X, Clock, AlertTriangle, Sparkles } from 'lucide-react';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 interface RoutineStepCardProps {
   step: {
@@ -15,6 +16,7 @@ interface RoutineStepCardProps {
   isHighlighted?: boolean;
   onRemove?: () => void;
   onComplete?: () => void;
+  onRecommend?: () => void;
 }
 
 const categoryColors: Record<string, string> = {
@@ -61,8 +63,15 @@ export function RoutineStepCard({
   isHighlighted = false,
   onRemove,
   onComplete,
+  onRecommend,
 }: RoutineStepCardProps) {
-  const color = categoryColors[step.category] || '#6B7280';
+  const { contrastMode } = useAccessibilityStore();
+  const isHcHigh = contrastMode === 'high';
+  const isHcMedium = contrastMode === 'medium';
+  
+  const baseColor = categoryColors[step.category] || '#6B7280';
+  const color = isHcHigh ? '#FFD700' : isHcMedium ? '#c9a227' : baseColor;
+  
   const label = categoryLabels[step.category] || step.category || 'Produit';
 
   return (
@@ -101,17 +110,42 @@ export function RoutineStepCard({
           style={{ background: `linear-gradient(to bottom, ${color}, transparent)` }}
         />
 
-        <div className="flex items-center gap-4 p-4 pl-5">
+        <div className="flex items-center gap-3 p-4 pl-5">
           {/* Drag handle */}
           <GripVertical className="w-5 h-5 text-gray-400 flex-shrink-0" />
+
+          {/* ★ AI Recommend Button */}
+          <motion.button
+            whileHover={{ scale: 1.2, rotate: 15 }}
+            whileTap={{ scale: 0.85 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRecommend?.();
+            }}
+            className="relative flex items-center justify-center w-8 h-8 rounded-xl flex-shrink-0 group"
+            style={{
+              background: 'linear-gradient(135deg, rgba(14,165,233,0.12), rgba(139,92,246,0.12))',
+              border: '1px solid rgba(139,92,246,0.2)',
+            }}
+            title="Recommandation IA de produit"
+          >
+            <Sparkles className="w-4 h-4 text-[#8B5CF6] group-hover:text-[#0EA5E9] transition-colors" />
+            {/* Pulsing dot indicator */}
+            <motion.span
+              className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full"
+              style={{ backgroundColor: '#8B5CF6' }}
+              animate={{ scale: [1, 1.4, 1], opacity: [1, 0.6, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+          </motion.button>
 
           {/* Step number */}
           <div
             className="flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 font-bold text-sm"
             style={{
-              background: `linear-gradient(135deg, ${color}33, ${color}11)`,
-              color: color,
-              border: `1px solid ${color}44`,
+              background: isHcHigh || isHcMedium ? 'transparent' : `linear-gradient(135deg, ${color}33, ${color}11)`,
+              color: isHcHigh ? '#00ffff' : color,
+              border: isHcHigh || isHcMedium ? `2px solid ${isHcHigh ? '#FFD700' : color}` : `1px solid ${color}44`,
             }}
           >
             {step.completed ? (
@@ -128,9 +162,9 @@ export function RoutineStepCard({
               <span
                 className="px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider flex-shrink-0"
                 style={{
-                  backgroundColor: `${color}15`,
-                  color: color,
-                  border: `1px solid ${color}33`,
+                  backgroundColor: isHcHigh || isHcMedium ? 'transparent' : `${color}15`,
+                  color: isHcHigh ? '#00ffff' : color,
+                  border: isHcHigh || isHcMedium ? `2px solid ${isHcHigh ? '#FFD700' : color}` : `1px solid ${color}33`,
                 }}
               >
                 {label}

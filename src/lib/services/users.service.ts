@@ -5,6 +5,7 @@ export interface UpdateUserDto {
     dateOfBirth?: string;
     gender?: string;
     preferredLanguage?: string;
+    settings?: any;
 }
 
 export interface User {
@@ -16,6 +17,7 @@ export interface User {
     dateOfBirth?: string;
     gender?: string;
     preferredLanguage?: string;
+    settings?: any;
     onboardingComplete: boolean;
 }
 

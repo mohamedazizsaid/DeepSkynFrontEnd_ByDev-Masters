@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Sparkles, CheckCircle, AlertTriangle, Info } from 'lucide-react';
 
@@ -14,6 +15,12 @@ interface AIAdviceModalProps {
 }
 
 export function AIAdviceModal({ isOpen, onClose, advice, isLoading }: AIAdviceModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const ratingConfig = {
     good: {
       icon: <CheckCircle className="w-6 h-6" />,
@@ -40,18 +47,29 @@ export function AIAdviceModal({ isOpen, onClose, advice, isLoading }: AIAdviceMo
 
   const config = advice ? ratingConfig[advice.rating] || ratingConfig.neutral : ratingConfig.neutral;
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Light Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-            style={{ zIndex: 100 }}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(255, 255, 255, 0.3)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              zIndex: 100,
+            }}
           />
 
           {/* Modal */}
@@ -159,6 +177,7 @@ export function AIAdviceModal({ isOpen, onClose, advice, isLoading }: AIAdviceMo
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

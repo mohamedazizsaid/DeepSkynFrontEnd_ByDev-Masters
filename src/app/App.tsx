@@ -11,6 +11,9 @@ import { ResetPasswordPage } from './pages/reset-password-page';
 import { GoogleCallbackPage } from './pages/google-callback-page';
 import { OnboardingFlow } from './components/onboarding-flow';
 import { DashboardLayout } from './components/dashboard-layout';
+import { AnimatedBackground } from './components/animated-background';
+import { AccessibilityOverlays } from './components/accessibility-overlays';
+import { AccessibilityPanel } from './components/accessibility-panel';
 import { useAuthStore } from '../stores/auth.store';
 
 const queryClient = new QueryClient({
@@ -25,7 +28,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB]">
+      <div className="min-h-screen flex items-center justify-center relative" style={{ zIndex: 1 }}>
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-[#0EA5E9] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-[#6B7280]">Loading...</p>
@@ -71,6 +74,8 @@ function AppContent() {
 
   return (
     <>
+      {/* Global animated background for premium look */}
+      <AnimatedBackground />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={
@@ -120,7 +125,8 @@ function AppContent() {
           error: { iconTheme: { primary: '#EF4444', secondary: '#fff' } },
         }}
       />
-
+      <AccessibilityOverlays />
+      <AccessibilityPanel />
     </>
   );
 }
@@ -132,5 +138,6 @@ export default function App() {
         <AppContent />
       </BrowserRouter>
     </QueryClientProvider>
+
   );
 }
