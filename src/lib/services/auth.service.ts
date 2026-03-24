@@ -84,6 +84,7 @@ export const authService = {
   async updateProfile(data: { 
     name?: string; 
     avatar?: string; 
+    coverPhoto?: string;
     gender?: string; 
     dateOfBirth?: string; 
     preferredLanguage?: string;

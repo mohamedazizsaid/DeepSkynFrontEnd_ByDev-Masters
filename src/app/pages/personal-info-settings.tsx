@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MapPin, Mail, User, Calendar, Share2, ArrowLeft, ChevronDown } from 'lucide-react';
+import { MapPin, Mail, User, Calendar, Share2, ArrowLeft, ChevronDown, Camera, Image as ImageIcon } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth.store';
 import { authService } from '../../lib/services/auth.service';
 import { addressService, AddressData } from '../../lib/services/address.service';
@@ -27,6 +27,8 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
     email: user?.email || '',
     dateOfBirth: user?.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : '',
     gender: user?.gender || '',
+    avatar: user?.avatar || '',
+    coverPhoto: user?.coverPhoto || '',
   });
   const [selectedAddress, setSelectedAddress] = useState<AddressData | null>(null);
 
@@ -75,6 +77,8 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
         name: formData.name,
         gender: formData.gender,
         dateOfBirth,
+        avatar: formData.avatar,
+        coverPhoto: formData.coverPhoto,
       });
       await loadUser();
       setIsEditing(false);
@@ -113,6 +117,17 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'coverPhoto') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData(prev => ({ ...prev, [type]: reader.result as string }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="flex flex-col gap-6">
       {/* Back Button */}
@@ -120,7 +135,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         onClick={onBack}
-        className="flex items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-colors w-fit"
+        className="flex lg:hidden items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
         <span className="text-sm font-medium">Retour</span>
@@ -170,6 +185,53 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
           <User className="w-5 h-5 text-[#0EA5E9]" />
           Détails personnels
         </h3>
+
+        {/* Profile + Cover Editor */}
+        <div className="mb-10 px-2 sm:px-4">
+          <div className="relative h-40 sm:h-52 bg-gray-100 rounded-3xl overflow-hidden group shadow-inner">
+            {formData.coverPhoto ? (
+              <img src={formData.coverPhoto} alt="Cover" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-r from-[#0EA5E9]/10 to-[#6366F1]/10 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-2 opacity-30">
+                  <ImageIcon className="w-10 h-10 text-[#0EA5E9]" />
+                  <span className="text-xs font-medium uppercase tracking-widest text-[#0EA5E9]">DeepSkyn Background</span>
+                </div>
+              </div>
+            )}
+            
+            {isEditing && (
+              <label className="absolute inset-0 bg-black/30 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex flex-col items-center justify-center text-white gap-2">
+                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-xl">
+                  <Camera className="w-6 h-6" />
+                </div>
+                <span className="text-sm font-semibold tracking-wide drop-shadow-md">Modifier la couverture</span>
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'coverPhoto')} />
+              </label>
+            )}
+
+            <div className="absolute left-6 sm:left-10 -bottom-10">
+               <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-white p-1.5 shadow-2xl overflow-hidden group/avatar ring-1 ring-black/5">
+                 <div className="w-full h-full rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#6366F1] flex items-center justify-center text-white text-4xl sm:text-5xl font-bold overflow-hidden shadow-inner">
+                    {formData.avatar ? (
+                      <img src={formData.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      formData.name?.charAt(0)?.toUpperCase() || 'U'
+                    )}
+                 </div>
+                 {isEditing && (
+                    <label className="absolute inset-0 bg-black/40 backdrop-blur-[1px] opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer flex items-center justify-center text-white">
+                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 truncate">
+                        <Camera className="w-5 h-5" />
+                      </div>
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatar')} />
+                    </label>
+                 )}
+               </div>
+            </div>
+          </div>
+          <div className="h-10" /> {/* Spacer for avatar offset */}
+        </div>
 
         <div className="grid sm:grid-cols-2 gap-5">
           <Input

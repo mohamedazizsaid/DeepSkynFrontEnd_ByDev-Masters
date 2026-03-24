@@ -59,11 +59,10 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
   }, []);
 
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
     age: user?.dateOfBirth ? (new Date().getFullYear() - new Date(user.dateOfBirth).getFullYear()).toString() : '',
     gender: user?.gender || '',
-    avatar: user?.avatar || ''
+    avatar: user?.avatar || '',
+    coverPhoto: user?.coverPhoto || '',
   });
 
   useEffect(() => {
@@ -162,26 +161,6 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
           </div>
         </div>
 
-        {/* Edit / Save buttons — top right on desktop */}
-        <div className="hidden sm:flex items-center gap-3">
-          {!isEditing ? (
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-              <Edit2 className="w-4 h-4" />
-              Modifier
-            </Button>
-          ) : (
-            <>
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
-                <X className="w-4 h-4" />
-                Annuler
-              </Button>
-              <Button size="sm" onClick={handleSave} loading={isSaving}>
-                <Save className="w-4 h-4" />
-                Enregistrer
-              </Button>
-            </>
-          )}
-        </div>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
@@ -197,68 +176,50 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Card>
-              {/* Gradient Banner */}
-              <div className="-mx-6 -mt-6 h-24 sm:h-28 rounded-t-2xl bg-gradient-to-br from-[#0EA5E9] via-[#06B6D4] to-[#8B5CF6] relative overflow-hidden">
-                <div className="absolute inset-0 opacity-20">
-                  <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/20" />
-                  <div className="absolute -bottom-12 -left-6 w-32 h-32 rounded-full bg-white/10" />
-                </div>
+            <Card className="overflow-hidden border-none shadow-xl">
+              {/* Premium Banner */}
+              <div className="-mx-6 -mt-6 h-32 sm:h-40 relative overflow-hidden group">
+                {user?.coverPhoto ? (
+                  <img src={user.coverPhoto} alt="Cover" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-[#0EA5E9] via-[#06B6D4] to-[#8B5CF6]">
+                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImEiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHBhdGggZD0iTTAgMGgyMHYyMEgweiIgZmlsbD0ibm9uZSIvPjxjaXJjbGUgY3g9IjEwIiBjeT0iMTAiIHI9IjEuNSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2EpIi8+PC9zdmc+')] opacity-30" />
+                  </div>
+                )}
               </div>
 
-              {/* Avatar */}
-              <div className="flex flex-col items-center -mt-14 relative z-10">
-                <div className="relative">
-                  <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] p-[3px] shadow-xl shadow-[#0EA5E9]/20">
-                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+              {/* High-End Avatar */}
+              <div className="flex flex-col items-center -mt-16 sm:-mt-20 relative z-10 px-4 pb-6">
+                <div className="relative group/avatar">
+                  <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white p-1.5 shadow-2xl ring-1 ring-black/5">
+                    <div className="w-full h-full rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center text-white text-4xl sm:text-6xl font-bold overflow-hidden shadow-inner">
                       {formData.avatar ? (
                         <img src={formData.avatar} alt="Avatar" className="w-full h-full object-cover" />
                       ) : (
-                        <UserIcon className="w-14 h-14 text-gray-300" />
+                        formData.name?.charAt(0)?.toUpperCase() || 'U'
                       )}
                     </div>
                   </div>
-                  {isEditing && (
-                    <label className="absolute bottom-1 right-1 w-9 h-9 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-[#E5E7EB] hover:border-[#0EA5E9] transition-colors cursor-pointer group">
-                      <Camera className="w-4 h-4 text-[#6B7280] group-hover:text-[#0EA5E9] transition-colors" />
-                      <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} />
-                    </label>
-                  )}
                 </div>
 
-                <h2 className="text-xl font-bold text-[#111827] mt-4">{formData.name || 'Utilisateur'}</h2>
-                <p className="text-sm text-[#6B7280] mt-0.5">{formData.email}</p>
+                <div className="text-center mt-5">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] tracking-tight">{formData.name || 'Utilisateur'}</h2>
+                  <p className="text-sm font-medium text-[#6B7280] flex items-center justify-center gap-1.5 mt-1">
+                    <Mail className="w-3.5 h-3.5" />
+                    {formData.email}
+                  </p>
+                </div>
 
-                <div className="mt-3 flex items-center gap-2 flex-wrap justify-center">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-[#0EA5E9]/10 to-[#06B6D4]/10 text-[#0EA5E9]">
-                    <Sparkles className="w-3 h-3" />
+                <div className="mt-5 flex items-center gap-2 flex-wrap justify-center">
+                  <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#0EA5E9]/10 to-[#6366F1]/10 text-[#0EA5E9] border border-[#0EA5E9]/20 shadow-sm">
+                    <Sparkles className="w-3.5 h-3.5" />
                     Membre Premium
                   </span>
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#6B7280]">
-                    <Clock className="w-3 h-3" />
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-50 text-[#6B7280] border border-gray-100">
+                    <Clock className="w-3.5 h-3.5" />
                     Depuis {memberSince}
                   </span>
                 </div>
-              </div>
-
-              {/* Mobile edit buttons */}
-              <div className="flex sm:hidden items-center gap-2 mt-5">
-                {!isEditing ? (
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => setIsEditing(true)}>
-                    <Edit2 className="w-4 h-4" />
-                    Modifier
-                  </Button>
-                ) : (
-                  <>
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => setIsEditing(false)}>
-                      Annuler
-                    </Button>
-                    <Button size="sm" className="flex-1" onClick={handleSave} loading={isSaving}>
-                      <Save className="w-4 h-4" />
-                      Sauvegarder
-                    </Button>
-                  </>
-                )}
               </div>
             </Card>
           </motion.div>
@@ -377,97 +338,29 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
                 {/* Desktop action already in header */}
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-5">
-                <Input
-                  label="Nom complet"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  icon={<UserIcon className="w-5 h-5" />}
-                  disabled={!isEditing}
-                />
-
-                <Input
-                  label="Adresse email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  icon={<Mail className="w-5 h-5" />}
-                  disabled={!isEditing}
-                />
-
-                <Input
-                  label="Âge"
-                  type="number"
-                  value={formData.age}
-                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                  icon={<Calendar className="w-5 h-5" />}
-                  disabled={!isEditing}
-                />
-
-                <div className="w-full" ref={genderRef}>
-                  <label className="block mb-2 text-sm text-[#374151]">Genre</label>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => isEditing && setIsGenderOpen(!isGenderOpen)}
-                      disabled={!isEditing}
-                      className={`w-full flex items-center pl-10 pr-10 py-3 bg-[#F9FAFB] border-2 rounded-xl 
-                        text-left transition-all duration-200
-                        ${isGenderOpen ? 'border-[#0EA5E9] ring-2 ring-[#0EA5E9]/20' : 'border-[#E5E7EB]'}
-                        ${!isEditing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-                    >
-                      <span className={formData.gender ? 'text-[#111827]' : 'text-[#9CA3AF]'}>
-                        {formData.gender
-                          ? { Male: 'Homme', Female: 'Femme', 'Non-binary': 'Non-binaire', 'Prefer not to say': 'Préfère ne pas dire' }[formData.gender] || formData.gender
-                          : 'Sélectionner'}
-                      </span>
-                    </button>
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none">
-                      <UserIcon className="w-5 h-5" />
+              <div className="grid sm:grid-cols-2 gap-x-8 gap-y-6">
+                {[
+                  { label: "Nom complet", value: formData.name || 'Utilisateur', icon: UserIcon },
+                  { label: "Adresse email", value: formData.email, icon: Mail },
+                  { label: "Âge", value: formData.age ? `${formData.age} ans` : 'N/A', icon: Calendar },
+                  { 
+                    label: "Genre", 
+                    value: formData.gender 
+                      ? { Male: 'Homme', Female: 'Femme', 'Non-binary': 'Non-binaire', 'Prefer not to say': 'Préfère ne pas dire' }[formData.gender] || formData.gender 
+                      : 'N/A', 
+                    icon: UserIcon 
+                  },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-4 p-4 bg-gray-50/50 rounded-2xl border border-gray-100/50">
+                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm text-[#0EA5E9]">
+                      <item.icon className="w-5 h-5" />
                     </div>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
-                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isGenderOpen ? 'rotate-180' : ''}`} />
+                    <div>
+                      <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-0.5">{item.label}</p>
+                      <p className="text-sm font-semibold text-[#374151]">{item.value}</p>
                     </div>
-
-                    <AnimatePresence>
-                      {isGenderOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white rounded-xl border border-[#E5E7EB] shadow-xl overflow-hidden"
-                        >
-                          {[
-                            { value: 'Male', label: 'Homme' },
-                            { value: 'Female', label: 'Femme' },
-                            { value: 'Non-binary', label: 'Non-binaire' },
-                            { value: 'Prefer not to say', label: 'Préfère ne pas dire' },
-                          ].map((option) => (
-                            <button
-                              key={option.value}
-                              type="button"
-                              onClick={() => {
-                                setFormData({ ...formData, gender: option.value });
-                                setIsGenderOpen(false);
-                              }}
-                              className={`w-full flex items-center justify-between px-4 py-3 text-sm transition-colors duration-150
-                                ${formData.gender === option.value
-                                  ? 'bg-[#0EA5E9]/5 text-[#0EA5E9] font-semibold'
-                                  : 'text-[#374151] hover:bg-[#F9FAFB]'
-                                }`}
-                            >
-                              <span>{option.label}</span>
-                              {formData.gender === option.value && (
-                                <Check className="w-4 h-4 text-[#0EA5E9]" />
-                              )}
-                            </button>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </div>
-                </div>
+                ))}
               </div>
             </Card>
           </motion.div>

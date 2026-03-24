@@ -105,7 +105,7 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         onClick={onBack}
-        className="flex items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-colors w-fit"
+        className="flex lg:hidden items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
         <span className="text-sm font-medium">Retour</span>
