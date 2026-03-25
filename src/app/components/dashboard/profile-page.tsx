@@ -180,12 +180,12 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
 
   const handleDownloadReport = async () => {
     if (!reportRef.current) {
-        toast.error('Contenu introuvable pour le rapport.');
+        toast.error(t('profile.reportError') || 'Contenu introuvable pour le rapport.');
         return;
     }
     
     setIsSaving(true);
-    const toastId = toast.loading('Génération du rapport PDF de votre peau...');
+    const toastId = toast.loading(t('profile.generatingReport'));
     
     try {
       const element = reportRef.current;
@@ -218,24 +218,27 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(22);
       pdf.setTextColor(14, 165, 233); // #0EA5E9
-      pdf.text('DeepSkyn - Rapport de Santé Cutanée', pdfWidth / 2, 15, { align: 'center' });
+      pdf.text(t('profile.reportTitle'), pdfWidth / 2, 15, { align: 'center' });
       
       pdf.setFontSize(10);
       pdf.setTextColor(107, 114, 128);
-      pdf.text(`Généré le ${new Date().toLocaleDateString('fr-FR')} pour ${user?.name || 'Utilisateur'}`, pdfWidth / 2, 22, { align: 'center' });
+      pdf.text(t('profile.reportGeneratedAt', { 
+        date: new Date().toLocaleDateString(t('common.loading') === '...جاري التحميل' ? 'ar-SA' : 'fr-FR'), 
+        user: user?.name || t('nav.profile') 
+      }), pdfWidth / 2, 22, { align: 'center' });
       
       pdf.addImage(imgData, 'PNG', (pdfWidth - finalWidth) / 2, 30, finalWidth, finalHeight);
       
       // Add footer
       pdf.setFontSize(8);
-      pdf.text('DeepSkyn AI Skin Analysis Platform - Document Confidentiel', pdfWidth / 2, pdfHeight - 10, { align: 'center' });
+      pdf.text(t('profile.reportConfidential'), pdfWidth / 2, pdfHeight - 10, { align: 'center' });
       
       pdf.save(`Rapport_De_Peau_${user?.name?.replace(/\s+/g, '_') || 'DeepSkyn'}.pdf`);
       
-      toast.success('Votre rapport PDF est prêt !', { id: toastId });
+      toast.success(t('profile.reportReady'), { id: toastId });
     } catch (error) {
       console.error('PDF Generation Error:', error);
-      toast.error('Erreur lors de la génération du PDF.', { id: toastId });
+      toast.error(t('profile.reportError'), { id: toastId });
     } finally {
       setIsSaving(false);
     }
@@ -253,7 +256,7 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
   };
 
   const memberSince = user?.createdAt
-    ? new Date(user.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+    ? new Date(user.createdAt).toLocaleDateString(t('common.loading') === '...جاري التحميل' ? 'ar-SA' : 'fr-FR', { month: 'long', year: 'numeric' })
     : 'N/A';
 
   return (
@@ -281,7 +284,7 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
             className="w-full sm:w-auto rounded-xl px-7 py-3 bg-[#0EA5E9] text-white shadow-lg shadow-[#0EA5E9]/20 hover:shadow-xl hover:shadow-[#0EA5E9]/30 hover:-translate-y-1 active:scale-95 transition-all duration-300 gap-2.5 font-extrabold"
           >
             {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileText className="w-5 h-5 text-white" />}
-            <span className="whitespace-nowrap text-white font-black drop-shadow-sm">Télécharger le rapport (PDF)</span>
+            <span className="whitespace-nowrap text-white font-black drop-shadow-sm">{t('profile.downloadReport')}</span>
           </Button>
         </div>
       </motion.div>
@@ -329,7 +332,7 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
                 </div>
 
                 <div className="text-center mt-6">
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">{formData.name || 'Utilisateur'}</h2>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">{formData.name || t('nav.profile')}</h2>
                   <p className="text-sm font-semibold text-[#6B7280] flex items-center justify-center gap-1.5 mt-1.5 opacity-80">
                     <Mail className="w-4 h-4 text-[#0EA5E9]" />
                     {formData.email}
@@ -339,11 +342,11 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
                 <div className="mt-6 flex items-center gap-2 flex-wrap justify-center">
                   <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-[#0EA5E9]/10 text-[#0EA5E9] border border-[#0EA5E9]/20 shadow-sm transition-colors hover:bg-[#0EA5E9]/20">
                     <Sparkles className="w-3.5 h-3.5" />
-                    Membre Premium
+                    {t('profile.memberPremium')}
                   </span>
                   <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-white/50 backdrop-blur-md text-gray-500 border border-gray-100 shadow-sm">
                     <Clock className="w-3.5 h-3.5 text-[#0EA5E9]" />
-                    Depuis {memberSince}
+                    {t('profile.memberSince', { date: memberSince })}
                   </span>
                 </div>
               </div>
@@ -359,7 +362,7 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
             <div className="grid grid-cols-2 gap-3">
               {[
                 {
-                  label: 'Analyses',
+                  label: t('dashboard.analyses'),
                   value: analysisCount.toString() || '0',
                   icon: Scan,
                   color: 'from-[#0EA5E9] to-[#06B6D4]',
@@ -367,15 +370,15 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
                   textColor: 'text-[#0EA5E9]',
                 },
                 {
-                  label: 'Type de peau',
-                  value: skinProfile?.skinType || 'N/A',
+                  label: t('onboarding.skinTitle'),
+                  value: (t('onboarding.skinTypesLabels') as any)[skinProfile?.skinType || ''] || 'N/A',
                   icon: Droplets,
                   color: 'from-[#8B5CF6] to-[#6366F1]',
                   bg: 'bg-[#8B5CF6]/10',
                   textColor: 'text-[#8B5CF6]',
                 },
                 {
-                  label: 'Score santé',
+                  label: t('dashboard.skinHealth'),
                   value: skinProfile?.healthScore ? `${skinProfile.healthScore}/100` : 'N/A',
                   icon: Heart,
                   color: 'from-[#EC4899] to-[#F43F5E]',
@@ -383,8 +386,8 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
                   textColor: 'text-[#EC4899]',
                 },
                 {
-                  label: 'Âge cutané',
-                  value: skinProfile?.skinAge ? `${skinProfile.skinAge} ans` : 'N/A',
+                  label: t('dashboard.skinAge'),
+                  value: skinProfile?.skinAge ? `${skinProfile.skinAge} ${t('common.years')}` : 'N/A',
                   icon: Activity,
                   color: 'from-[#10B981] to-[#06B6D4]',
                   bg: 'bg-[#10B981]/10',
@@ -428,7 +431,7 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-[#111827]">{t('onboarding.sumTitle')}</h3>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Votre identité cutanée</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{t('profile.skinIdentity')}</p>
                   </div>
                 </div>
 
@@ -440,7 +443,7 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
                     className="text-[#0EA5E9] hover:bg-[#0EA5E9]/10 font-bold rounded-xl px-3 h-9"
                   >
                     <Edit2 className="w-3.5 h-3.5 mr-1.5" />
-                    Modifier
+                    {t('common.edit')}
                   </Button>
                 )}
               </div>
@@ -453,7 +456,7 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
                     size="sm"
                     className="rounded-xl px-4 text-gray-500 font-bold h-9"
                   >
-                    Annuler
+                    {t('common.cancel')}
                   </Button>
                   <Button
                     onClick={handleSave}
@@ -462,7 +465,7 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
                     className="rounded-xl px-5 bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white shadow-md hover:-translate-y-1 active:scale-95 transition-all font-bold h-9"
                   >
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Save className="w-4 h-4 mr-1.5" />}
-                    Enregistrer
+                    {t('common.save')}
                   </Button>
                 </div>
               )}
@@ -536,7 +539,7 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
                               : 'bg-white border-gray-200 text-gray-500 hover:border-[#0EA5E9]/30'
                           }`}
                         >
-                          {id}
+                          {(t('onboarding.concernsLabels') as any)[id] || id}
                         </button>
                       ))}
                     </div>
@@ -559,7 +562,7 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
                                : 'bg-white border-gray-200 text-gray-500 hover:border-[#EF4444]/30'
                            }`}
                          >
-                           {id}
+                           {(t('onboarding.sensitivitiesLabels') as any)[id] || id}
                          </button>
                        ))}
                     </div>
@@ -598,9 +601,9 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
 
               <div className="grid sm:grid-cols-2 gap-5 relative z-10">
                 {[
-                  { label: t('auth.fullName'), value: formData.name || 'Utilisateur', icon: UserIcon, color: 'text-[#0EA5E9]', bg: 'bg-[#0EA5E9]/5' },
+                  { label: t('auth.fullName'), value: formData.name || t('nav.profile'), icon: UserIcon, color: 'text-[#0EA5E9]', bg: 'bg-[#0EA5E9]/5' },
                   { label: t('auth.email'), value: formData.email, icon: Mail, color: 'text-[#8B5CF6]', bg: 'bg-[#8B5CF6]/5' },
-                  { label: "Âge", value: formData.age ? `${formData.age} ans` : 'N/A', icon: Calendar, color: 'text-[#EC4899]', bg: 'bg-[#EC4899]/5' },
+                  { label: t('profile.age'), value: formData.age ? `${formData.age} ${t('common.years')}` : 'N/A', icon: Calendar, color: 'text-[#EC4899]', bg: 'bg-[#EC4899]/5' },
                   { 
                     label: t('onboarding.gender'), 
                     value: formData.gender 
@@ -637,8 +640,8 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
                   <Shield className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-[#111827] tracking-tight">Sécurité du compte</h3>
-                  <p className="text-xs text-[#6B7280] font-medium opacity-70 hidden sm:block">Protégez votre compte avec les meilleurs standards</p>
+                  <h3 className="text-lg font-extrabold text-[#111827] tracking-tight">{t('profile.securityTitle')}</h3>
+                  <p className="text-xs text-[#6B7280] font-medium opacity-70 hidden sm:block">{t('profile.securityDesc')}</p>
                 </div>
               </div>
 
@@ -648,8 +651,8 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
                     <Shield className="w-6 h-6 text-[#8B5CF6]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-[#111827]">Authentification 2FA</p>
-                    <p className="text-xs text-[#6B7280] font-medium">Protection supplémentaire</p>
+                    <p className="text-sm font-bold text-[#111827]">{t('settings.twoFactor')}</p>
+                    <p className="text-xs text-[#6B7280] font-medium">{t('settings.twoFactorDesc')}</p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-[#9CA3AF] group-hover:text-[#8B5CF6] group-hover:translate-x-1 transition-all" />
                 </div>

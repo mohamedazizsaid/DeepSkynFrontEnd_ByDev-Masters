@@ -5,10 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/button';
 import { Input } from '../components/input';
 import { authService } from '../../lib/services/auth.service';
+import { useAccessibilityStore } from '../../stores/accessibility.store';
 import toast from 'react-hot-toast';
 
 export function ForgotPasswordPage() {
   const navigate = useNavigate();
+  const { t } = useAccessibilityStore();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -19,7 +21,7 @@ export function ForgotPasswordPage() {
     try {
       await authService.forgotPassword(email);
       setSent(true);
-      toast.success('Email envoyé !');
+      toast.success(t('auth.emailSent'));
     } catch (error: any) {
       // Always show success to prevent email enumeration
       setSent(true);
@@ -41,18 +43,18 @@ export function ForgotPasswordPage() {
             >
               <CheckCircle className="w-10 h-10 text-[#10B981]" />
             </motion.div>
-            <h1 className="text-2xl font-bold mb-4">Check Your Email</h1>
+            <h1 className="text-2xl font-bold mb-4">{t('auth.checkEmail')}</h1>
             <p className="text-[#6B7280] mb-8">
-              We've sent password reset instructions to{' '}
+              {t('auth.resetInstructionsSent')}{' '}
               <span className="font-medium text-[#111827]">{email}</span>
             </p>
             <div className="space-y-3">
-              <Button onClick={() => navigate('/login')} className="w-full">Back to Sign In</Button>
+              <Button onClick={() => navigate('/login')} className="w-full">{t('auth.backToSignIn')}</Button>
               <button
                 onClick={() => setSent(false)}
                 className="w-full text-sm text-[#6B7280] hover:text-[#0EA5E9] transition-colors"
               >
-                Didn't receive the email? Try again
+                {t('auth.notReceivedEmail')}
               </button>
             </div>
           </div>
@@ -69,7 +71,7 @@ export function ForgotPasswordPage() {
           className="mb-8 flex items-center gap-2 text-[#6B7280] hover:text-[#0EA5E9] transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span>Back to sign in</span>
+          <span>{t('auth.backToSignIn')}</span>
         </button>
 
         <div className="text-center mb-8">
@@ -81,28 +83,28 @@ export function ForgotPasswordPage() {
               DeepSkyn
             </span>
           </div>
-          <h1 className="text-3xl font-bold mb-2">Reset Password</h1>
-          <p className="text-[#6B7280]">Enter your email to receive reset instructions</p>
+          <h1 className="text-3xl font-bold mb-2">{t('auth.resetPassword')}</h1>
+          <p className="text-[#6B7280]">{t('auth.enterEmailReset')}</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-[#E5E7EB]">
           <form onSubmit={handleSubmit} className="space-y-6">
             <Input
               type="email"
-              label="Email"
+              label={t('auth.email')}
               placeholder="your@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               icon={<Mail className="w-5 h-5" />}
               required
             />
-            <Button type="submit" className="w-full" loading={loading}>Send Reset Link</Button>
+            <Button type="submit" className="w-full" loading={loading}>{t('auth.sendResetLink')}</Button>
           </form>
 
           <div className="mt-6 text-center text-sm text-[#6B7280]">
-            Remember your password?{' '}
+            {t('auth.rememberPassword')}{' '}
             <button onClick={() => navigate('/login')} className="text-[#0EA5E9] font-medium hover:underline">
-              Sign in
+              {t('auth.signIn')}
             </button>
           </div>
         </div>

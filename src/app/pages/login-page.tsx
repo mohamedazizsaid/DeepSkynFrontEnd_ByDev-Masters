@@ -33,7 +33,7 @@ export function LoginPage() {
     e.stopPropagation();
 
     if (!captchaValue) {
-      toast.error('Veuillez valider le captcha');
+      toast.error(t('auth.captchaError'));
       return;
     }
 

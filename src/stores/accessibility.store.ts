@@ -46,7 +46,7 @@ interface AccessibilityState {
 
     // Actions
     setLanguage: (lang: Language) => void;
-    t: (key: string) => any;
+    t: (key: string, params?: Record<string, string | number>) => any;
     toggleTheme: () => void;
     setTheme: (theme: 'light' | 'dark') => void;
     setContrastMode: (mode: ContrastMode) => void;
@@ -194,31 +194,42 @@ export const useAccessibilityStore = create<AccessibilityState>()(
                 if (get().isSpeaking) get().stopSpeaking(); // Stop speech if language changes
             },
 
-            t: (keyPath: string) => {
+            t: (keyPath: string, params?: Record<string, string | number>) => {
                 const lang = get().language;
                 const path = keyPath.split('.');
-                let current: any = translations[lang];
-                for (const k of path) {
-                    if (current?.[k] === undefined) {
-                        console.warn(`Translation key missing: ${keyPath} in ${lang}`);
-                        // fallback to fr
-                        let fallbackCurrent: any = translations['fr'];
-                        for (const fbK of path) {
-                            if (fallbackCurrent?.[fbK] === undefined) return keyPath;
-                            fallbackCurrent = fallbackCurrent[fbK];
-                        }
-                        return fallbackCurrent;
+                
+                const translateWithPath = (dict: any, p: string[]) => {
+                    let curr = dict;
+                    for (const k of p) {
+                        if (curr?.[k] === undefined) return null;
+                        curr = curr[k];
                     }
-                    current = current[k];
+                    return curr;
+                };
+
+                let val = translateWithPath(translations[lang], path);
+                if (val === null) {
+                    val = translateWithPath(translations['fr'], path);
                 }
-                return current;
+
+                if (val === null) return keyPath;
+
+                if (params && typeof val === 'string') {
+                    let result = val;
+                    Object.entries(params).forEach(([k, v]) => {
+                        result = result.replace(`{${k}}`, v.toString());
+                    });
+                    return result;
+                }
+                return val;
             },
 
             toggleTheme: () => {
                 const newTheme = get().theme === 'light' ? 'dark' : 'light';
                 applyTheme(newTheme);
                 set({ theme: newTheme });
-                announce(newTheme === 'dark' ? 'Mode sombre activé' : 'Mode clair activé');
+                const { t } = get();
+                announce(newTheme === 'dark' ? t('accessibilityPanel.darkModeOn') : t('accessibilityPanel.lightModeOn'));
             },
 
             setTheme: (theme) => {
@@ -229,8 +240,8 @@ export const useAccessibilityStore = create<AccessibilityState>()(
             setContrastMode: (mode) => {
                 applyContrast(mode);
                 set({ contrastMode: mode });
-                const labels = { off: 'Normal', medium: 'Moyen', high: 'Élevé' };
-                announce(`Contraste ${labels[mode]} activé`);
+                const { t } = get();
+                announce(t('accessibilityPanel.announcements.contrastSet', { mode: t(`accessibilityPanel.contrastLabels.${mode}`) }));
             },
 
             resetContrastMode: () => {
@@ -242,7 +253,8 @@ export const useAccessibilityStore = create<AccessibilityState>()(
                 const next = !get().reduceMotion;
                 toggleCssClass('reduce-motion', next);
                 set({ reduceMotion: next });
-                announce(next ? 'Animations réduites' : 'Animations activées');
+                const { t } = get();
+                announce(next ? t('accessibilityPanel.announcements.animationsReduced') : t('accessibilityPanel.announcements.animationsEnabled'));
             },
 
             toggleDyslexiaFont: () => {

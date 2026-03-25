@@ -7,6 +7,7 @@ import { addressService, AddressData } from '../../lib/services/address.service'
 import { AddressMapPicker } from '../../components/location/address-map-picker';
 import { Button } from '../components/button';
 import { Input } from '../components/input';
+import { Checkbox } from '../components/ui/checkbox';
 import toast from 'react-hot-toast';
 
 interface PersonalInfoSettingsProps {
@@ -29,6 +30,8 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
     gender: user?.gender || '',
     avatar: user?.avatar || '',
     coverPhoto: user?.coverPhoto || '',
+    isPublic: user?.isPublic ?? false,
+    receiveRecommendations: user?.receiveRecommendations ?? true,
   });
   const [selectedAddress, setSelectedAddress] = useState<AddressData | null>(null);
 
@@ -79,10 +82,12 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
         dateOfBirth,
         avatar: formData.avatar,
         coverPhoto: formData.coverPhoto,
+        isPublic: formData.isPublic,
+        receiveRecommendations: formData.receiveRecommendations,
       });
       await loadUser();
       setIsEditing(false);
-      toast.success('Informations mises à jour');
+      toast.success('Votre profil a été mis à jour avec succès ✨');
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally {
@@ -97,7 +102,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
       setSelectedAddress(address);
       setIsEditingAddress(false);
       await loadUser();
-      toast.success('Adresse mise à jour avec succès');
+      toast.success('Votre adresse de livraison a été enregistrée 📍');
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Erreur lors de la mise à jour de l\'adresse');
     } finally {
@@ -110,7 +115,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
       try {
         await addressService.deleteUserAddress();
         setSelectedAddress(null);
-        toast.success('Adresse supprimée');
+        toast.success('L\'adresse a été retirée de votre profil 🗑️');
       } catch (error: any) {
         toast.error(error?.response?.data?.message || 'Erreur lors de la suppression');
       }
@@ -126,6 +131,26 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
       setFormData(prev => ({ ...prev, [type]: reader.result as string }));
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleTogglePrivacy = async (field: 'isPublic' | 'receiveRecommendations', value: boolean) => {
+    // Optimistic UI update
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    try {
+      await authService.updateProfile({ [field]: value });
+      await loadUser();
+      
+      if (field === 'isPublic') {
+        toast.success(value ? 'Votre profil est désormais public 🌍' : 'Votre profil est désormais privé 🔒');
+      } else {
+        toast.success(value ? 'Recommandations personnalisées activées ✨' : 'Recommandations désactivées');
+      }
+    } catch (error: any) {
+      // Revert on error
+      setFormData(prev => ({ ...prev, [field]: !value }));
+      toast.error('Oups ! Impossible de mettre à jour vos préférences de confidentialité 😕');
+    }
   };
 
   return (
@@ -441,15 +466,38 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
           <Share2 className="w-5 h-5 text-[#0EA5E9]" />
           Confidentialité
         </h3>
-        <div className="space-y-3">
-          <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#F9FAFB] cursor-pointer transition-colors">
-            <input type="checkbox" defaultChecked className="w-4 h-4 rounded" />
-            <span className="text-sm text-[#374151]">Afficher mon profil publiquement</span>
-          </label>
-          <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#F9FAFB] cursor-pointer transition-colors">
-            <input type="checkbox" className="w-4 h-4 rounded" />
-            <span className="text-sm text-[#374151]">Recevoir les recommandations personnalisées</span>
-          </label>
+        <div className="space-y-4 pt-2">
+          <div className="flex items-center space-x-3 p-4 rounded-xl bg-gray-50/50 border border-gray-100 hover:border-[#0EA5E9]/30 transition-all group">
+            <Checkbox 
+              id="isPublic" 
+              checked={formData.isPublic}
+              onCheckedChange={(checked) => handleTogglePrivacy('isPublic', !!checked)}
+              className="border-gray-300 data-[state=checked]:border-[#0EA5E9]"
+            />
+            <label htmlFor="isPublic" className="text-sm font-semibold text-gray-700 cursor-pointer flex-1 select-none">
+              Afficher mon profil publiquement
+              <p className="text-[10px] text-gray-500 font-normal mt-0.5">Votre profil sera visible par la communauté DeepSkyn</p>
+            </label>
+            <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${formData.isPublic ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+              {formData.isPublic ? 'Public' : 'Privé'}
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-3 p-4 rounded-xl bg-gray-50/50 border border-gray-100 hover:border-[#0EA5E9]/30 transition-all group">
+            <Checkbox 
+              id="receiveRecommendations" 
+              checked={formData.receiveRecommendations}
+              onCheckedChange={(checked) => handleTogglePrivacy('receiveRecommendations', !!checked)}
+              className="border-gray-300 data-[state=checked]:border-[#0EA5E9]"
+            />
+            <label htmlFor="receiveRecommendations" className="text-sm font-semibold text-gray-700 cursor-pointer flex-1 select-none">
+              Recevoir les recommandations personnalisées
+              <p className="text-[10px] text-gray-500 font-normal mt-0.5">L'IA vous proposera des produits adaptés à vos besoins spécifiques</p>
+            </label>
+            <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${formData.receiveRecommendations ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'}`}>
+              {formData.receiveRecommendations ? 'Activé' : 'Désactivé'}
+            </div>
+          </div>
         </div>
       </motion.div>
     </div>

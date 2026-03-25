@@ -41,10 +41,10 @@ interface StepItem {
   order: number;
 }
 
-function mapRoutineSteps(steps: RoutineStep[]): StepItem[] {
+function mapRoutineSteps(steps: RoutineStep[], t: any): StepItem[] {
   return steps.map((s, i) => ({
     id: s.id || `step-${i}-${Date.now()}`,
-    name: s.productName || s.name || `Étape ${i + 1}`,
+    name: s.productName || s.name || `${t('routine.step')} ${i + 1}`,
     category: s.category || 'treatment',
     description: s.description || s.notes || '',
     duration: typeof s.duration === 'string' ? parseInt(s.duration) || 30 : s.duration || 30,
@@ -107,16 +107,16 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
       const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       
       if (reminders.morningEnabled && reminders.morningTime === currentTime) {
-        new Notification("Routine Matin ☀️", {
-          body: "C'est l'heure de votre routine du matin ! ✨",
+        new Notification(t('routine.notifs.morningTitle'), {
+          body: t('routine.notifs.morningBody'),
           icon: "/favicon.ico"
         });
         setActiveTab('am');
       }
       
       if (reminders.eveningEnabled && reminders.eveningTime === currentTime) {
-        new Notification("Routine Soir 🌙", {
-          body: "C'est l'heure de votre routine du soir ! 🌙",
+        new Notification(t('routine.notifs.eveningTitle'), {
+          body: t('routine.notifs.eveningBody'),
           icon: "/favicon.ico"
         });
         setActiveTab('pm');
@@ -178,11 +178,11 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
         );
 
         if (am) {
-          setAmSteps(mapRoutineSteps(am.steps || []));
+          setAmSteps(mapRoutineSteps(am.steps || [], t));
           setRoutineId(am.id);
         }
         if (pm) {
-          setPmSteps(mapRoutineSteps(pm.steps || []));
+          setPmSteps(mapRoutineSteps(pm.steps || [], t));
           if (!am) setRoutineId(pm.id);
         }
 
@@ -210,7 +210,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
       const routine = await routineService.generateAI({ type });
 
       if (routine?.steps) {
-        const steps = mapRoutineSteps(routine.steps);
+        const steps = mapRoutineSteps(routine.steps, t);
         if (type === 'AM') setAmSteps(steps);
         else setPmSteps(steps);
         setRoutineId(routine.id);
@@ -220,20 +220,20 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
       const defaultSteps: StepItem[] =
         activeTab === 'am'
           ? [
-              { id: 'def-1', name: 'Nettoyant doux', category: 'cleanser', description: 'Nettoyer en douceur', duration: 60, completed: false, order: 1 },
-              { id: 'def-2', name: 'Tonique hydratant', category: 'toner', description: 'Équilibrer le pH', duration: 30, completed: false, order: 2 },
-              { id: 'def-3', name: 'Sérum Vitamine C', category: 'serum', description: 'Protection antioxydante', duration: 30, completed: false, order: 3 },
-              { id: 'def-4', name: 'Crème contour yeux', category: 'eye_cream', description: 'Hydrater la zone délicate', duration: 20, completed: false, order: 4 },
-              { id: 'def-5', name: 'Hydratant léger', category: 'moisturizer', description: 'Sceller l\'hydratation', duration: 30, completed: false, order: 5 },
-              { id: 'def-6', name: 'SPF 50+', category: 'sunscreen', description: 'Protection solaire indispensable', duration: 30, completed: false, order: 6 },
+              { id: 'def-1', name: t('routine.products.cleanser'), category: 'cleanser', description: t('routine.products.cleanserDesc'), duration: 60, completed: false, order: 1 },
+              { id: 'def-2', name: t('routine.products.toner'), category: 'toner', description: t('routine.products.tonerDesc'), duration: 30, completed: false, order: 2 },
+              { id: 'def-3', name: t('routine.products.serum'), category: 'serum', description: t('routine.products.serumDesc'), duration: 30, completed: false, order: 3 },
+              { id: 'def-4', name: t('routine.products.eye_cream'), category: 'eye_cream', description: t('routine.products.eye_creamDesc'), duration: 20, completed: false, order: 4 },
+              { id: 'def-5', name: t('routine.products.moisturizer'), category: 'moisturizer', description: t('routine.products.moisturizerDesc'), duration: 30, completed: false, order: 5 },
+              { id: 'def-6', name: t('routine.products.sunscreen'), category: 'sunscreen', description: t('routine.products.sunscreenDesc'), duration: 30, completed: false, order: 6 },
             ]
           : [
-              { id: 'def-7', name: 'Huile démaquillante', category: 'makeup_remover', description: 'Premier nettoyage', duration: 60, completed: false, order: 1 },
-              { id: 'def-8', name: 'Nettoyant doux', category: 'cleanser', description: 'Second nettoyage', duration: 60, completed: false, order: 2 },
-              { id: 'def-9', name: 'Exfoliant doux', category: 'exfoliant', description: '2-3x par semaine', duration: 30, completed: false, order: 3 },
-              { id: 'def-10', name: 'Sérum rétinol', category: 'serum', description: 'Renouvellement cellulaire', duration: 30, completed: false, order: 4 },
-              { id: 'def-11', name: 'Crème contour yeux', category: 'eye_cream', description: 'Soin nourrissant', duration: 20, completed: false, order: 5 },
-              { id: 'def-12', name: 'Crème de nuit', category: 'night_cream', description: 'Réparation nocturne', duration: 30, completed: false, order: 6 },
+              { id: 'def-7', name: t('routine.products.makeup_remover'), category: 'makeup_remover', description: t('routine.products.makeup_removerDesc'), duration: 60, completed: false, order: 1 },
+              { id: 'def-8', name: t('routine.products.cleanser'), category: 'cleanser', description: t('routine.products.cleanserDesc'), duration: 60, completed: false, order: 2 },
+              { id: 'def-9', name: t('routine.products.exfoliant'), category: 'exfoliant', description: t('routine.products.exfoliantDesc'), duration: 30, completed: false, order: 3 },
+              { id: 'def-10', name: t('routine.products.serum'), category: 'serum', description: t('routine.products.serumDesc'), duration: 30, completed: false, order: 4 },
+              { id: 'def-11', name: t('routine.products.eye_cream'), category: 'eye_cream', description: t('routine.products.eye_creamDesc'), duration: 20, completed: false, order: 5 },
+              { id: 'def-12', name: t('routine.products.night_cream'), category: 'night_cream', description: t('routine.products.night_creamDesc'), duration: 30, completed: false, order: 6 },
             ];
 
       setCurrentSteps(defaultSteps);
@@ -261,7 +261,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
         setCurrentAdvice(advice);
       } catch {
         setCurrentAdvice({
-          advice: 'Modification enregistrée. Continuez à prendre soin de votre peau ! ✨',
+          advice: t('routine.adviceFallback'),
           rating: 'neutral',
           emoji: '✨',
         });
@@ -277,7 +277,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
     setCurrentSteps(newSteps);
     // Debounce advice request
     setTimeout(() => {
-      requestAdvice('reorder', 'Réorganisation des étapes de la routine');
+      requestAdvice('reorder', t('routine.reorderDesc'));
     }, 800);
   };
 
@@ -294,7 +294,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
     };
 
     setCurrentSteps((prev) => [...prev, newStep]);
-    requestAdvice('add_step', `Ajout de "${stepData.name}" à la routine`, stepData.name);
+    requestAdvice('add_step', t('routine.addStepDesc').replace('{name}', stepData.name), stepData.name);
   };
 
   // ─── Handle remove step ───
@@ -412,7 +412,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 }`}
               >
                 {show3D ? <Box className="w-4 h-4" /> : <List className="w-4 h-4" />}
-                {show3D ? '3D' : 'Liste'}
+                {show3D ? '3D' : t('common.list')}
               </motion.button>
             </div>
           </div>
@@ -473,13 +473,13 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                     {activeTab === 'am' && reminders.morningEnabled && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-700 flex items-center gap-1">
                         <Bell className="w-2.5 h-2.5" />
-                        Rappel à {reminders.morningTime}
+                        {t('routine.rappelAt')} {reminders.morningTime}
                       </span>
                     )}
                     {activeTab === 'pm' && reminders.eveningEnabled && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-700 flex items-center gap-1">
                         <Bell className="w-2.5 h-2.5" />
-                        Rappel à {reminders.eveningTime}
+                        {t('routine.rappelAt')} {reminders.eveningTime}
                       </span>
                     )}
                   </div>
@@ -534,12 +534,12 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 <InfoCard
                   title={t('routine.applicationOrder')}
                   items={[
-                    'Nettoyant',
-                    'Tonique',
-                    'Sérum',
-                    'Contour yeux',
-                    'Hydratant',
-                    'SPF (matin)',
+                    t('routine.products.cleanser'),
+                    t('routine.products.toner'),
+                    t('routine.products.serum'),
+                    t('routine.products.eye_cream'),
+                    t('routine.products.moisturizer'),
+                    t('routine.products.sunscreen') + ` (${t('routine.morning')})`,
                   ]}
                 />
                 <TipsCard />
@@ -555,7 +555,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                   <div className="w-full h-[400px] rounded-2xl bg-white border border-gray-200 shadow-sm flex items-center justify-center">
                     <div className="text-center">
                       <Loader2 className="w-8 h-8 text-[#0EA5E9] animate-spin mx-auto mb-2" />
-                      <p className="text-gray-500 text-xs">Chargement du modèle 3D...</p>
+                      <p className="text-gray-500 text-xs">{t('routine.loading3D')}</p>
                     </div>
                   </div>
                 }
@@ -573,12 +573,12 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
               <InfoCard
                 title={t('routine.applicationOrder')}
                 items={[
-                  'Nettoyant',
-                  'Tonique',
-                  'Sérum',
-                  'Contour yeux',
-                  'Hydratant',
-                  'SPF (matin)',
+                  t('routine.products.cleanser'),
+                  t('routine.products.toner'),
+                  t('routine.products.serum'),
+                  t('routine.products.eye_cream'),
+                  t('routine.products.moisturizer'),
+                  t('routine.products.sunscreen') + ` (${t('routine.morning')})`,
                 ]}
               />
               <TipsCard />
@@ -645,20 +645,13 @@ function InfoCard({ title, items }: { title: string; items: string[] }) {
 
 function TipsCard() {
   const { t } = useAccessibilityStore();
-  const tips = [
-    'Attendez 30-60s entre chaque étape',
-    'Appliquez sur peau humide pour mieux absorber',
-    'Ne mélangez pas Vitamine C et Rétinol',
-    'SPF toujours en dernière étape le matin',
-  ];
 
   return (
     <div
       className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
     >
-      <h3 className="font-bold text-gray-900 text-sm mb-3">{t('routine.proTips')}</h3>
       <div className="space-y-2">
-        {tips.map((tip, i) => (
+        {t('routine.tips').map((tip: string, i: number) => (
           <div key={i} className="flex items-start gap-2">
             <span className="text-[#10B981] text-xs mt-0.5">✓</span>
             <span className="text-xs text-gray-600 leading-relaxed">{tip}</span>

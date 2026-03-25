@@ -5,10 +5,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/button';
 import { Input } from '../components/input';
 import { authService } from '../../lib/services/auth.service';
+import { useAccessibilityStore } from '../../stores/accessibility.store';
 import toast from 'react-hot-toast';
 
 export function ResetPasswordPage() {
   const navigate = useNavigate();
+  const { t } = useAccessibilityStore();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
 
@@ -37,16 +39,16 @@ export function ResetPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      toast.error('Les mots de passe ne correspondent pas');
+      toast.error(t('auth.passMismatch'));
       return;
     }
     setLoading(true);
     try {
       await authService.resetPassword(token, newPassword);
       setSuccess(true);
-      toast.success('Mot de passe réinitialisé !');
+      toast.success(t('auth.passwordResetSuccess'));
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Erreur lors de la réinitialisation');
+      toast.error(error?.response?.data?.message || t('auth.resetError'));
     } finally {
       setLoading(false);
     }
@@ -68,9 +70,9 @@ export function ResetPasswordPage() {
             <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[#EF4444]/10 flex items-center justify-center">
               <XCircle className="w-10 h-10 text-[#EF4444]" />
             </div>
-            <h1 className="text-2xl font-bold mb-4">Lien invalide</h1>
-            <p className="text-[#6B7280] mb-8">Ce lien de réinitialisation est invalide ou a expiré.</p>
-            <Button onClick={() => navigate('/forgot-password')} className="w-full">Demander un nouveau lien</Button>
+            <h1 className="text-2xl font-bold mb-4">{t('auth.invalidLink')}</h1>
+            <p className="text-[#6B7280] mb-8">{t('auth.invalidLinkDesc')}</p>
+            <Button onClick={() => navigate('/forgot-password')} className="w-full">{t('auth.requestNewLink')}</Button>
           </div>
         </motion.div>
       </div>
@@ -90,9 +92,9 @@ export function ResetPasswordPage() {
             >
               <CheckCircle className="w-10 h-10 text-[#10B981]" />
             </motion.div>
-            <h1 className="text-2xl font-bold mb-4">Mot de passe réinitialisé</h1>
-            <p className="text-[#6B7280] mb-8">Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</p>
-            <Button onClick={() => navigate('/login')} className="w-full">Se connecter</Button>
+            <h1 className="text-2xl font-bold mb-4">{t('auth.passwordReset')}</h1>
+            <p className="text-[#6B7280] mb-8">{t('auth.nowCanSignIn')}</p>
+            <Button onClick={() => navigate('/login')} className="w-full">{t('auth.signIn')}</Button>
           </div>
         </motion.div>
       </div>
@@ -111,16 +113,16 @@ export function ResetPasswordPage() {
               DeepSkyn
             </span>
           </div>
-          <h1 className="text-3xl font-bold mb-2">New Password</h1>
-          <p className="text-[#6B7280]">Choose a strong password for your account</p>
+          <h1 className="text-3xl font-bold mb-2">{t('auth.newPasswordLabel')}</h1>
+          <p className="text-[#6B7280]">{t('auth.chooseStrongPassword')}</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-[#E5E7EB]">
           <form onSubmit={handleSubmit} className="space-y-6">
             <Input
               type="password"
-              label="New Password"
-              placeholder="Min 8 characters"
+              label={t('auth.newPasswordLabel')}
+              placeholder={t('auth.min8Chars')}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               icon={<Lock className="w-5 h-5" />}
@@ -128,12 +130,12 @@ export function ResetPasswordPage() {
             />
             <Input
               type="password"
-              label="Confirm Password"
+              label={t('auth.confirmPassword')}
               placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               icon={<Lock className="w-5 h-5" />}
-              error={confirmPassword && newPassword !== confirmPassword ? "Passwords don't match" : undefined}
+              error={confirmPassword && newPassword !== confirmPassword ? t('auth.passMismatch') : undefined}
               required
             />
             <Button
@@ -142,7 +144,7 @@ export function ResetPasswordPage() {
               loading={loading}
               disabled={newPassword.length < 8 || newPassword !== confirmPassword}
             >
-              Reset Password
+              {t('auth.resetPassword')}
             </Button>
           </form>
         </div>

@@ -48,7 +48,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
 
   const skinHealthScore = latestAnalysis?.healthScore ?? skinProfile?.healthScore ?? 0;
   const skinAge = latestAnalysis?.skinAge ?? skinProfile?.skinAge ?? null;
-  const userName = user?.given_name || user?.name?.split(' ')[0] || 'Utilisateur';
+  const userName = user?.given_name || user?.name?.split(' ')[0] || t('nav.profile');
   const scoreChange = calculateScoreChange(stats);
 
   const realAge = (() => {

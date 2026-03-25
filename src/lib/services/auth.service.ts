@@ -94,6 +94,8 @@ export const authService = {
     country?: string;
     latitude?: number;
     longitude?: number;
+    isPublic?: boolean;
+    receiveRecommendations?: boolean;
   }): Promise<UserProfile> {
     const res = await apiClient.patch<UserProfile>('/auth/profile', data);
     return res.data;

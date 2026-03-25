@@ -55,6 +55,8 @@ export interface UserProfile {
   gender?: string;
   dateOfBirth?: string;
   preferredLanguage?: string;
+  isPublic?: boolean;
+  receiveRecommendations?: boolean;
   createdAt?: string;
 }
 
