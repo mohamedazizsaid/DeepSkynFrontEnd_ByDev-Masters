@@ -25,6 +25,8 @@ import {
   Heart,
   MessageCircle,
   FileText,
+  Layers,
+  Snowflake,
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -413,164 +415,45 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
             </div>
           </motion.div>
 
-          {/* Skin Profile Summary */}
+          {/* Coach IA Insights / AI Message Card */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.16 }}
+            className="mt-2"
           >
-            <Card className="relative overflow-hidden">
-              {isEditing && (
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#0EA5E9]/5 rounded-bl-full -mr-16 -mt-16 z-0" />
-              )}
+            <Card className="bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] border-none shadow-2xl overflow-hidden relative group cursor-pointer p-6">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 transition-transform duration-700 group-hover:scale-150" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-2xl -ml-12 -mb-12" />
               
-              <div className="flex items-center justify-between mb-6 relative z-10">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#F9A8D4] to-[#FED7AA] flex items-center justify-center shadow-md">
-                    <Sun className="w-5 h-5 text-white" />
+              <div className="relative z-10 text-left">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-[#111827]">{t('onboarding.sumTitle')}</h3>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{t('profile.skinIdentity')}</p>
+                    <h3 className="text-white font-black text-sm uppercase tracking-widest leading-none">Analyse du Coach IA</h3>
+                    <p className="text-white/60 text-[10px] font-bold mt-1.5 uppercase tracking-wider">Insight du jour</p>
                   </div>
                 </div>
-
-                {!isEditing && (
-                  <Button
-                    onClick={() => setIsEditing(true)}
-                    variant="ghost"
-                    size="sm"
-                    className="text-[#0EA5E9] hover:bg-[#0EA5E9]/10 font-bold rounded-xl px-3 h-9"
-                  >
-                    <Edit2 className="w-3.5 h-3.5 mr-1.5" />
-                    {t('common.edit')}
-                  </Button>
-                )}
+                
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 mb-6 group-hover:bg-white/15 transition-all">
+                  <p className="text-white text-sm font-bold leading-relaxed italic">
+                    "Votre profil indique une légère déshydratation en zone T. Pensez à augmenter votre apport en eau aujourd'hui !"
+                  </p>
+                </div>
+                
+                <Button 
+                  className="w-full !bg-white !text-black hover:!bg-white/95 font-black rounded-xl h-11 shadow-2xl active:scale-95 transition-all border-none relative z-20"
+                >
+                  Discuter avec le coach
+                </Button>
               </div>
-
-              {isEditing && (
-                <div className="flex items-center gap-2 mb-6 relative z-10">
-                  <Button
-                    onClick={() => setIsEditing(false)}
-                    variant="ghost"
-                    size="sm"
-                    className="rounded-xl px-4 text-gray-500 font-bold h-9"
-                  >
-                    {t('common.cancel')}
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    size="sm"
-                    className="rounded-xl px-5 bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white shadow-md hover:-translate-y-1 active:scale-95 transition-all font-bold h-9"
-                  >
-                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Save className="w-4 h-4 mr-1.5" />}
-                    {t('common.save')}
-                  </Button>
-                </div>
-              )}
-
-              {!isEditing ? (
-                <div className="space-y-4 relative z-10">
-                  {[
-                    { label: t('onboarding.fitzTitle'), value: (t('onboarding.fitzTypesLabels') as any)[skinProfile?.fitzpatrickType?.toString() || ''] || 'N/A' },
-                    { label: t('onboarding.skinTitle'), value: (t('onboarding.skinTypesLabels') as any)[skinProfile?.skinType || ''] || 'N/A' },
-                    { label: t('onboarding.concernTitle'), value: skinProfile?.concerns?.length ? `${skinProfile.concerns.length} ${t('onboarding.concernSuffix')}` : 'N/A' },
-                    { label: t('dashboard.skinHealth'), value: skinProfile?.healthScore ? `${skinProfile.healthScore}/100` : 'N/A' },
-                  ].map((item, index) => (
-                    <div key={index} className="flex flex-col gap-1 p-3 rounded-2xl bg-gray-50/50 border border-transparent hover:border-gray-100 hover:bg-white transition-all">
-                      <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">{item.label}</span>
-                      <span className="text-sm font-bold text-gray-800">{item.value}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-6 relative z-10">
-                  {/* Fitzpatrick Type Edit */}
-                  <div>
-                    <label className="text-xs font-bold text-[#6B7280] uppercase tracking-wider mb-2 block">{t('onboarding.fitzTitle')}</label>
-                    <div className="grid grid-cols-6 gap-2">
-                      {[1, 2, 3, 4, 5, 6].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          onClick={() => setEditProfileData(prev => ({ ...prev, fitzpatrickType: num }))}
-                          className={`h-10 rounded-lg font-bold transition-all ${
-                            editProfileData.fitzpatrickType === num
-                              ? 'bg-[#0EA5E9] text-white shadow-md scale-110'
-                              : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                          }`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Skin Type Edit */}
-                  <div>
-                    <label className="text-xs font-bold text-[#6B7280] uppercase tracking-wider mb-2 block">{t('onboarding.skinTitle')}</label>
-                    <select
-                      value={editProfileData.skinType}
-                      onChange={(e) => setEditProfileData(prev => ({ ...prev, skinType: e.target.value as any }))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-[#374151] focus:ring-2 focus:ring-[#0EA5E9] focus:border-transparent outline-none transition-all"
-                    >
-                      <option value="">Sélectionner</option>
-                      {Object.entries(t('onboarding.skinTypesLabels') as any).map(([key, label]: any) => (
-                        <option key={key} value={key}>{label}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Concerns Picker */}
-                  <div>
-                    <label className="text-xs font-bold text-[#6B7280] uppercase tracking-wider mb-2 block">
-                      {t('onboarding.concernTitle')} ({editProfileData.concerns.length})
-                    </label>
-                    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1">
-                      {['acne', 'wrinkles', 'dark-spots', 'dryness', 'sensitivity', 'redness', 'large-pores', 'dark-circles', 'uneven-texture', 'dullness', 'hyperpigmentation', 'oiliness'].map((id) => (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => toggleConcern(id)}
-                          className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                            editProfileData.concerns.includes(id)
-                              ? 'bg-[#0EA5E9]/10 border-[#0EA5E9] text-[#0EA5E9]'
-                              : 'bg-white border-gray-200 text-gray-500 hover:border-[#0EA5E9]/30'
-                          }`}
-                        >
-                          {(t('onboarding.concernsLabels') as any)[id] || id}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Sensitivities */}
-                  <div>
-                    <label className="text-xs font-bold text-[#6B7280] uppercase tracking-wider mb-2 block">
-                      {t('onboarding.sensTitle')}
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                       {['fragrance', 'alcohol', 'retinol', 'aha-bha', 'sulfates', 'parabens'].map(id => (
-                         <button
-                           key={id}
-                           type="button"
-                           onClick={() => toggleSensitivity(id)}
-                           className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                             editProfileData.sensitivities.includes(id)
-                               ? 'bg-[#EF4444]/10 border-[#EF4444] text-[#EF4444]'
-                               : 'bg-white border-gray-200 text-gray-500 hover:border-[#EF4444]/30'
-                           }`}
-                         >
-                           {(t('onboarding.sensitivitiesLabels') as any)[id] || id}
-                         </button>
-                       ))}
-                    </div>
-                  </div>
-                </div>
-              )}
             </Card>
           </motion.div>
+
+
+
         </div>
 
         {/* ═══════════════════════════════════════════════════════
@@ -719,6 +602,285 @@ export function ProfilePage({ onBack }: ProfilePageProps) {
                   </motion.div>
                 ))}
               </div>
+            </Card>
+          </motion.div>
+
+          {/* Skin Profile Summary (Moved here, below Activity) */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.32 }}
+          >
+            <Card className="relative overflow-hidden bg-white/70 backdrop-blur-xl border-white/40 shadow-2xl group/skin">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#0EA5E9]/5 rounded-bl-full -mr-16 -mt-16 transition-transform duration-700 group-hover/skin:scale-110" />
+              
+              <div className="flex items-center justify-between mb-8 relative z-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#F9A8D4] to-[#FED7AA] flex items-center justify-center shadow-lg shadow-pink-200/50 group-hover/skin:rotate-12 transition-transform duration-500">
+                    <Sun className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-extrabold text-[#111827] tracking-tight">{t('onboarding.sumTitle')}</h3>
+                    <p className="text-[10px] font-extrabold text-blue-500 uppercase tracking-widest">{t('profile.skinIdentity')}</p>
+                  </div>
+                </div>
+
+                {!isEditing && (
+                  <Button
+                    onClick={() => setIsEditing(true)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-[#0EA5E9] hover:bg-[#0EA5E9]/10 font-bold rounded-2xl px-4 h-10 transition-all border border-transparent hover:border-[#0EA5E9]/20"
+                  >
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    {t('common.edit')}
+                  </Button>
+                )}
+              </div>
+
+              {!isEditing ? (
+                <div className="space-y-8 relative z-10">
+                  {/* Premium Skin Type Hero Card */}
+                  {(() => {
+                    const skinTypeInfo: Record<string, { icon: any, gradient: string, bg: string, desc: string, detail: string }> = {
+                      normal: { 
+                        icon: Sparkles, 
+                        gradient: 'from-[#10B981] to-[#34D399]', 
+                        bg: 'bg-[#10B981]/10',
+                        desc: 'Peau équilibrée et saine',
+                        detail: 'Texture uniforme, pores peu visibles, teint naturellement lumineux.'
+                      },
+                      oily: { 
+                        icon: Droplets, 
+                        gradient: 'from-[#F59E0B] to-[#FBBF24]', 
+                        bg: 'bg-[#F59E0B]/10',
+                        desc: 'Tendance aux brillances',
+                        detail: 'Pores dilatés, brillance excessive en zone T, tendance aux imperfections.'
+                      },
+                      dry: { 
+                        icon: Sun, 
+                        gradient: 'from-[#EF4444] to-[#F87171]', 
+                        bg: 'bg-[#EF4444]/10',
+                        desc: 'Besoin d\'hydratation intense',
+                        detail: 'Sensations de tiraillement, desquamation légère, teint parfois terne.'
+                      },
+                      combination: { 
+                        icon: Layers, 
+                        gradient: 'from-[#8B5CF6] to-[#A78BFA]', 
+                        bg: 'bg-[#8B5CF6]/10',
+                        desc: 'Zone T grasse et joues sèches',
+                        detail: 'Équilibre complexe entre excès de sébum central et sécheresse latérale.'
+                      },
+                      sensitive: { 
+                        icon: Snowflake, 
+                        gradient: 'from-[#EC4899] to-[#F472B6]', 
+                        bg: 'bg-[#EC4899]/10',
+                        desc: 'Réactivité et rougeurs',
+                        detail: 'Peau fragile réagissant aux agressions extérieures et aux produits forts.'
+                      },
+                    };
+                    const type = skinProfile?.skinType || 'normal';
+                    const info = skinTypeInfo[type] || skinTypeInfo.normal;
+
+                    return (
+                      <div className="relative group/hero overflow-hidden rounded-[2.5rem] bg-white/40 border border-white/60 p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:bg-white/60 hover:-translate-y-1">
+                        <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${info.gradient} opacity-5 rounded-full blur-3xl -mr-32 -mt-32 transition-transform duration-1000 group-hover/hero:scale-150`} />
+                        
+                        <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+                          <div className={`w-24 h-24 rounded-[2rem] bg-gradient-to-br ${info.gradient} flex items-center justify-center text-white shadow-2xl shadow-emerald-500/20 group-hover/hero:rotate-12 transition-transform duration-700`}>
+                             <info.icon className="w-12 h-12" />
+                          </div>
+                          
+                          <div className="flex-1 text-center md:text-left">
+                            <span className="text-[10px] uppercase tracking-[0.3em] font-black text-blue-500 mb-2 block">{t('onboarding.skinTitle')}</span>
+                            <h2 className="text-3xl font-black text-[#111827] mb-2 tracking-tight">{(t('onboarding.skinTypesLabels') as any)[type] || type}</h2>
+                            <p className="text-sm font-bold text-gray-500 mb-4">{info.desc}</p>
+                            <div className="p-4 rounded-2xl bg-white/60 border border-white/80 inline-block">
+                               <p className="text-xs font-semibold text-gray-400 italic leading-relaxed">"{info.detail}"</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col items-center gap-2 p-6 rounded-[2rem] bg-white/80 border border-white shadow-inner">
+                             <Sun className="w-5 h-5 text-amber-500" />
+                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">{t('onboarding.fitzTitle')}</span>
+                             <span className="text-2xl font-black text-gray-800 tracking-tighter">Type {skinProfile?.fitzpatrickType || 'N/A'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Secondary Details: Concerns & Sensitivities */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Concerns Section */}
+                    <div className="p-8 rounded-[2.5rem] bg-[#0EA5E9]/5 border border-[#0EA5E9]/10 relative overflow-hidden group/concerns">
+                       <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-[#0EA5E9]/10 rounded-full blur-2xl group-hover/concerns:scale-150 transition-transform duration-700" />
+                       <div className="flex items-center gap-3 mb-6 relative z-10">
+                          <div className="w-10 h-10 rounded-xl bg-[#0EA5E9] flex items-center justify-center shadow-lg shadow-[#0EA5E9]/20">
+                             <Activity className="w-5 h-5 text-white" />
+                          </div>
+                          <h3 className="text-sm font-black text-gray-800 uppercase tracking-widest">{t('onboarding.concernTitle')}</h3>
+                       </div>
+                       
+                       <div className="flex flex-wrap gap-2.5 relative z-10">
+                          {skinProfile?.concerns?.map(id => (
+                            <span key={id} className="px-5 py-2.5 rounded-2xl bg-white text-[11px] font-black text-[#0EA5E9] border border-[#0EA5E9]/10 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all">
+                               {(t('onboarding.concernsLabels') as any)[id] || id}
+                            </span>
+                          )) || <span className="text-xs text-gray-400 font-bold italic">Aucune préoccupation renseignée</span>}
+                       </div>
+                    </div>
+
+                    {/* Sensitivities Section */}
+                    <div className="p-8 rounded-[2.5rem] bg-[#EF4444]/5 border border-[#EF4444]/10 relative overflow-hidden group/sens">
+                       <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-[#EF4444]/10 rounded-full blur-2xl group-hover/sens:scale-150 transition-transform duration-700" />
+                       <div className="flex items-center gap-3 mb-6 relative z-10">
+                          <div className="w-10 h-10 rounded-xl bg-[#EF4444] flex items-center justify-center shadow-lg shadow-[#EF4444]/20">
+                             <Shield className="w-5 h-5 text-white" />
+                          </div>
+                          <h3 className="text-sm font-black text-gray-800 uppercase tracking-widest">{t('onboarding.sensTitle')}</h3>
+                       </div>
+                       
+                       <div className="flex flex-wrap gap-2.5 relative z-10">
+                          {skinProfile?.sensitivities?.map(id => (
+                            <span key={id} className="px-5 py-2.5 rounded-2xl bg-white text-[11px] font-black text-[#EF4444] border border-[#EF4444]/10 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all">
+                               {(t('onboarding.sensitivitiesLabels') as any)[id] || id}
+                            </span>
+                          )) || <span className="text-xs text-gray-400 font-bold italic">Aucune sensibilité renseignée</span>}
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-8 relative z-10 pb-4">
+                  {/* Fitzpatrick Type Edit */}
+                  <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 block">{t('onboarding.fitzTitle')}</label>
+                    <div className="grid grid-cols-6 gap-3">
+                      {[1, 2, 3, 4, 5, 6].map((num) => {
+                        const colors = [
+                          'bg-[#FDF2F0]', 'bg-[#F9E5D9]', 'bg-[#F2D7B4]', 
+                          'bg-[#D8B48F]', 'bg-[#A67C52]', 'bg-[#4B3621]'
+                        ];
+                        return (
+                          <button
+                            key={num}
+                            type="button"
+                            onClick={() => setEditProfileData(prev => ({ ...prev, fitzpatrickType: num }))}
+                            className={`group relative h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                              editProfileData.fitzpatrickType === num
+                                ? 'ring-2 ring-[#0EA5E9] ring-offset-4 scale-110 z-10'
+                                : 'hover:scale-105 opacity-70 hover:opacity-100'
+                            }`}
+                          >
+                            <div className={`w-full h-full rounded-xl ${colors[num-1]} shadow-sm`} />
+                            {editProfileData.fitzpatrickType === num && (
+                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#0EA5E9] rounded-full flex items-center justify-center shadow-lg decoration-none">
+                                <Check className="w-3 h-3 text-white" />
+                              </div>
+                            )}
+                            <span className={`absolute inset-0 flex items-center justify-center text-xs font-black ${num > 4 ? 'text-white' : 'text-gray-800'} mix-blend-overlay`}>
+                              {num}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+
+                  {/* Skin Type Edit */}
+                  <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 block">{t('onboarding.skinTitle')}</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {Object.entries(t('onboarding.skinTypesLabels') as any).map(([key, label]: any) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setEditProfileData(prev => ({ ...prev, skinType: key }))}
+                          className={`p-3 rounded-2xl border-2 text-left transition-all duration-300 ${
+                            editProfileData.skinType === key
+                              ? 'border-[#0EA5E9] bg-[#0EA5E9]/5 shadow-lg shadow-[#0EA5E9]/10'
+                              : 'border-white bg-white/50 hover:border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={`text-sm font-black ${editProfileData.skinType === key ? 'text-[#0EA5E9]' : 'text-gray-700'}`}>
+                              {label}
+                            </span>
+                            {editProfileData.skinType === key && <Check className="w-4 h-4 text-[#0EA5E9]" />}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+
+                  {/* Concerns Picker */}
+                  <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 block">
+                      {t('onboarding.concernTitle')} <span className="text-[#0EA5E9]">({editProfileData.concerns.length})</span>
+                    </label>
+                    <div className="flex flex-wrap gap-2.5 max-h-56 overflow-y-auto p-1 custom-scrollbar">
+                      {['acne', 'wrinkles', 'dark-spots', 'dryness', 'sensitivity', 'redness', 'large-pores', 'dark-circles', 'uneven-texture', 'dullness', 'hyperpigmentation', 'oiliness'].map((id) => (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => toggleConcern(id)}
+                          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-300 border-2 ${
+                            editProfileData.concerns.includes(id)
+                              ? 'bg-[#0EA5E9] border-[#0EA5E9] text-white shadow-lg shadow-[#0EA5E9]/20 scale-105'
+                              : 'bg-white/50 border-white text-gray-500 hover:border-gray-200'
+                          }`}
+                        >
+                          {(t('onboarding.concernsLabels') as any)[id] || id}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                  
+                  {/* Sensitivities */}
+                  <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 block">
+                      {t('onboarding.sensTitle')} <span className="text-[#EF4444]">({editProfileData.sensitivities.length})</span>
+                    </label>
+                    <div className="flex flex-wrap gap-2.5">
+                       {['fragrance', 'alcohol', 'retinol', 'aha-bha', 'sulfates', 'parabens'].map(id => (
+                         <button
+                           key={id}
+                           type="button"
+                           onClick={() => toggleSensitivity(id)}
+                           className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-300 border-2 ${
+                             editProfileData.sensitivities.includes(id)
+                               ? 'bg-[#EF4444] border-[#EF4444] text-white shadow-lg shadow-[#EF4444]/20 scale-105'
+                               : 'bg-white/50 border-white text-gray-500 hover:border-gray-200'
+                           }`}
+                         >
+                           {(t('onboarding.sensitivitiesLabels') as any)[id] || id}
+                         </button>
+                       ))}
+                    </div>
+                  </motion.div>
+
+
+                  {/* Action Buttons at bottom when editing */}
+                  <div className="flex items-center gap-3 pt-4 sticky bottom-0 bg-white/10 backdrop-blur-md -mx-6 px-6 py-4 border-t border-white/40">
+                    <Button
+                      onClick={() => setIsEditing(false)}
+                      variant="ghost"
+                      className="flex-1 rounded-2xl h-12 font-bold text-gray-500 hover:bg-gray-100 transition-all"
+                    >
+                      {t('common.cancel')}
+                    </Button>
+                    <Button
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className="flex-[1.5] rounded-2xl h-12 bg-[#0EA5E9] text-white shadow-lg shadow-[#0EA5E9]/20 hover:shadow-xl hover:shadow-[#0EA5E9]/30 hover:-translate-y-1 active:scale-95 transition-all font-black"
+                    >
+                      {isSaving ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Save className="w-5 h-5 mr-2" />}
+                      {t('common.save')}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </Card>
           </motion.div>
         </div>

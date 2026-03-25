@@ -213,29 +213,33 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
 
         {/* Profile + Cover Editor */}
         <div className="mb-10 px-2 sm:px-4">
-          <div className="relative h-40 sm:h-52 bg-gray-100 rounded-3xl overflow-hidden group shadow-inner">
-            {formData.coverPhoto ? (
-              <img src={formData.coverPhoto} alt="Cover" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-r from-[#0EA5E9]/10 to-[#6366F1]/10 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-2 opacity-30">
-                  <ImageIcon className="w-10 h-10 text-[#0EA5E9]" />
-                  <span className="text-xs font-medium uppercase tracking-widest text-[#0EA5E9]">DeepSkyn Background</span>
+          <div className="relative">
+            {/* Cover Banner Container */}
+            <div className="relative h-40 sm:h-52 bg-gray-100 rounded-3xl overflow-hidden group shadow-inner">
+              {formData.coverPhoto ? (
+                <img src={formData.coverPhoto} alt="Cover" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-r from-[#0EA5E9]/10 to-[#6366F1]/10 flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-2 opacity-30">
+                    <ImageIcon className="w-10 h-10 text-[#0EA5E9]" />
+                    <span className="text-xs font-medium uppercase tracking-widest text-[#0EA5E9]">DeepSkyn Background</span>
+                  </div>
                 </div>
-              </div>
-            )}
-            
-            {isEditing && (
-              <label className="absolute inset-0 bg-black/30 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex flex-col items-center justify-center text-white gap-2">
-                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-xl">
-                  <Camera className="w-6 h-6" />
-                </div>
-                <span className="text-sm font-semibold tracking-wide drop-shadow-md">Modifier la couverture</span>
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'coverPhoto')} />
-              </label>
-            )}
+              )}
+              
+              {isEditing && (
+                <label className="absolute inset-0 bg-black/30 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex flex-col items-center justify-center text-white gap-2">
+                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-xl">
+                    <Camera className="w-6 h-6" />
+                  </div>
+                  <span className="text-sm font-semibold tracking-wide drop-shadow-md">Modifier la couverture</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'coverPhoto')} />
+                </label>
+              )}
+            </div>
 
-            <div className="absolute left-6 sm:left-10 -bottom-10">
+            {/* Avatar - Moved OUTSIDE of overflow-hidden container */}
+            <div className="absolute left-6 sm:left-10 -bottom-10 z-20">
                <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-white p-1.5 shadow-2xl overflow-hidden group/avatar ring-1 ring-black/5">
                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#6366F1] flex items-center justify-center text-white text-4xl sm:text-5xl font-bold overflow-hidden shadow-inner">
                     {formData.avatar ? (
