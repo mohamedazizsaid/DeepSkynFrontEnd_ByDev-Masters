@@ -57,6 +57,7 @@ export interface UserProfile {
   preferredLanguage?: string;
   isPublic?: boolean;
   receiveRecommendations?: boolean;
+  settings?: any;
   createdAt?: string;
 }
 

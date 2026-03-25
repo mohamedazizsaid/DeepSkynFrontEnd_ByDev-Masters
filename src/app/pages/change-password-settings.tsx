@@ -4,6 +4,7 @@ import { Lock, Eye, EyeOff, Check, ArrowLeft } from 'lucide-react';
 import { authService } from '../../lib/services/auth.service';
 import { Button } from '../components/button';
 import { Input } from '../components/input';
+import { useAccessibilityStore } from '../../stores/accessibility.store';
 import toast from 'react-hot-toast';
 
 interface ChangePasswordSettingsProps {
@@ -11,6 +12,7 @@ interface ChangePasswordSettingsProps {
 }
 
 export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) {
+  const { t } = useAccessibilityStore();
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -42,12 +44,16 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
     e.preventDefault();
 
     if (formData.newPassword !== formData.confirmPassword) {
-      toast.error('Les mots de passe ne correspondent pas');
+      toast.error(t('settings.security.mismatch') || 'Les mots de passe saisis ne sont pas identiques.', {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+      });
       return;
     }
 
     if (formData.newPassword.length < 8) {
-      toast.error('Le mot de passe doit contenir au moins 8 caractères');
+      toast.error(t('settings.security.minLength') || 'Votre nouveau mot de passe doit contenir au moins 8 caractères.', {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+      });
       return;
     }
 
@@ -57,17 +63,21 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
         formData.currentPassword,
         formData.newPassword
       );
-      toast.success('Mot de passe modifié avec succès');
+      toast.success(t('settings.security.updateSuccess') || 'Votre mot de passe a été modifié avec succès.', {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
+      });
       setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setPasswordStrength(0);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Erreur lors de la modification');
+      toast.error(error?.response?.data?.message || 'Une erreur est survenue lors du changement de mot de passe.', {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const strengthLabels = ['Très faible', 'Faible', 'Moyen', 'Bon', 'Très bon'];
+  const strengthLabels = t('settings.security.strengthLabels') as unknown as string[] || ['Très faible', 'Faible', 'Moyen', 'Bon', 'Très bon'];
   const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-lime-500', 'bg-green-500'];
 
   return (
@@ -80,7 +90,7 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
         className="flex lg:hidden items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span className="text-sm font-medium">Retour</span>
+        <span className="text-sm font-medium">{t('common.back')}</span>
       </motion.button>
 
       {/* Header */}
@@ -94,8 +104,8 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
             <Lock className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#111827]">Changer le mot de passe</h2>
-            <p className="text-xs text-[#6B7280]">Sécurisez votre compte</p>
+            <h2 className="text-lg font-bold text-[#111827]">{t('settings.security.passwordTitle')}</h2>
+            <p className="text-xs text-[#6B7280]">{t('settings.security.passwordSubtitle')}</p>
           </div>
         </div>
       </motion.div>
@@ -109,13 +119,13 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
       >
         {/* Current Password */}
         <div className="mb-6">
-          <label className="block text-sm font-semibold text-[#111827] mb-2">Mot de passe actuel</label>
+          <label className="block text-sm font-semibold text-[#111827] mb-2">{t('settings.security.currentPassword')}</label>
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
               value={formData.currentPassword}
               onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-              placeholder="Entrez votre mot de passe actuel"
+              placeholder={t('settings.security.currentPassword')}
               className="w-full pl-10 pr-10 py-3 bg-[#F9FAFB] border-2 border-[#E5E7EB] rounded-xl focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/20 outline-none transition-all duration-200 text-[#111827] placeholder-[#9CA3AF]"
             />
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
@@ -133,13 +143,13 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
 
         {/* New Password */}
         <div className="mb-6">
-          <label className="block text-sm font-semibold text-[#111827] mb-2">Nouveau mot de passe</label>
+          <label className="block text-sm font-semibold text-[#111827] mb-2">{t('settings.security.newPassword')}</label>
           <div className="relative">
             <input
               type={showNewPassword ? 'text' : 'password'}
               value={formData.newPassword}
               onChange={handleNewPasswordChange}
-              placeholder="Créez un mot de passe fort"
+              placeholder={t('settings.security.newPassword')}
               className="w-full pl-10 pr-10 py-3 bg-[#F9FAFB] border-2 border-[#E5E7EB] rounded-xl focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/20 outline-none transition-all duration-200 text-[#111827] placeholder-[#9CA3AF]"
             />
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
@@ -160,7 +170,7 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
               className="mt-3"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-[#6B7280]">Force du mot de passe</span>
+                <span className="text-xs font-medium text-[#6B7280]">{t('settings.security.strength')}</span>
                 <span className="text-xs font-semibold text-[#111827]">{strengthLabels[passwordStrength - 1]}</span>
               </div>
               <div className="w-full h-2 bg-[#E5E7EB] rounded-full overflow-hidden">
@@ -173,19 +183,19 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
               <ul className="mt-3 space-y-2 text-xs text-[#6B7280]">
                 <li className={`flex items-center gap-2 ${formData.newPassword.length >= 8 ? 'text-[#10B981]' : ''}`}>
                   {formData.newPassword.length >= 8 ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />}
-                  Au moins 8 caractères
+                  {t('settings.security.minLength')}
                 </li>
                 <li className={`flex items-center gap-2 ${/[a-z]/.test(formData.newPassword) && /[A-Z]/.test(formData.newPassword) ? 'text-[#10B981]' : ''}`}>
                   {/[a-z]/.test(formData.newPassword) && /[A-Z]/.test(formData.newPassword) ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />}
-                  Majuscules et minuscules
+                  {t('auth.uppercaseReq')}
                 </li>
                 <li className={`flex items-center gap-2 ${/\d/.test(formData.newPassword) ? 'text-[#10B981]' : ''}`}>
                   {/\d/.test(formData.newPassword) ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />}
-                  Contient des chiffres
+                  {t('auth.numberReq')}
                 </li>
                 <li className={`flex items-center gap-2 ${/[!@#$%^&*]/.test(formData.newPassword) ? 'text-[#10B981]' : ''}`}>
                   {/[!@#$%^&*]/.test(formData.newPassword) ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />}
-                  Contient des caractères spéciaux
+                  {t('auth.specialCharReq')}
                 </li>
               </ul>
             </motion.div>
@@ -194,13 +204,13 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
 
         {/* Confirm Password */}
         <div className="mb-8">
-          <label className="block text-sm font-semibold text-[#111827] mb-2">Confirmer le mot de passe</label>
+          <label className="block text-sm font-semibold text-[#111827] mb-2">{t('settings.security.confirmPassword')}</label>
           <div className="relative">
             <input
               type={showConfirmPassword ? 'text' : 'password'}
               value={formData.confirmPassword}
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              placeholder="Confirmez votre nouveau mot de passe"
+              placeholder={t('settings.security.confirmPassword')}
               className="w-full pl-10 pr-10 py-3 bg-[#F9FAFB] border-2 border-[#E5E7EB] rounded-xl focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/20 outline-none transition-all duration-200 text-[#111827] placeholder-[#9CA3AF]"
             />
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
@@ -215,21 +225,21 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
           {formData.confirmPassword && formData.newPassword === formData.confirmPassword && (
             <p className="text-xs text-[#10B981] mt-2 flex items-center gap-1">
               <Check className="w-4 h-4" />
-              Les mots de passe correspondent
+              {t('settings.security.updateSuccess')}
             </p>
           )}
           {formData.confirmPassword && formData.newPassword !== formData.confirmPassword && (
-            <p className="text-xs text-[#EF4444] mt-2">Les mots de passe ne correspondent pas</p>
+            <p className="text-xs text-[#EF4444] mt-2">{t('settings.security.mismatch')}</p>
           )}
         </div>
 
         {/* Actions */}
         <div className="flex gap-3">
           <Button variant="outline" onClick={onBack} className="flex-1">
-            Annuler
+            {t('common.cancel')}
           </Button>
           <Button type="submit" loading={loading} className="flex-1">
-            Mettre à jour
+            {t('common.save')}
           </Button>
         </div>
       </motion.form>
@@ -241,12 +251,10 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
         transition={{ duration: 0.3, delay: 0.2 }}
         className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-xl"
       >
-        <p className="text-sm font-medium text-blue-900 mb-2">💡 Conseils de sécurité</p>
+        <p className="text-sm font-medium text-blue-900 mb-2">💡 {t('dashboard.personalizedAdvice')}</p>
         <ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
-          <li>Utilisez un mot de passe unique</li>
-          <li>Évitez les informations personnelles</li>
-          <li>Ne partagez pas votre mot de passe</li>
-          <li>Changez-le régulièrement</li>
+          <li>{t('auth.chooseStrongPassword')}</li>
+          <li>{t('settings.security.passwordSubtitle')}</li>
         </ul>
       </motion.div>
     </div>

@@ -225,7 +225,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                 <div className="flex justify-between h-20">
                     <div className="flex">
                         {/* Logo */}
-                        <div className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => onNavigate('dashboard')}>
+                        <div data-tour="navbar-logo" className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => onNavigate('dashboard')}>
                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center mr-2 shadow-lg shadow-[#0EA5E9]/20">
                                 <Sparkles className="w-6 h-6 text-white" />
                             </div>
@@ -258,6 +258,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                             {rightNavItems.map((item) => (
                                 <button
                                     key={item.id}
+                                    data-tour={`nav-${item.id === 'chat' ? 'coach' : item.id}`}
                                     onClick={() => onNavigate(item.id)}
                                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === item.id
                                             ? 'text-[#0EA5E9] bg-blue-50'
@@ -273,6 +274,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                         {/* Notifications */}
                         {onToggleNotifications && (
                             <button
+                                data-tour="nav-notifications"
                                 onClick={onToggleNotifications}
                                 className="p-2 text-gray-400 hover:text-gray-500 relative rounded-full hover:bg-gray-100 transition-colors"
                                 aria-label="View notifications"
@@ -288,7 +290,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                         <WeatherNavbar className="hidden lg:block" />
 
                         {/* Profile Dropdown */}
-                        <div className="relative ml-2" ref={dropdownRef}>
+                        <div data-tour="nav-profile" className="relative ml-2" ref={dropdownRef}>
                             <button
                                 onClick={() => {
                                     setIsProfileOpen(!isProfileOpen);

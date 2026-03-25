@@ -13,7 +13,9 @@ import { ProfileHero } from './components/profile-hero';
 import { PostComposer } from './components/post-composer';
 import { PostCard } from './components/post-card';
 import type { PostCardData } from './components/post-card';
-import { StoryBar } from './components/story-bar';
+import { StoryBar, MOCK_STORIES, StoryUser } from './components/story-bar';
+import { StoryUploadModal } from './components/story-upload-modal';
+import { StoryViewerModal } from './components/story-viewer-modal';
 import { SuggestionsTab } from './components/suggestions-tab';
 import { StatsTab } from './components/stats-tab';
 
@@ -28,6 +30,9 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
   const [activeTab, setActiveTab] = useState<CommunityTab>('feed');
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stories, setStories] = useState<StoryUser[]>(MOCK_STORIES);
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
+  const [selectedStoryIndex, setSelectedStoryIndex] = useState<number | null>(null);
   const [posting, setPosting] = useState(false);
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -139,6 +144,26 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
   useEffect(() => { loadPosts(1); }, [loadPosts]);
   useEffect(() => { if (user?.coverPhoto) setCommunityImage(user.coverPhoto); }, [user?.coverPhoto]);
 
+  // ─── Story Upload Handler ───
+  const handleStoryUpload = async (file: File) => {
+    // Simulate upload delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    const newStoryUrl = URL.createObjectURL(file);
+    
+    // Add to the front of stories, pretending the current user uploaded it
+    const newStory: StoryUser = {
+      id: `new-${Date.now()}`,
+      name: user?.name || 'Moi',
+      avatar: user?.avatar,
+      hasStory: true,
+      isViewed: false,
+      mediaUrl: newStoryUrl
+    };
+    
+    setStories([newStory, ...stories]);
+    toast.success('Story publiée avec succès !');
+  };
+
   // ─── Post actions ───
   const handleCreatePost = async (content: string, media?: string) => {
     if (!content.trim()) return;
@@ -201,6 +226,19 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
 
   return (
     <div className={`min-h-screen relative ${pageBg}`} style={{ zIndex: 1 }}>
+      <StoryUploadModal 
+        isOpen={isStoryModalOpen} 
+        onClose={() => setIsStoryModalOpen(false)} 
+        onUpload={handleStoryUpload}
+        userAvatar={user?.avatar}
+        userName={user?.name || 'Utilisateur'}
+      />
+      <StoryViewerModal
+        isOpen={selectedStoryIndex !== null}
+        onClose={() => setSelectedStoryIndex(null)}
+        stories={stories}
+        initialIndex={selectedStoryIndex !== null ? selectedStoryIndex : 0}
+      />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         {/* ═══ Sub-navigation tabs ═══ */}
         <motion.div
@@ -248,7 +286,13 @@ export function CommunityPage({ onBack }: CommunityPageProps) {
                   {/* Main Feed */}
                   <div>
                     {/* Stories */}
-                    <StoryBar currentUserAvatar={user?.avatar} currentUserName={user?.name || 'Vous'} />
+                    <StoryBar 
+                      currentUserAvatar={user?.avatar} 
+                      currentUserName={user?.name || 'Vous'} 
+                      stories={stories}
+                      onAddClick={() => setIsStoryModalOpen(true)}
+                      onStoryClick={(i) => setSelectedStoryIndex(i)}
+                    />
 
                     {/* Post Composer */}
                     <PostComposer

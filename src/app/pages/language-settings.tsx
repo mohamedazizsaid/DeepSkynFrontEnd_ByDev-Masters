@@ -34,9 +34,13 @@ export function LanguageSettings({ onBack }: LanguageSettingsProps) {
       });
       await loadUser();
       setLanguage(languageCode as any);
-      toast.success(t('common.success') + '!');
+      toast.success('La langue de l\'interface a été mise à jour.', {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
+      });
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Erreur lors de la mise à jour');
+      toast.error(error?.response?.data?.message || 'Une erreur est survenue lors du changement de langue.', {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+      });
       setSelectedLanguage(user?.preferredLanguage || 'fr');
     } finally {
       setSaving(false);
@@ -66,8 +70,8 @@ export function LanguageSettings({ onBack }: LanguageSettingsProps) {
           <Globe className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-[#111827]">{t('settings.langAndRegion')}</h2>
-          <p className="text-xs text-[#6B7280]">Choisissez votre langue préférée</p>
+          <h2 className="text-lg font-bold text-[#111827]">{t('settings.help.title')}</h2>
+          <p className="text-xs text-[#6B7280]">{t('settings.help.subtitle')}</p>
         </div>
       </motion.div>
 
@@ -129,13 +133,13 @@ export function LanguageSettings({ onBack }: LanguageSettingsProps) {
         transition={{ duration: 0.3, delay: 0.3 }}
         className="mt-0 p-5 bg-[#6366F1]/5 border border-[#6366F1]/20 rounded-2xl"
       >
-        <h3 className="font-semibold text-[#111827] mb-3">Langue sélectionnée</h3>
+        <h3 className="font-semibold text-[#111827] mb-3">{t('settings.language.current')}</h3>
         <p className="text-sm text-[#6B7280]">
-          L'interface de DeepSkyn s'affichera en{' '}
+          {t('settings.language.description')}{' '}
           <span className="font-semibold text-[#6366F1]">
             {LANGUAGES.find(l => l.code === selectedLanguage)?.name || 'Français'}
           </span>
-          . Cette préférence sera appliquée sur tous vos appareils.
+          .
         </p>
       </motion.div>
 
@@ -146,9 +150,9 @@ export function LanguageSettings({ onBack }: LanguageSettingsProps) {
         transition={{ duration: 0.3, delay: 0.4 }}
         className="mt-0 p-5 bg-amber-50 border border-amber-200 rounded-2xl"
       >
-        <p className="text-sm font-medium text-amber-900 mb-2">🌍 Bientôt disponible</p>
+        <p className="text-sm font-medium text-amber-900 mb-2">🌍 {t('settings.language.warning')}</p>
         <p className="text-xs text-amber-800">
-          Plus de langues seront ajoutées dans les prochaines mises à jour. Vous pouvez aussi nous suggérer votre langue dans le centre d'aide.
+          {t('settings.language.warningDesc')}
         </p>
       </motion.div>
     </div>

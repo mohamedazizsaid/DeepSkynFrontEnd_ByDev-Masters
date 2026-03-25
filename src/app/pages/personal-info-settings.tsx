@@ -8,6 +8,7 @@ import { AddressMapPicker } from '../../components/location/address-map-picker';
 import { Button } from '../components/button';
 import { Input } from '../components/input';
 import { Checkbox } from '../components/ui/checkbox';
+import { useAccessibilityStore } from '../../stores/accessibility.store';
 import toast from 'react-hot-toast';
 
 interface PersonalInfoSettingsProps {
@@ -16,6 +17,7 @@ interface PersonalInfoSettingsProps {
 
 export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
   const { user, loadUser } = useAuthStore();
+  const { t } = useAccessibilityStore();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingAddress, setIsEditingAddress] = useState(false);
@@ -87,9 +89,13 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
       });
       await loadUser();
       setIsEditing(false);
-      toast.success('Votre profil a été mis à jour avec succès ✨');
+      toast.success(t('settings.personal.updateSuccess'), {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
+      });
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Erreur lors de la sauvegarde');
+      toast.error(error?.response?.data?.message || t('settings.personal.updateError'), {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+      });
     } finally {
       setIsSaving(false);
     }
@@ -102,22 +108,30 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
       setSelectedAddress(address);
       setIsEditingAddress(false);
       await loadUser();
-      toast.success('Votre adresse de livraison a été enregistrée 📍');
+      toast.success(t('settings.personal.addressSyncSuccess'), {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
+      });
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Erreur lors de la mise à jour de l\'adresse');
+      toast.error(error?.response?.data?.message || t('settings.personal.addressSyncError'), {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+      });
     } finally {
       setIsSavingAddress(false);
     }
   };
 
   const handleDeleteAddress = async () => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer votre adresse ?')) {
+    if (window.confirm(t('common.delete') + '?')) {
       try {
         await addressService.deleteUserAddress();
         setSelectedAddress(null);
-        toast.success('L\'adresse a été retirée de votre profil 🗑️');
+        toast.success(t('common.success'), {
+          style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
+        });
       } catch (error: any) {
-        toast.error(error?.response?.data?.message || 'Erreur lors de la suppression');
+        toast.error(error?.response?.data?.message || t('settings.personal.updateError'), {
+          style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+        });
       }
     }
   };
@@ -134,22 +148,19 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
   };
 
   const handleTogglePrivacy = async (field: 'isPublic' | 'receiveRecommendations', value: boolean) => {
-    // Optimistic UI update
     setFormData(prev => ({ ...prev, [field]: value }));
     
     try {
       await authService.updateProfile({ [field]: value });
       await loadUser();
-      
-      if (field === 'isPublic') {
-        toast.success(value ? 'Votre profil est désormais public 🌍' : 'Votre profil est désormais privé 🔒');
-      } else {
-        toast.success(value ? 'Recommandations personnalisées activées ✨' : 'Recommandations désactivées');
-      }
+      toast.success(t('common.success'), {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
+      });
     } catch (error: any) {
-      // Revert on error
       setFormData(prev => ({ ...prev, [field]: !value }));
-      toast.error('Oups ! Impossible de mettre à jour vos préférences de confidentialité 😕');
+      toast.error(t('common.error'), {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+      });
     }
   };
 
@@ -163,7 +174,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
         className="flex lg:hidden items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span className="text-sm font-medium">Retour</span>
+        <span className="text-sm font-medium">{t('common.back')}</span>
       </motion.button>
 
       {/* Header */}
@@ -177,22 +188,22 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
             <User className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#111827]">Informations personnelles</h2>
-            <p className="text-xs text-[#6B7280]">Gérez vos données</p>
+            <h2 className="text-lg font-bold text-[#111827]">{t('settings.personal.title')}</h2>
+            <p className="text-xs text-[#6B7280]">{t('settings.personal.subtitle')}</p>
           </div>
         </div>
         <div className="flex gap-2">
           {!isEditing ? (
             <Button onClick={() => setIsEditing(true)} size="sm">
-              Modifier
+              {t('common.edit')}
             </Button>
           ) : (
             <>
               <Button variant="outline" onClick={() => setIsEditing(false)} size="sm">
-                Annuler
+                {t('common.cancel')}
               </Button>
               <Button onClick={handleSaveProfile} loading={isSaving} size="sm">
-                Enregistrer
+                {t('common.save')}
               </Button>
             </>
           )}
@@ -208,13 +219,12 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
       >
         <h3 className="text-lg font-bold text-[#111827] mb-6 flex items-center gap-2">
           <User className="w-5 h-5 text-[#0EA5E9]" />
-          Détails personnels
+          {t('settings.personal.details')}
         </h3>
 
         {/* Profile + Cover Editor */}
         <div className="mb-10 px-2 sm:px-4">
           <div className="relative">
-            {/* Cover Banner Container */}
             <div className="relative h-40 sm:h-52 bg-gray-100 rounded-3xl overflow-hidden group shadow-inner">
               {formData.coverPhoto ? (
                 <img src={formData.coverPhoto} alt="Cover" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -232,13 +242,12 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
                   <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-xl">
                     <Camera className="w-6 h-6" />
                   </div>
-                  <span className="text-sm font-semibold tracking-wide drop-shadow-md">Modifier la couverture</span>
+                  <span className="text-sm font-semibold tracking-wide drop-shadow-md">{t('common.edit')}</span>
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'coverPhoto')} />
                 </label>
               )}
             </div>
 
-            {/* Avatar - Moved OUTSIDE of overflow-hidden container */}
             <div className="absolute left-6 sm:left-10 -bottom-10 z-20">
                <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-white p-1.5 shadow-2xl overflow-hidden group/avatar ring-1 ring-black/5">
                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#6366F1] flex items-center justify-center text-white text-4xl sm:text-5xl font-bold overflow-hidden shadow-inner">
@@ -259,12 +268,12 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
                </div>
             </div>
           </div>
-          <div className="h-10" /> {/* Spacer for avatar offset */}
+          <div className="h-10" />
         </div>
 
         <div className="grid sm:grid-cols-2 gap-5">
           <Input
-            label="Nom complet"
+            label={t('settings.personal.fullName')}
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             disabled={!isEditing}
@@ -272,7 +281,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
           />
 
           <Input
-            label="Email"
+            label={t('settings.personal.email')}
             type="email"
             value={formData.email}
             disabled
@@ -280,7 +289,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
           />
 
           <Input
-            label="Date de naissance"
+            label={t('settings.personal.dob')}
             type="date"
             value={formData.dateOfBirth}
             onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
@@ -289,7 +298,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
           />
 
           <div className="w-full" ref={genderRef}>
-            <label className="block mb-2 text-sm text-[#374151]">Genre</label>
+            <label className="block mb-2 text-sm text-[#374151]">{t('settings.personal.gender')}</label>
             <div className="relative">
               <button
                 type="button"
@@ -303,8 +312,8 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
               >
                 <span className={formData.gender ? 'text-[#111827]' : 'text-[#9CA3AF]'}>
                   {formData.gender
-                    ? { Male: 'Homme', Female: 'Femme', 'Non-binary': 'Non-binaire', 'Prefer not to say': 'Préfère ne pas dire' }[formData.gender] || formData.gender
-                    : 'Sélectionner'}
+                    ? { Male: t('settings.personal.genderOptions.male'), Female: t('settings.personal.genderOptions.female'), 'Non-binary': t('settings.personal.genderOptions.nonBinary'), 'Prefer not to say': t('settings.personal.genderOptions.private') }[formData.gender] || formData.gender
+                    : '---'}
                 </span>
               </button>
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none">
@@ -324,10 +333,10 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
                     className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white rounded-xl border border-[#E5E7EB] shadow-xl overflow-hidden"
                   >
                     {[
-                      { value: 'Male', label: 'Homme' },
-                      { value: 'Female', label: 'Femme' },
-                      { value: 'Non-binary', label: 'Non-binaire' },
-                      { value: 'Prefer not to say', label: 'Préfère ne pas dire' },
+                      { value: 'Male', label: t('settings.personal.genderOptions.male') },
+                      { value: 'Female', label: t('settings.personal.genderOptions.female') },
+                      { value: 'Non-binary', label: t('settings.personal.genderOptions.nonBinary') },
+                      { value: 'Prefer not to say', label: t('settings.personal.genderOptions.private') },
                     ].map((option) => (
                       <button
                         key={option.value}
@@ -363,12 +372,12 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center shadow-lg shadow-[#10B981]/20">
-                <MapPin className="w-5 h-5 text-white" />
-              </div>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center shadow-lg shadow-[#10B981]/20">
+            <MapPin className="w-5 h-5 text-white" />
+          </div>
               <div>
-                <h3 className="text-lg font-bold text-[#111827]">Votre localisation</h3>
-                <p className="text-xs text-[#6B7280]">Adresse enregistrée</p>
+                <h3 className="text-lg font-bold text-[#111827]">{t('settings.personal.location')}</h3>
+                <p className="text-xs text-[#6B7280]">{t('settings.personal.locationDesc')}</p>
               </div>
             </div>
             <Button
@@ -376,31 +385,31 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
               size="sm"
               variant="outline"
             >
-              Modifier
+              {t('common.edit')}
             </Button>
           </div>
 
           {selectedAddress ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-              <div className="sm:col-span-2 p-4 rounded-xl bg-[#F0FDF4] border border-[#10B981]/20">
-                <p className="text-xs text-[#047857] uppercase tracking-wider font-semibold">Adresse</p>
+              <div className="sm:col-span-2 p-4 rounded-xl bg-sky-50/50 border border-[#0EA5E9]/20">
+                <p className="text-xs text-[#0EA5E9] uppercase tracking-wider font-semibold">{t('settings.personal.address')}</p>
                 <p className="text-sm font-medium text-[#111827] mt-1 line-clamp-2">
                   {selectedAddress.address}
                 </p>
               </div>
 
               <div className="p-4 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB]">
-                <p className="text-xs text-[#6B7280] uppercase tracking-wider font-semibold">Ville</p>
+                <p className="text-xs text-[#6B7280] uppercase tracking-wider font-semibold">{t('settings.personal.city')}</p>
                 <p className="text-sm font-medium text-[#111827] mt-1">{selectedAddress.city}</p>
               </div>
 
               <div className="p-4 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB]">
-                <p className="text-xs text-[#6B7280] uppercase tracking-wider font-semibold">Code postal</p>
+                <p className="text-xs text-[#6B7280] uppercase tracking-wider font-semibold">{t('settings.personal.zipCode')}</p>
                 <p className="text-sm font-medium text-[#111827] mt-1">{selectedAddress.zipCode}</p>
               </div>
 
               <div className="p-4 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB]">
-                <p className="text-xs text-[#6B7280] uppercase tracking-wider font-semibold">Pays</p>
+                <p className="text-xs text-[#6B7280] uppercase tracking-wider font-semibold">{t('settings.personal.country')}</p>
                 <p className="text-sm font-medium text-[#111827] mt-1">{selectedAddress.country}</p>
               </div>
 
@@ -415,14 +424,14 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
                   onClick={handleDeleteAddress}
                   className="w-full py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                 >
-                  Supprimer l'adresse
+                  {t('common.delete')}
                 </button>
               </div>
             </div>
           ) : (
             <div className="pt-4 p-4 rounded-xl bg-[#FEF3C7] border border-[#FCD34D]">
               <p className="text-sm text-[#92400E]">
-                💡 Vous n'avez pas encore d'adresse enregistrée. Cliquez sur "Modifier" pour en ajouter une.
+                💡 {t('settings.personal.locationDesc')}
               </p>
             </div>
           )}
@@ -445,14 +454,14 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
               onClick={() => setIsEditingAddress(false)}
               className="flex-1"
             >
-              Annuler
+              {t('common.cancel')}
             </Button>
             {selectedAddress && !isSavingAddress && (
               <Button
                 onClick={() => setIsEditingAddress(false)}
                 className="flex-1"
               >
-                ✓ Confirmé
+                {t('common.success')}
               </Button>
             )}
           </div>
@@ -468,7 +477,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
       >
         <h3 className="text-lg font-bold text-[#111827] mb-4 flex items-center gap-2">
           <Share2 className="w-5 h-5 text-[#0EA5E9]" />
-          Confidentialité
+          {t('settings.personal.privacy')}
         </h3>
         <div className="space-y-4 pt-2">
           <div className="flex items-center space-x-3 p-4 rounded-xl bg-gray-50/50 border border-gray-100 hover:border-[#0EA5E9]/30 transition-all group">
@@ -479,11 +488,11 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
               className="border-gray-300 data-[state=checked]:border-[#0EA5E9]"
             />
             <label htmlFor="isPublic" className="text-sm font-semibold text-gray-700 cursor-pointer flex-1 select-none">
-              Afficher mon profil publiquement
-              <p className="text-[10px] text-gray-500 font-normal mt-0.5">Votre profil sera visible par la communauté DeepSkyn</p>
+              {t('settings.personal.isPublic')}
+              <p className="text-[10px] text-gray-500 font-normal mt-0.5">{t('settings.personal.isPublicDesc')}</p>
             </label>
-            <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${formData.isPublic ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
-              {formData.isPublic ? 'Public' : 'Privé'}
+            <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${formData.isPublic ? 'bg-sky-100 text-[#0EA5E9]' : 'bg-gray-200 text-gray-600'}`}>
+              {formData.isPublic ? t('settings.security.enabled') : t('settings.security.disabled')}
             </div>
           </div>
           
@@ -495,11 +504,11 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
               className="border-gray-300 data-[state=checked]:border-[#0EA5E9]"
             />
             <label htmlFor="receiveRecommendations" className="text-sm font-semibold text-gray-700 cursor-pointer flex-1 select-none">
-              Recevoir les recommandations personnalisées
-              <p className="text-[10px] text-gray-500 font-normal mt-0.5">L'IA vous proposera des produits adaptés à vos besoins spécifiques</p>
+              {t('settings.personal.recommendations')}
+              <p className="text-[10px] text-gray-500 font-normal mt-0.5">{t('settings.personal.recommendationsDesc')}</p>
             </label>
             <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${formData.receiveRecommendations ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'}`}>
-              {formData.receiveRecommendations ? 'Activé' : 'Désactivé'}
+              {formData.receiveRecommendations ? t('settings.security.enabled') : t('settings.security.disabled')}
             </div>
           </div>
         </div>

@@ -7,6 +7,10 @@ import { TwoFactorSettings } from './two-factor-settings';
 import { PersonalInfoSettings } from './personal-info-settings';
 import { ChangePasswordSettings } from './change-password-settings';
 import { LanguageSettings } from './language-settings';
+import { HelpSettings } from './help-settings';
+import { TermsSettings } from './terms-settings';
+import { AppearanceSettings } from './appearance-settings';
+import { NotificationSettings } from './notification-settings';
 import toast from 'react-hot-toast';
 
 import { useAccessibilityStore } from '../../stores/accessibility.store';
@@ -19,27 +23,27 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const { user, logout } = useAuthStore();
   const { t } = useAccessibilityStore();
   const navigate = useNavigate();
-  const [currentView, setCurrentView] = useState<'main' | '2fa' | 'personal' | 'password' | 'language'>('main');
+  const [currentView, setCurrentView] = useState<'main' | '2fa' | 'personal' | 'password' | 'language' | 'help' | 'terms' | 'notifications' | 'appearance'>('main');
 
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success('Déconnexion réussie');
+      toast.success(t('settings.logoutSuccess'));
       navigate('/');
     } catch {
-      toast.error('Erreur lors de la déconnexion');
+      toast.error(t('settings.logoutError'));
     }
   };
 
   const settingsSections = [
     {
-      title: t('settings.account'),
+      title: t('settings.sections.account'),
       items: [
         {
           id: 'personal',
           icon: <User className="w-5 h-5" />,
-          label: t('settings.personalInfo'),
-          description: t('settings.personalInfoDesc'),
+          label: t('settings.tabs.personal'),
+          description: t('settings.personal.subtitle'),
           color: 'from-[#0EA5E9] to-[#06B6D4]',
           iconBg: 'bg-[#0EA5E9]/10',
           iconColor: 'text-[#0EA5E9]',
@@ -47,8 +51,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         {
           id: '2fa',
           icon: <Shield className="w-5 h-5" />,
-          label: t('settings.twoFactor'),
-          description: t('settings.twoFactorDesc'),
+          label: t('settings.tabs.2fa'),
+          description: t('settings.security.twoFactorSubtitle'),
           color: 'from-[#8B5CF6] to-[#6366F1]',
           iconBg: 'bg-[#8B5CF6]/10',
           iconColor: 'text-[#8B5CF6]',
@@ -56,8 +60,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         {
           id: 'password',
           icon: <Lock className="w-5 h-5" />,
-          label: t('settings.password'),
-          description: t('settings.passwordDesc'),
+          label: t('settings.tabs.password'),
+          description: t('settings.security.passwordSubtitle'),
           color: 'from-[#EC4899] to-[#F43F5E]',
           iconBg: 'bg-[#EC4899]/10',
           iconColor: 'text-[#EC4899]',
@@ -65,13 +69,13 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
       ],
     },
     {
-      title: t('settings.preferences'),
+      title: t('settings.sections.preferences'),
       items: [
         {
           id: 'notifications',
           icon: <Bell className="w-5 h-5" />,
-          label: t('settings.notifications'),
-          description: t('settings.notificationsDesc'),
+          label: t('settings.tabs.notifications'),
+          description: t('settings.notifications.subtitle'),
           color: 'from-[#F59E0B] to-[#EF4444]',
           iconBg: 'bg-[#F59E0B]/10',
           iconColor: 'text-[#F59E0B]',
@@ -79,8 +83,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         {
           id: 'appearance',
           icon: <Palette className="w-5 h-5" />,
-          label: t('settings.appearance'),
-          description: t('settings.appearanceDesc'),
+          label: t('settings.tabs.appearance'),
+          description: t('settings.appearance.subtitle'),
           color: 'from-[#10B981] to-[#06B6D4]',
           iconBg: 'bg-[#10B981]/10',
           iconColor: 'text-[#10B981]',
@@ -88,8 +92,10 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         {
           id: 'language',
           icon: <Globe className="w-5 h-5" />,
-          label: t('settings.langAndRegion'),
-          description: user?.preferredLanguage ? (['fr', 'en', 'ar', 'es', 'de', 'it'].includes(user.preferredLanguage) ? { fr: 'Français', en: 'English', ar: 'العربية', es: 'Español', de: 'Deutsch', it: 'Italiano' }[user.preferredLanguage] : user.preferredLanguage) : 'Français',
+          label: t('settings.tabs.language'),
+          description: user?.preferredLanguage 
+            ? ({ fr: 'Français', en: 'English', ar: 'العربية', es: 'Español' }[user.preferredLanguage as 'fr'|'en'|'ar'|'es'] || user.preferredLanguage)
+            : t('settings.language.current'),
           color: 'from-[#6366F1] to-[#8B5CF6]',
           iconBg: 'bg-[#6366F1]/10',
           iconColor: 'text-[#6366F1]',
@@ -97,13 +103,13 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
       ],
     },
     {
-      title: t('settings.support'),
+      title: t('settings.sections.support'),
       items: [
         {
           id: 'help',
           icon: <HelpCircle className="w-5 h-5" />,
-          label: t('settings.helpCenter'),
-          description: t('settings.helpDesc'),
+          label: t('settings.tabs.help'),
+          description: t('settings.help.subtitle'),
           color: 'from-[#14B8A6] to-[#06B6D4]',
           iconBg: 'bg-[#14B8A6]/10',
           iconColor: 'text-[#14B8A6]',
@@ -111,8 +117,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         {
           id: 'terms',
           icon: <FileText className="w-5 h-5" />,
-          label: t('settings.terms'),
-          description: t('settings.termsDesc'),
+          label: t('settings.tabs.terms'),
+          description: t('settings.terms.subtitle'),
           color: 'from-[#64748B] to-[#475569]',
           iconBg: 'bg-[#64748B]/10',
           iconColor: 'text-[#64748B]',
@@ -148,7 +154,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#111827]">{t('settings.title')}</h1>
-              <p className="text-sm text-[#6B7280] hidden sm:block">{t('settings.managePreferences')}</p>
+              <p className="text-sm text-[#6B7280] hidden sm:block tracking-wide">{t('settings.managePreferences')}</p>
             </div>
           </div>
         </div>
@@ -171,7 +177,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                 {user.coverPhoto ? (
                   <img
                     src={user.coverPhoto}
-                    alt="Couverture"
+                    alt={t('settings.coverAlt')}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -302,13 +308,16 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           {/* Desktop Content Views OR Mobile Detailed Views */}
           <div className={currentView === 'main' ? 'hidden lg:block' : 'block'}>
              {/* If currentView is main on Desktop, we show personal by default */}
-             {(currentView === 'personal' || (currentView === 'main' && window.innerWidth >= 1024)) && (
+             {(currentView === 'personal' || (currentView === 'main')) && (
                <PersonalInfoSettings onBack={() => setCurrentView('main')} />
              )}
              {currentView === '2fa' && <TwoFactorSettings onBack={() => setCurrentView('main')} />}
              {currentView === 'password' && <ChangePasswordSettings onBack={() => setCurrentView('main')} />}
+             {currentView === 'notifications' && <NotificationSettings onBack={() => setCurrentView('main')} />}
+             {currentView === 'appearance' && <AppearanceSettings onBack={() => setCurrentView('main')} />}
              {currentView === 'language' && <LanguageSettings onBack={() => setCurrentView('main')} />}
-             {/* Note: Other tabs like 'notifications', 'appearance', 'help' just show placeholders if clicked, or stay on current for now */}
+             {currentView === 'help' && <HelpSettings onBack={() => setCurrentView('main')} />}
+             {currentView === 'terms' && <TermsSettings onBack={() => setCurrentView('main')} />}
           </div>
         </div>
       </div>

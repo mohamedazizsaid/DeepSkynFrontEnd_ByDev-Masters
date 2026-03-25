@@ -12,7 +12,7 @@ import { MOCK_ADS, interleaveFeedWithAds } from './components/mock-ads';
 import { useAuthStore } from '../../stores/auth.store';
 import toast from 'react-hot-toast';
 
-interface ProfilePageProps {
+export interface ProfilePageProps {
   onBack?: () => void;
   userId?: string; // If provided, show that user's profile instead of current user
 }

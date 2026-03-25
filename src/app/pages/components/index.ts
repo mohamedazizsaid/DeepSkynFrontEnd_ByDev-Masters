@@ -1,5 +1,4 @@
 export { ProfileHero } from './profile-hero';
-export type { ProfilePageProps } from './profile-page';
 export { ProfilePage } from '../profile-page';
 export { ProfileTabs } from './profile-tabs';
 export type { Tab } from './profile-tabs';

@@ -12,6 +12,7 @@ import { SettingsPage } from '../pages/settings-page';
 import { CommunityPage } from '../pages/community-page';
 import { WeatherPage } from './dashboard/weather-page';
 import { NotificationPanel } from './notification-panel';
+import { GuidedTour } from './guided-tour';
 import { useNotificationStore } from '../../stores/notification.store';
 import { useAuthStore } from '../../stores/auth.store';
 
@@ -24,6 +25,7 @@ export type DashboardPageType = 'dashboard' | 'analysis' | 'evolution' | 'routin
 export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
   const [currentPage, setCurrentPage] = useState<DashboardPageType>('dashboard');
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showTour, setShowTour] = useState(false);
   const { connect, disconnect, fetchUnreadCount } = useNotificationStore();
   const { user, roles } = useAuthStore();
 
@@ -72,7 +74,7 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
       case 'subscription':
         return <SubscriptionPage {...commonProps} />;
       case 'profile':
-        return <ProfilePage {...commonProps} />;
+        return <ProfilePage {...commonProps} onNavigate={handleNavigate} />;
       case 'settings':
         return <SettingsPage />;
       case 'community':
@@ -101,6 +103,7 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
           isOpen={showNotifications}
           onClose={() => setShowNotifications(false)}
         />
+        {currentPage === 'dashboard' && <GuidedTour forceShow={showTour} onComplete={() => setShowTour(false)} />}
       </div>
     );
   }
@@ -122,6 +125,7 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
       />
+      {currentPage === 'dashboard' && <GuidedTour forceShow={showTour} onComplete={() => setShowTour(false)} />}
     </div>
   );
 }

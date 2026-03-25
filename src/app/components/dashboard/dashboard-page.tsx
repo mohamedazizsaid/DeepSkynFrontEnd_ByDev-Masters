@@ -158,7 +158,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       </motion.div>
 
       {/* ═══ Top Stats Row ═══ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div data-tour="dashboard-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           { label: t('dashboard.skinHealth'), value: `${skinHealthScore}`, icon: <Shield className="w-5 h-5" />, color: '#0EA5E9', suffix: `/${100}` },
           { label: t('dashboard.skinAge'), value: skinAge ? `${skinAge}` : '—', icon: <Zap className="w-5 h-5" />, color: '#8B5CF6', suffix: ` ${t('common.years')}` },
@@ -195,6 +195,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className={`rounded-2xl border p-6 shadow-sm ${cardBg}`}
+          data-tour="dashboard-score"
         >
           <div className="flex items-center justify-between mb-2">
             <h3 className={`text-base font-bold ${textPrimary}`}>{t('dashboard.globalScore')}</h3>
@@ -328,6 +329,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         className={`rounded-2xl border p-6 shadow-sm mb-6 ${cardBg}`}
+        data-tour="dashboard-evolution"
       >
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -380,6 +382,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
           className={`rounded-2xl border p-6 shadow-sm ${cardBg}`}
+          data-tour="dashboard-quick-actions"
         >
           <h3 className={`text-base font-bold mb-4 ${textPrimary}`}>{t('dashboard.quickActions')}</h3>
           <div className="grid grid-cols-2 gap-3">

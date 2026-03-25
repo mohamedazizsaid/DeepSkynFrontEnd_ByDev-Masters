@@ -3,15 +3,24 @@ import { motion } from 'motion/react';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
-interface StoryUser {
+export interface StoryUser {
   id: string;
   name: string;
   avatar?: string;
   hasStory?: boolean;
   isViewed?: boolean;
+  mediaUrl?: string; // Appended property for real stories
 }
 
-const MOCK_STORIES: StoryUser[] = [
+export interface StoryBarProps {
+  currentUserAvatar?: string;
+  currentUserName?: string;
+  stories?: StoryUser[];
+  onAddClick?: () => void;
+  onStoryClick?: (index: number) => void;
+}
+
+export const MOCK_STORIES: StoryUser[] = [
   { id: 's1', name: 'Emma L.', avatar: 'https://ui-avatars.com/api/?name=Emma+L&background=F9A8D4&color=fff', hasStory: true },
   { id: 's2', name: 'Sophie M.', avatar: 'https://ui-avatars.com/api/?name=Sophie+M&background=06B6D4&color=fff', hasStory: true },
   { id: 's3', name: 'Marie C.', avatar: 'https://ui-avatars.com/api/?name=Marie+C&background=A78BFA&color=fff', hasStory: true, isViewed: true },
@@ -21,12 +30,7 @@ const MOCK_STORIES: StoryUser[] = [
   { id: 's7', name: 'Nina B.', avatar: 'https://ui-avatars.com/api/?name=Nina+B&background=60A5FA&color=fff', hasStory: true },
 ];
 
-interface StoryBarProps {
-  currentUserAvatar?: string;
-  currentUserName?: string;
-}
-
-export function StoryBar({ currentUserAvatar, currentUserName = 'Vous' }: StoryBarProps) {
+export function StoryBar({ currentUserAvatar, currentUserName = 'Vous', stories = MOCK_STORIES, onAddClick, onStoryClick }: StoryBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { theme, contrastMode } = useAccessibilityStore();
   const isDark = theme === 'dark';
@@ -58,7 +62,7 @@ export function StoryBar({ currentUserAvatar, currentUserName = 'Vous' }: StoryB
 
         <div ref={scrollRef} className="flex gap-3 overflow-x-auto scrollbar-hide px-6" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {/* Create Story */}
-          <motion.div whileHover={{ scale: 1.05 }} className="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0">
+          <motion.div whileHover={{ scale: 1.05 }} onClick={onAddClick} className="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0">
             <div className="relative">
               <div className={`w-16 h-16 rounded-full overflow-hidden border-2 ${isHcHigh ? 'border-yellow-400' : 'border-[#E5E7EB]'}`}>
                 {currentUserAvatar ? (
@@ -77,8 +81,19 @@ export function StoryBar({ currentUserAvatar, currentUserName = 'Vous' }: StoryB
           </motion.div>
 
           {/* Stories */}
-          {MOCK_STORIES.map((story) => (
-            <motion.div key={story.id} whileHover={{ scale: 1.05 }} className="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0">
+          {stories.map((story, index) => (
+            <motion.div 
+              key={story.id} 
+              whileHover={{ scale: 1.05 }} 
+              onClick={() => {
+                if (story.hasStory && story.mediaUrl && onStoryClick) {
+                  // We need to pass the index among active stories, or just the global index and the Viewer filters it.
+                  // For simplicity, let's just pass the index. 
+                  onStoryClick(index);
+                }
+              }}
+              className="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0"
+            >
               <div className={`w-16 h-16 rounded-full p-[2.5px] ${story.isViewed
                 ? (isHcHigh ? 'bg-gray-600' : 'bg-gray-300')
                 : (isHcHigh ? 'bg-yellow-400' : 'bg-gradient-to-tr from-[#0EA5E9] via-[#8B5CF6] to-[#EC4899]')

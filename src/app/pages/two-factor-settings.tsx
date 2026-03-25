@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Shield, ShieldCheck, ShieldOff, Loader2, Copy, Check, Smartphone, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/button';
 import { authService } from '../../lib/services/auth.service';
+import { useAccessibilityStore } from '../../stores/accessibility.store';
 import toast from 'react-hot-toast';
 
 interface TwoFactorSettingsProps {
@@ -10,6 +11,7 @@ interface TwoFactorSettingsProps {
 }
 
 export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
+  const { t } = useAccessibilityStore();
   const [isEnabled, setIsEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [setupMode, setSetupMode] = useState(false);
@@ -29,7 +31,9 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
       const status = await authService.get2FAStatus();
       setIsEnabled(status.enabled);
     } catch {
-      toast.error('Erreur lors du chargement du statut 2FA');
+      toast.error(t('common.error'), {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+      });
     } finally {
       setLoading(false);
     }
@@ -43,7 +47,9 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
       setSecret(result.secret);
       setSetupMode(true);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Erreur lors de la génération');
+      toast.error(error?.response?.data?.message || t('common.error'), {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+      });
     } finally {
       setActionLoading(false);
     }
@@ -57,9 +63,13 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
       setIsEnabled(true);
       setSetupMode(false);
       setCode('');
-      toast.success('2FA activé avec succès !');
+      toast.success(t('settings.security.updateSuccess'), {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
+      });
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Code invalide');
+      toast.error(error?.response?.data?.message || t('settings.security.mismatch'), {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+      });
       setCode('');
     } finally {
       setActionLoading(false);
@@ -74,9 +84,13 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
       setIsEnabled(false);
       setDisableMode(false);
       setCode('');
-      toast.success('2FA désactivé');
+      toast.success(t('common.success'), {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
+      });
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Code invalide');
+      toast.error(error?.response?.data?.message || t('settings.security.mismatch'), {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+      });
       setCode('');
     } finally {
       setActionLoading(false);
@@ -87,7 +101,9 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
     navigator.clipboard.writeText(secret);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast.success('Secret copié !');
+    toast.success(t('common.success'), {
+      style: { borderRadius: '10px', fontSize: '12px' }
+    });
   };
 
   if (loading) {
@@ -108,7 +124,7 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
         className="flex lg:hidden items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span className="text-sm font-medium">Retour</span>
+        <span className="text-sm font-medium">{t('common.back')}</span>
       </motion.button>
 
       {/* Header */}
@@ -121,40 +137,33 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
           <Shield className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-[#111827]">Authentification 2FA</h2>
-          <p className="text-xs text-[#6B7280]">Renforcez la sécurité de votre compte</p>
+          <h2 className="text-lg font-bold text-[#111827]">{t('settings.security.twoFactor')}</h2>
+          <p className="text-xs text-[#6B7280]">{t('settings.security.twoFactorSubtitle')}</p>
         </div>
       </motion.div>
 
-      {/* Status Card */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className={`
-          rounded-2xl border-2 p-6 transition-all duration-200
-          ${isEnabled
-            ? 'bg-gradient-to-br from-[#10B981]/5 to-[#06B6D4]/5 border-[#10B981]/30 shadow-lg shadow-[#10B981]/5'
-            : 'bg-gradient-to-br from-[#F59E0B]/5 to-[#FCD34D]/5 border-[#F59E0B]/30 shadow-lg shadow-[#F59E0B]/5'
-          }
-        `}
+        className={`bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6 overflow-hidden relative group transition-all hover:border-[#8B5CF6]/30`}
       >
-        <div className="flex items-center gap-4">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isEnabled ? 'bg-[#10B981]/10' : 'bg-[#F59E0B]/10'}`}>
+        <div className="flex items-center gap-4 relative z-10">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${isEnabled ? 'bg-emerald-50 text-emerald-500 shadow-sm border border-emerald-100' : 'bg-orange-50 text-orange-500 shadow-sm border border-orange-100'}`}>
             {isEnabled ? (
-              <ShieldCheck className="w-6 h-6 text-[#10B981]" />
+              <ShieldCheck className="w-6 h-6" />
             ) : (
-              <ShieldOff className="w-6 h-6 text-[#F59E0B]" />
+              <ShieldOff className="w-6 h-6" />
             )}
           </div>
           <div className="flex-1">
-            <h3 className={`text-lg font-bold ${isEnabled ? 'text-[#10B981]' : 'text-[#F59E0B]'}`}>
-              {isEnabled ? '2FA Activé' : '2FA Désactivé'}
+            <h3 className={`text-base font-bold ${isEnabled ? 'text-emerald-600' : 'text-orange-600'}`}>
+              {isEnabled ? t('settings.security.enabled') : t('settings.security.disabled')}
             </h3>
-            <p className="text-sm text-[#6B7280] mt-0.5">
+            <p className="text-xs text-[#6B7280] font-medium">
               {isEnabled
-                ? 'Votre compte est protégé par une authentification à deux facteurs'
-                : 'Activez le 2FA pour une meilleure sécurité'}
+                ? t('settings.security.twoFactorActive')
+                : t('settings.security.twoFactorInactive')}
             </p>
           </div>
           <AnimatePresence>
@@ -165,7 +174,7 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
                 size="sm"
                 variant={isEnabled ? 'outline' : undefined}
               >
-                {isEnabled ? 'Désactiver' : 'Activer'}
+                {isEnabled ? t('common.disable') : t('common.enable')}
               </Button>
             )}
           </AnimatePresence>
@@ -183,7 +192,7 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
           >
             <h3 className="text-lg font-bold text-[#111827] mb-6 flex items-center gap-2">
               <Smartphone className="w-5 h-5 text-[#8B5CF6]" />
-              Configuration du 2FA
+              {t('settings.security.twoFactor')}
             </h3>
 
             <div className="space-y-6">
@@ -193,10 +202,10 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
                   <div className="w-8 h-8 rounded-full bg-[#8B5CF6] text-white flex items-center justify-center font-bold text-sm">
                     1
                   </div>
-                  <span className="ml-3 font-semibold text-[#111827]">Scannez le code QR</span>
+                  <span className="ml-3 font-semibold text-[#111827]">{t('settings.security.step1')}</span>
                 </div>
                 <p className="text-sm text-[#6B7280] mb-4 ml-11">
-                  Utilisez Google Authenticator, Authy, Microsoft Authenticator ou une autre application d'authentification
+                  {t('settings.security.setup')}
                 </p>
                 {qrCode && (
                   <motion.div
@@ -217,9 +226,9 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
                   <div className="w-8 h-8 rounded-full bg-[#8B5CF6] text-white flex items-center justify-center font-bold text-sm">
                     2
                   </div>
-                  <span className="ml-3 font-semibold text-[#111827]">Entrez le code manuellement</span>
+                  <span className="ml-3 font-semibold text-[#111827]">{t('settings.security.step2')}</span>
                 </div>
-                <p className="text-sm text-[#6B7280] mb-3 ml-11">Si vous ne pouvez pas scanner le QR code :</p>
+                <p className="text-sm text-[#6B7280] mb-3 ml-11">{t('settings.security.secretKey')}</p>
                 <motion.div
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -245,9 +254,9 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
                   <div className="w-8 h-8 rounded-full bg-[#8B5CF6] text-white flex items-center justify-center font-bold text-sm">
                     3
                   </div>
-                  <span className="ml-3 font-semibold text-[#111827]">Vérifiez le code</span>
+                  <span className="ml-3 font-semibold text-[#111827]">{t('settings.security.step3')}</span>
                 </div>
-                <p className="text-sm text-[#6B7280] mb-3 ml-11">Entrez le code à 6 chiffres de votre application</p>
+                <p className="text-sm text-[#6B7280] mb-3 ml-11">{t('settings.security.verify')}</p>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -271,7 +280,7 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
                 }}
                 className="flex-1"
               >
-                Annuler
+                {t('common.cancel')}
               </Button>
               <Button
                 onClick={handleEnable}
@@ -279,7 +288,7 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
                 disabled={code.length !== 6}
                 className="flex-1"
               >
-                Activer le 2FA
+                {t('common.enable')}
               </Button>
             </div>
           </motion.div>
@@ -297,10 +306,10 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
           >
             <h3 className="text-lg font-bold text-[#111827] mb-4 flex items-center gap-2">
               <ShieldOff className="w-5 h-5 text-[#EF4444]" />
-              Désactiver le 2FA
+              {t('common.disable')}
             </h3>
             <p className="text-sm text-[#6B7280] mb-6">
-              Entrez un code de votre application d'authentification pour confirmer la désactivation de la protection 2FA.
+              {t('settings.security.passwordSubtitle')}
             </p>
             <input
               type="text"
@@ -322,7 +331,7 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
                 }}
                 className="flex-1"
               >
-                Annuler
+                {t('common.cancel')}
               </Button>
               <Button
                 onClick={handleDisable}
@@ -330,7 +339,7 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
                 disabled={code.length !== 6}
                 className="flex-1 bg-[#EF4444] hover:bg-[#DC2626] text-white"
               >
-                Confirmer la désactivation
+                {t('common.save')}
               </Button>
             </div>
           </motion.div>
@@ -343,12 +352,17 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="p-5 bg-[#8B5CF6]/5 border border-[#8B5CF6]/20 rounded-2xl"
+          className="p-6 bg-purple-50 rounded-2xl border border-purple-100 flex gap-4 items-start"
         >
-          <p className="text-sm font-medium text-[#8B5CF6] mb-2">ℹ️ Qu'est-ce que l'authentification 2FA ?</p>
-          <p className="text-sm text-[#6B7280]">
-            L'authentification à deux facteurs ajoute une couche de sécurité supplémentaire à votre compte en requérant un code temporaire en plus de votre mot de passe lors de la connexion.
-          </p>
+          <div className="p-2.5 rounded-xl bg-white shadow-sm border border-purple-100 flex-shrink-0">
+             <Shield className="w-5 h-5 text-purple-600" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-purple-900 mb-1">{t('settings.security.twoFactor')}</p>
+            <p className="text-xs font-medium text-purple-800/80 leading-relaxed">
+              {t('settings.security.twoFactorSubtitle')}
+            </p>
+          </div>
         </motion.div>
       )}
     </div>
