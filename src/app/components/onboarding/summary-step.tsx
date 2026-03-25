@@ -5,6 +5,7 @@ import {
     Droplets, Sun, AlertCircle, ShieldAlert, Heart
 } from 'lucide-react';
 import { Button } from '../button';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 interface SummaryStepProps {
     data: {
@@ -18,25 +19,14 @@ interface SummaryStepProps {
     isSubmitting: boolean;
 }
 
-const skinTypeLabels: Record<string, string> = {
-    normal: 'Normale ✨',
-    oily: 'Grasse 💧',
-    dry: 'Sèche 🏜️',
-    combination: 'Mixte ⚖️',
-    sensitive: 'Sensible 🌸',
-};
-
-const fitzpatrickLabels: Record<number, string> = {
-    1: 'Type I — Très claire',
-    2: 'Type II — Claire',
-    3: 'Type III — Intermédiaire',
-    4: 'Type IV — Mate',
-    5: 'Type V — Foncée',
-    6: 'Type VI — Très foncée',
-};
-
 export function SummaryStep({ data, onSubmit, onBack, isSubmitting }: SummaryStepProps) {
+    const { t } = useAccessibilityStore();
     const [showConfetti, setShowConfetti] = useState(false);
+
+    // Dynamic translations
+    const skinTypeLabels: Record<string, string> = t('onboarding.skinTypesLabels') as Record<string, string>;
+    const fitzpatrickLabels: Record<string, string> = t('onboarding.fitzTypesLabels') as Record<string, string>;
+    const categories = t('onboarding.categories') as unknown as string[];
 
     useEffect(() => {
         const timer = setTimeout(() => setShowConfetti(true), 600);
@@ -46,33 +36,33 @@ export function SummaryStep({ data, onSubmit, onBack, isSubmitting }: SummarySte
     const sections = [
         {
             icon: <Droplets className="w-5 h-5" />,
-            label: 'Type de peau',
-            value: data.skinType ? skinTypeLabels[data.skinType] || data.skinType : 'Non renseigné',
+            label: categories[0],
+            value: data.skinType ? skinTypeLabels[data.skinType] || data.skinType : t('onboarding.notProvided'),
             gradient: 'from-[#0EA5E9] to-[#06B6D4]',
             color: '#0EA5E9',
         },
         {
             icon: <Sun className="w-5 h-5" />,
-            label: 'Phototype Fitzpatrick',
-            value: data.fitzpatrickType ? fitzpatrickLabels[data.fitzpatrickType] || `Type ${data.fitzpatrickType}` : 'Non renseigné',
+            label: categories[1],
+            value: data.fitzpatrickType ? fitzpatrickLabels[data.fitzpatrickType.toString()] || `Type ${data.fitzpatrickType}` : t('onboarding.notProvided'),
             gradient: 'from-[#F59E0B] to-[#FBBF24]',
             color: '#F59E0B',
         },
         {
             icon: <AlertCircle className="w-5 h-5" />,
-            label: 'Préoccupations',
+            label: categories[2],
             value: data.concerns && data.concerns.length > 0
                 ? data.concerns.join(', ')
-                : 'Aucune',
+                : t('onboarding.none'),
             gradient: 'from-[#EC4899] to-[#F472B6]',
             color: '#EC4899',
         },
         {
             icon: <ShieldAlert className="w-5 h-5" />,
-            label: 'Sensibilités',
+            label: categories[3],
             value: data.sensitivities && data.sensitivities.length > 0
                 ? data.sensitivities.join(', ')
-                : 'Aucune',
+                : t('onboarding.none'),
             gradient: 'from-[#EF4444] to-[#F87171]',
             color: '#EF4444',
         },
@@ -135,10 +125,10 @@ export function SummaryStep({ data, onSubmit, onBack, isSubmitting }: SummarySte
                     </div>
                 </motion.div>
                 <h2 className="text-3xl font-extrabold mb-3 text-[#111827]">
-                    Votre Profil de Peau 🎉
+                    {t('onboarding.sumTitle')}
                 </h2>
                 <p className="text-lg text-[#6B7280] max-w-xl mx-auto">
-                    Voici un résumé de votre profil. Vérifiez et confirmez pour commencer !
+                    {t('onboarding.sumSub')}
                 </p>
             </motion.div>
 
@@ -193,7 +183,7 @@ export function SummaryStep({ data, onSubmit, onBack, isSubmitting }: SummarySte
                 <div className="inline-flex items-center gap-2 bg-[#F9FAFB] rounded-full px-5 py-2.5 border border-[#E5E7EB]">
                     <Sparkles className="w-4 h-4 text-[#0EA5E9]" />
                     <span className="text-xs text-[#6B7280]">
-                        Vos données sont sécurisées et utilisées uniquement pour personnaliser vos soins
+                        {t('onboarding.sumPrivacy')}
                     </span>
                 </div>
             </motion.div>
@@ -207,17 +197,17 @@ export function SummaryStep({ data, onSubmit, onBack, isSubmitting }: SummarySte
             >
                 <Button type="button" variant="outline" onClick={onBack} className="flex-1" disabled={isSubmitting}>
                     <ArrowLeft className="w-5 h-5" />
-                    Modifier
+                    {t('onboarding.sumModify')}
                 </Button>
                 <Button onClick={onSubmit} className="flex-1 shadow-lg shadow-[#0EA5E9]/20" loading={isSubmitting}>
                     {isSubmitting ? (
                         <>
                             <Loader className="w-5 h-5 animate-spin" />
-                            Sauvegarde en cours...
+                            {t('onboarding.sumSave')}
                         </>
                     ) : (
                         <>
-                            Confirmer & Commencer
+                            {t('onboarding.sumConfirm')}
                             <ArrowRight className="w-5 h-5" />
                         </>
                     )}

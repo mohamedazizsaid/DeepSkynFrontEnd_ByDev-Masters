@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sun, ArrowLeft, ArrowRight, Check, HelpCircle } from 'lucide-react';
 import { Button } from '../button';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 interface FitzpatrickStepProps {
     onNext: (data: { fitzpatrickType: number }) => void;
@@ -79,8 +80,12 @@ const fitzpatrickTypes = [
 ];
 
 export function FitzpatrickStep({ onNext, onBack, initialValue }: FitzpatrickStepProps) {
+    const { t } = useAccessibilityStore();
     const [selected, setSelected] = useState<number | null>(initialValue || null);
     const [showInfo, setShowInfo] = useState(false);
+
+    // Dynamic translation access
+    const fitzTypesLabels = t('onboarding.fitzTypesLabels') as Record<string, string>;
 
     const handleSubmit = () => {
         if (selected !== null) {
@@ -113,7 +118,7 @@ export function FitzpatrickStep({ onNext, onBack, initialValue }: FitzpatrickSte
                 </motion.div>
                 <div className="flex items-center justify-center gap-2 mb-3">
                     <h2 className="text-3xl font-extrabold text-[#111827]">
-                        Votre Phototype Fitzpatrick
+                        {t('onboarding.fitzTitle')}
                     </h2>
                     <motion.button
                         onClick={() => setShowInfo(!showInfo)}
@@ -125,7 +130,7 @@ export function FitzpatrickStep({ onNext, onBack, initialValue }: FitzpatrickSte
                     </motion.button>
                 </div>
                 <p className="text-lg text-[#6B7280] max-w-xl mx-auto">
-                    Identifiez votre sensibilité solaire pour des conseils SPF personnalisés
+                    {t('onboarding.fitzSub')}
                 </p>
             </motion.div>
 
@@ -140,8 +145,7 @@ export function FitzpatrickStep({ onNext, onBack, initialValue }: FitzpatrickSte
                     >
                         <div className="bg-gradient-to-r from-[#F59E0B]/10 to-[#FBBF24]/10 rounded-2xl p-5 border border-[#F59E0B]/20">
                             <p className="text-sm text-[#374151]">
-                                <strong>L'échelle de Fitzpatrick</strong> est une classification dermatologique qui évalue la réponse de votre peau au soleil.
-                                Elle aide à déterminer votre risque de coup de soleil et les mesures de protection solaire appropriées.
+                                {t('onboarding.fitzInfo')}
                             </p>
                         </div>
                     </motion.div>
@@ -192,7 +196,7 @@ export function FitzpatrickStep({ onNext, onBack, initialValue }: FitzpatrickSte
                                     transition={{ duration: 0.4 }}
                                 />
                                 <div>
-                                    <div className="text-sm font-bold text-[#111827]">{type.label}</div>
+                                    <div className="text-sm font-bold text-[#111827]">{fitzTypesLabels[type.type.toString()] || type.label}</div>
                                     <div className="text-xs text-[#6B7280]">{type.shortDesc}</div>
                                 </div>
                             </div>
@@ -230,7 +234,7 @@ export function FitzpatrickStep({ onNext, onBack, initialValue }: FitzpatrickSte
                     onClick={() => onNext({ fitzpatrickType: 0 })}
                     className="text-sm text-[#9CA3AF] hover:text-[#0EA5E9] transition-colors underline underline-offset-4"
                 >
-                    Je ne suis pas sûr(e), passer cette étape
+                    {t('onboarding.skip')}
                 </button>
             </motion.div>
 
@@ -243,10 +247,10 @@ export function FitzpatrickStep({ onNext, onBack, initialValue }: FitzpatrickSte
             >
                 <Button type="button" variant="outline" onClick={onBack} className="flex-1">
                     <ArrowLeft className="w-5 h-5" />
-                    Retour
+                    {t('onboarding.back')}
                 </Button>
                 <Button onClick={handleSubmit} className="flex-1" disabled={selected === null}>
-                    Continuer
+                    {t('onboarding.next')}
                     <ArrowRight className="w-5 h-5" />
                 </Button>
             </motion.div>

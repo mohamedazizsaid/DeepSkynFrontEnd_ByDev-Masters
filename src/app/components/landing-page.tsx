@@ -4,6 +4,7 @@ import { Sparkles, Brain, Calendar, TrendingUp, Shield, Star, Check, ArrowRight 
 import { Button } from './button';
 import { Card } from './card';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { useAccessibilityStore } from '../../stores/accessibility.store';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -11,37 +12,32 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
+  const { t } = useAccessibilityStore();
+  
   const features = [
     {
       icon: <Brain className="w-8 h-8" />,
-      title: 'AI-Powered Analysis',
-      description: 'Advanced AI technology analyzes your skin with medical-grade precision'
+      title: t('landing.feature1Title'),
+      description: t('landing.feature1Desc')
     },
     {
       icon: <Calendar className="w-8 h-8" />,
-      title: 'Personalized Routines',
-      description: 'Custom skincare routines tailored to your unique skin profile'
+      title: t('landing.feature2Title'),
+      description: t('landing.feature2Desc')
     },
     {
       icon: <TrendingUp className="w-8 h-8" />,
-      title: 'Track Your Progress',
-      description: 'Monitor your skin evolution with detailed analytics and insights'
+      title: t('landing.feature3Title'),
+      description: t('landing.feature3Desc')
     },
     {
       icon: <Sparkles className="w-8 h-8" />,
-      title: 'Smart Recommendations',
-      description: 'Get product recommendations based on your skin concerns'
+      title: t('landing.feature4Title'),
+      description: t('landing.feature4Desc')
     }
   ];
 
-  const benefits = [
-    'Fitzpatrick skin type analysis',
-    'Real age vs skin age comparison',
-    'Personalized AI dermatology coach',
-    'Daily routine reminders',
-    'Progress tracking & reporting',
-    'Expert skincare insights'
-  ];
+  const benefits = t('landing.benefits') as unknown as string[];
 
   const testimonials = [
     {
@@ -88,10 +84,10 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             animate={{ opacity: 1, x: 0 }}
           >
             <Button variant="ghost" onClick={onLogin}>
-              Sign In
+              {t('landing.navSignIn')}
             </Button>
             <Button onClick={onGetStarted}>
-              Get Started
+              {t('landing.navGetStarted')}
             </Button>
           </motion.div>
         </div>
@@ -108,44 +104,43 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0EA5E9]/10 rounded-full mb-6">
                 <Sparkles className="w-4 h-4 text-[#0EA5E9]" />
-                <span className="text-sm text-[#0EA5E9] font-medium">AI-Powered Dermatology</span>
+                <span className="text-sm text-[#0EA5E9] font-medium">{t('landing.heroTag')}</span>
               </div>
               
               <h1 className="text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                Your Personal
+                {t('landing.heroTitle1')}
                 <span className="block bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent">
-                  Skin Health
+                  {t('landing.heroTitleGradient')}
                 </span>
-                Companion
+                {t('landing.heroTitle2')}
               </h1>
               
               <p className="text-xl text-[#6B7280] mb-8 leading-relaxed">
-                Discover your skin's true potential with AI-powered analysis, personalized routines, 
-                and expert guidance tailored just for you.
+                {t('landing.heroDesc')}
               </p>
               
               <div className="flex flex-wrap gap-4">
                 <Button size="lg" onClick={onGetStarted}>
-                  Start Your Journey
-                  <ArrowRight className="w-5 h-5" />
+                  {t('landing.heroStart')}
+                  <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
                 <Button variant="outline" size="lg">
-                  Watch Demo
+                  {t('landing.heroWatchDemo')}
                 </Button>
               </div>
 
-              <div className="mt-12 flex items-center gap-8">
+              <div className="mt-12 flex flex-wrap items-center gap-8">
                 <div>
                   <div className="text-3xl font-bold text-[#0EA5E9]">50K+</div>
-                  <div className="text-sm text-[#6B7280]">Active Users</div>
+                  <div className="text-sm text-[#6B7280]">{t('landing.activeUsers')}</div>
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-[#0EA5E9]">4.9★</div>
-                  <div className="text-sm text-[#6B7280]">User Rating</div>
+                  <div className="text-sm text-[#6B7280]">{t('landing.userRating')}</div>
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-[#0EA5E9]">95%</div>
-                  <div className="text-sm text-[#6B7280]">Satisfaction</div>
+                  <div className="text-sm text-[#6B7280]">{t('landing.satisfaction')}</div>
                 </div>
               </div>
             </motion.div>
@@ -165,16 +160,15 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0EA5E9]/20 to-transparent"></div>
               </div>
               
-              {/* Floating Stats Card */}
               <motion.div
-                className="absolute bottom-8 left-8 right-8 bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-xl"
+                className="absolute bottom-8 left-8 right-8 bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-xl ltr:text-left rtl:text-right"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm text-[#6B7280] mb-1">Skin Health Score</div>
+                    <div className="text-sm text-[#6B7280] mb-1">{t('landing.skinHealthScore')}</div>
                     <div className="text-3xl font-bold text-[#0EA5E9]">87/100</div>
                   </div>
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center">
@@ -196,8 +190,8 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-4">Powerful Features</h2>
-            <p className="text-xl text-[#6B7280]">Everything you need for perfect skin health</p>
+            <h2 className="text-4xl font-bold mb-4">{t('landing.featuresTitle')}</h2>
+            <p className="text-xl text-[#6B7280]">{t('landing.featuresDesc')}</p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -232,16 +226,15 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
               viewport={{ once: true }}
             >
               <h2 className="text-4xl font-bold mb-6">
-                Why Choose
+                {t('landing.whyChoose')}
                 <span className="block text-[#0EA5E9]">DeepSkyn?</span>
               </h2>
               <p className="text-xl text-[#6B7280] mb-8">
-                Our comprehensive platform combines cutting-edge AI technology with dermatological expertise 
-                to give you the best skincare experience.
+                {t('landing.whyDesc')}
               </p>
               
               <div className="space-y-4">
-                {benefits.map((benefit, index) => (
+                {benefits?.map((benefit, index) => (
                   <motion.div
                     key={index}
                     className="flex items-center gap-3"
@@ -286,8 +279,8 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-4">Loved by Thousands</h2>
-            <p className="text-xl text-[#6B7280]">See what our users are saying</p>
+            <h2 className="text-4xl font-bold mb-4">{t('landing.lovedBy')}</h2>
+            <p className="text-xl text-[#6B7280]">{t('landing.lovedDesc')}</p>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -326,8 +319,8 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
-            <p className="text-xl text-[#6B7280]">Choose the plan that's right for you</p>
+            <h2 className="text-4xl font-bold mb-4">{t('landing.pricingTitle')}</h2>
+            <p className="text-xl text-[#6B7280]">{t('landing.pricingDesc')}</p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 gap-8">
@@ -338,27 +331,21 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             >
               <Card className="h-full">
                 <div className="mb-6">
-                  <h3 className="text-2xl font-bold mb-2">Free</h3>
+                  <h3 className="text-2xl font-bold mb-2">{t('landing.free')}</h3>
                   <div className="text-4xl font-bold text-[#0EA5E9]">
-                    $0<span className="text-lg text-[#6B7280]">/month</span>
+                    $0<span className="text-lg text-[#6B7280]">/mo</span>
                   </div>
                 </div>
                 <ul className="space-y-3 mb-8">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-[#0EA5E9]" />
-                    <span>Basic skin analysis</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-[#0EA5E9]" />
-                    <span>Personalized routine</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-[#0EA5E9]" />
-                    <span>Monthly reports</span>
-                  </li>
+                  {(t('landing.freeFeatures') as unknown as string[]).map((ft, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <Check className="w-5 h-5 text-[#0EA5E9]" />
+                      <span>{ft}</span>
+                    </li>
+                  ))}
                 </ul>
                 <Button variant="outline" className="w-full" onClick={onGetStarted}>
-                  Get Started
+                  {t('landing.navGetStarted')}
                 </Button>
               </Card>
             </motion.div>
@@ -371,34 +358,24 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             >
               <Card className="h-full border-2 border-[#0EA5E9] relative">
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white text-sm font-medium rounded-full">
-                  Most Popular
+                  {t('landing.mostPopular')}
                 </div>
                 <div className="mb-6">
-                  <h3 className="text-2xl font-bold mb-2">Premium</h3>
+                  <h3 className="text-2xl font-bold mb-2">{t('landing.premium')}</h3>
                   <div className="text-4xl font-bold bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent">
-                    $19<span className="text-lg text-[#6B7280]">/month</span>
+                    $19<span className="text-lg text-[#6B7280]">/mo</span>
                   </div>
                 </div>
                 <ul className="space-y-3 mb-8">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-[#0EA5E9]" />
-                    <span>Advanced AI analysis</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-[#0EA5E9]" />
-                    <span>AI dermatology coach</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-[#0EA5E9]" />
-                    <span>Unlimited tracking</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-[#0EA5E9]" />
-                    <span>Priority support</span>
-                  </li>
+                  {(t('landing.premiumFeatures') as unknown as string[]).map((pt, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <Check className="w-5 h-5 text-[#0EA5E9]" />
+                      <span>{pt}</span>
+                    </li>
+                  ))}
                 </ul>
                 <Button className="w-full" onClick={onGetStarted}>
-                  Start Premium Trial
+                  {t('landing.startTrial')}
                 </Button>
               </Card>
             </motion.div>
@@ -415,10 +392,10 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             viewport={{ once: true }}
           >
             <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
-              Ready to Transform Your Skin?
+              {t('landing.readyToTransform')}
             </h2>
             <p className="text-xl text-white/90 mb-8">
-              Join thousands of users achieving their best skin ever
+              {t('landing.joinThousands')}
             </p>
             <Button 
               size="lg" 
@@ -426,8 +403,8 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
               className="bg-white text-[#0EA5E9] hover:bg-gray-50 border-0"
               onClick={onGetStarted}
             >
-              Start Your Free Analysis
-              <ArrowRight className="w-5 h-5" />
+              {t('landing.freeAnalysis')}
+              <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </motion.div>
         </div>
@@ -445,11 +422,11 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
                 <span className="text-xl font-bold">DeepSkyn</span>
               </div>
               <p className="text-gray-400 text-sm">
-                AI-powered skincare companion for your best skin ever.
+                {t('landing.footerDesc')}
               </p>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Product</h4>
+              <h4 className="font-bold mb-4">{t('landing.product')}</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
@@ -457,7 +434,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Company</h4>
+              <h4 className="font-bold mb-4">{t('landing.company')}</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">About</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
@@ -465,7 +442,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Legal</h4>
+              <h4 className="font-bold mb-4">{t('landing.legal')}</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Terms</a></li>
@@ -474,7 +451,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             </div>
           </div>
           <div className="pt-8 border-t border-gray-800 text-center text-sm text-gray-400">
-            © 2026 DeepSkyn. All rights reserved.
+            © 2026 DeepSkyn. {t('landing.allRightsReserved')}
           </div>
         </div>
       </footer>

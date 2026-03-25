@@ -1,21 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Loader, Sparkles, CheckCircle } from 'lucide-react';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 interface AnalysisProcessingProps {
   onComplete: () => void;
 }
 
-const processingSteps = [
-  { id: 1, text: 'Analyzing uploaded images...', duration: 2000 },
-  { id: 2, text: 'Detecting skin type...', duration: 1500 },
-  { id: 3, text: 'Identifying concerns...', duration: 1800 },
-  { id: 4, text: 'Calculating skin health score...', duration: 1700 },
-  { id: 5, text: 'Generating personalized routine...', duration: 2000 }
-];
-
 export function AnalysisProcessing({ onComplete }: AnalysisProcessingProps) {
+  const { t } = useAccessibilityStore();
   const [currentStep, setCurrentStep] = useState(0);
+
+  const initialProcessingSteps = [
+    { id: 1, text: '', duration: 2000 },
+    { id: 2, text: '', duration: 1500 },
+    { id: 3, text: '', duration: 1800 },
+    { id: 4, text: '', duration: 1700 },
+    { id: 5, text: '', duration: 2000 }
+  ];
+
+  const translatedTexts = t('onboarding.analysisSteps') as unknown as string[];
+  const processingSteps = initialProcessingSteps.map((s, i) => ({ ...s, text: translatedTexts[i] || s.text }));
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [progress, setProgress] = useState(0);
 
@@ -81,9 +86,9 @@ export function AnalysisProcessing({ onComplete }: AnalysisProcessingProps) {
           >
             <Sparkles className="w-10 h-10 text-white" />
           </motion.div>
-          <h1 className="text-3xl font-bold mb-4">Analyzing Your Skin</h1>
+          <h1 className="text-3xl font-bold mb-4">{t('onboarding.analysisTitle')}</h1>
           <p className="text-lg text-[#6B7280]">
-            Our AI is working its magic...
+            {t('onboarding.analysisSub')}
           </p>
         </div>
 
@@ -92,7 +97,7 @@ export function AnalysisProcessing({ onComplete }: AnalysisProcessingProps) {
           {/* Progress Bar */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-[#6B7280]">Progress</span>
+              <span className="text-sm font-medium text-[#6B7280]">{t('onboarding.analysisProgress')}</span>
               <span className="text-sm font-bold text-[#0EA5E9]">{Math.round(progress)}%</span>
             </div>
             <div className="h-3 bg-[#E5E7EB] rounded-full overflow-hidden">
@@ -160,7 +165,7 @@ export function AnalysisProcessing({ onComplete }: AnalysisProcessingProps) {
           {/* Estimated Time */}
           <div className="mt-8 text-center">
             <p className="text-sm text-[#6B7280]">
-              Estimated time remaining: <span className="font-medium text-[#0EA5E9]">
+              {t('onboarding.analysisTime')} <span className="font-medium text-[#0EA5E9]">
                 {Math.max(0, Math.ceil((processingSteps.length - currentStep) * 1.5))}s
               </span>
             </p>
@@ -176,7 +181,7 @@ export function AnalysisProcessing({ onComplete }: AnalysisProcessingProps) {
         >
           <div className="inline-block bg-white rounded-xl px-6 py-4 shadow-md border border-[#E5E7EB]">
             <p className="text-sm text-[#6B7280]">
-              💡 <strong>Did you know?</strong> Your skin completely renews itself every 28 days!
+              💡 <strong>{t('onboarding.analysisFact')}</strong> {t('onboarding.analysisFactDetail')}
             </p>
           </div>
         </motion.div>

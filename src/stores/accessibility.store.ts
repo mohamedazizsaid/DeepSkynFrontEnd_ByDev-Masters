@@ -18,12 +18,15 @@ type SpeechRecognitionInstance = {
     onend: (() => void) | null;
 };
 
+import { Language, translations, TranslationKeys } from '../lib/i18n/translations';
+
 // ── Store interface ─────────────────────────────────────────────────────
 type ContrastMode = 'off' | 'medium' | 'high';
 type ColorBlindFilter = 'none' | 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia';
 
 interface AccessibilityState {
     // State
+    language: Language;
     theme: 'light' | 'dark';
     contrastMode: ContrastMode;
     zoomLevel: number;
@@ -42,6 +45,8 @@ interface AccessibilityState {
     speechRate: number;
 
     // Actions
+    setLanguage: (lang: Language) => void;
+    t: (key: string) => any;
     toggleTheme: () => void;
     setTheme: (theme: 'light' | 'dark') => void;
     setContrastMode: (mode: ContrastMode) => void;
@@ -133,6 +138,12 @@ function applyColorBlindFilter(filter: ColorBlindFilter) {
     }
 }
 
+function applyLanguageDir(lang: Language) {
+    const root = document.documentElement;
+    root.setAttribute('lang', lang);
+    root.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+}
+
 // ── Extract page text for TTS ───────────────────────────────────────────
 function getPageText(): string {
     const main = document.querySelector('main') || document.body;
@@ -159,6 +170,7 @@ function getPageText(): string {
 export const useAccessibilityStore = create<AccessibilityState>()(
     persist(
         (set, get) => ({
+            language: 'fr',
             theme: 'light',
             contrastMode: 'off',
             zoomLevel: 100,
@@ -175,6 +187,32 @@ export const useAccessibilityStore = create<AccessibilityState>()(
             colorBlindFilter: 'none' as ColorBlindFilter,
             readingGuide: false,
             speechRate: 1,
+
+            setLanguage: (lang) => {
+                set({ language: lang });
+                applyLanguageDir(lang);
+                if (get().isSpeaking) get().stopSpeaking(); // Stop speech if language changes
+            },
+
+            t: (keyPath: string) => {
+                const lang = get().language;
+                const path = keyPath.split('.');
+                let current: any = translations[lang];
+                for (const k of path) {
+                    if (current?.[k] === undefined) {
+                        console.warn(`Translation key missing: ${keyPath} in ${lang}`);
+                        // fallback to fr
+                        let fallbackCurrent: any = translations['fr'];
+                        for (const fbK of path) {
+                            if (fallbackCurrent?.[fbK] === undefined) return keyPath;
+                            fallbackCurrent = fallbackCurrent[fbK];
+                        }
+                        return fallbackCurrent;
+                    }
+                    current = current[k];
+                }
+                return current;
+            },
 
             toggleTheme: () => {
                 const newTheme = get().theme === 'light' ? 'dark' : 'light';

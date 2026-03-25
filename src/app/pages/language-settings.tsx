@@ -4,6 +4,7 @@ import { Globe, Check, ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth.store';
 import { authService } from '../../lib/services/auth.service';
 import toast from 'react-hot-toast';
+import { useAccessibilityStore } from '../../stores/accessibility.store';
 
 interface LanguageSettingsProps {
   onBack: () => void;
@@ -20,6 +21,7 @@ const LANGUAGES = [
 
 export function LanguageSettings({ onBack }: LanguageSettingsProps) {
   const { user, loadUser } = useAuthStore();
+  const { t, setLanguage } = useAccessibilityStore();
   const [selectedLanguage, setSelectedLanguage] = useState(user?.preferredLanguage || 'fr');
   const [saving, setSaving] = useState(false);
 
@@ -31,7 +33,8 @@ export function LanguageSettings({ onBack }: LanguageSettingsProps) {
         preferredLanguage: languageCode,
       });
       await loadUser();
-      toast.success('Langue mise à jour');
+      setLanguage(languageCode as any);
+      toast.success(t('common.success') + '!');
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Erreur lors de la mise à jour');
       setSelectedLanguage(user?.preferredLanguage || 'fr');
@@ -63,7 +66,7 @@ export function LanguageSettings({ onBack }: LanguageSettingsProps) {
           <Globe className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-[#111827]">Langue & région</h2>
+          <h2 className="text-lg font-bold text-[#111827]">{t('settings.langAndRegion')}</h2>
           <p className="text-xs text-[#6B7280]">Choisissez votre langue préférée</p>
         </div>
       </motion.div>

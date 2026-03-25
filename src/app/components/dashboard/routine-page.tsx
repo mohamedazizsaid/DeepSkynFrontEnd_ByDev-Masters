@@ -20,6 +20,7 @@ import { routineService } from '../../../lib/services/routine.service';
 import { usersService } from '../../../lib/services/users.service';
 import type { Routine, RoutineStep, AIAdviceResponse, ProductRecommendation } from '../../../lib/types';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
+import { useNotification } from '../../../lib/hooks/useNotification';
 
 // Lazy load 3D viewer for performance
 const Face3DViewer = lazy(() =>
@@ -70,7 +71,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
   const [currentRecommendation, setCurrentRecommendation] = useState<ProductRecommendation | null>(null);
   const [recommendStepName, setRecommendStepName] = useState<string>('');
 
-  const { theme, contrastMode } = useAccessibilityStore();
+  const { theme, contrastMode, t } = useAccessibilityStore();
   const isHcHigh = contrastMode === 'high';
   const isHcMedium = contrastMode === 'medium';
   const isDark = theme === 'dark';
@@ -78,13 +79,89 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
   const [amSteps, setAmSteps] = useState<StepItem[]>([]);
   const [pmSteps, setPmSteps] = useState<StepItem[]>([]);
 
+  const [reminders, setReminders] = useState({
+    morningEnabled: false,
+    morningTime: '08:00',
+    eveningEnabled: false,
+    eveningTime: '21:00'
+  });
+
   const currentSteps = activeTab === 'am' ? amSteps : pmSteps;
   const setCurrentSteps = activeTab === 'am' ? setAmSteps : setPmSteps;
 
-  // ─── Load routines on mount ───
+  // ─── Load routines and auto-select tab based on time ───
   useEffect(() => {
     loadRoutines();
+    autoSelectTab();
+    
+    // Check reminders every minute
+    const interval = setInterval(checkReminders, 60000);
+    return () => clearInterval(interval);
   }, []);
+
+  const checkReminders = () => {
+    try {
+      if (!reminders) return;
+
+      const now = new Date();
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      
+      if (reminders.morningEnabled && reminders.morningTime === currentTime) {
+        new Notification("Routine Matin ☀️", {
+          body: "C'est l'heure de votre routine du matin ! ✨",
+          icon: "/favicon.ico"
+        });
+        setActiveTab('am');
+      }
+      
+      if (reminders.eveningEnabled && reminders.eveningTime === currentTime) {
+        new Notification("Routine Soir 🌙", {
+          body: "C'est l'heure de votre routine du soir ! 🌙",
+          icon: "/favicon.ico"
+        });
+        setActiveTab('pm');
+      }
+    } catch (e) {
+      console.error("Reminder check failed", e);
+    }
+  };
+
+  const autoSelectTab = async () => {
+    try {
+      const user = await usersService.getMe();
+      const rems = user.settings?.reminders;
+      if (rems) {
+        setReminders(rems);
+        const now = new Date();
+        const hour = now.getHours();
+        const minute = now.getMinutes();
+        const currentTimeMinutes = hour * 60 + minute;
+        
+        const morningTime = rems.morningTime || '08:00';
+        const eveningTime = rems.eveningTime || '21:00';
+        
+        const [mH, mM] = morningTime.split(':').map(Number);
+        const [eH, eM] = eveningTime.split(':').map(Number);
+        
+        const mMinutes = mH * 60 + mM;
+        const eMinutes = eH * 60 + eM;
+
+        if (currentTimeMinutes >= mMinutes && currentTimeMinutes < eMinutes) {
+          setActiveTab('am');
+        } else {
+          setActiveTab('pm');
+        }
+      } else {
+        const hour = new Date().getHours();
+        if (hour >= 6 && hour < 18) setActiveTab('am');
+        else setActiveTab('pm');
+      }
+    } catch {
+      const hour = new Date().getHours();
+      if (hour >= 6 && hour < 18) setActiveTab('am');
+      else setActiveTab('pm');
+    }
+  };
 
   const loadRoutines = async () => {
     setLoading(true);
@@ -276,7 +353,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
           >
             <Sparkles className="w-12 h-12 text-[#D4AF37] mx-auto" />
           </motion.div>
-          <p className="text-[#6B7280] mt-4">Chargement de vos routines...</p>
+          <p className="text-[#6B7280] mt-4">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -292,19 +369,19 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
             className="flex items-center gap-2 text-gray-500 hover:text-[#0EA5E9] mb-6 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="text-sm">Retour au Dashboard</span>
+            <span className="text-sm">{t('routine.backToDashboard')}</span>
           </button>
 
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-1 tracking-tight">
-                Ma Routine{' '}
+                {t('routine.title')}{' '}
                 <span className={isHcHigh ? 'text-cyan-400' : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent'}>
-                  Soins
+                  {t('routine.skincare')}
                 </span>
               </h1>
               <p className="text-gray-500 text-sm">
-                Personnalisée par l'IA pour votre peau
+                {t('routine.subtitle')}
               </p>
             </div>
 
@@ -321,7 +398,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 ) : (
                   <Sparkles className="w-4 h-4" />
                 )}
-                {generating ? 'Génération...' : 'Régénérer IA'}
+                {generating ? t('routine.generating') : t('routine.regenerateAI')}
               </motion.button>
 
               <motion.button
@@ -355,7 +432,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
           >
             <div className="flex items-center justify-center gap-2">
               <Sun className="w-5 h-5" />
-              <span>Routine Matin</span>
+              <span>{t('routine.morningRoutine')}</span>
             </div>
           </motion.button>
 
@@ -371,7 +448,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
           >
             <div className="flex items-center justify-center gap-2">
               <Moon className="w-5 h-5" />
-              <span>Routine Soir</span>
+              <span>{t('routine.eveningRoutine')}</span>
             </div>
           </motion.button>
         </div>
@@ -387,11 +464,25 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
                   <h3 className="font-bold text-gray-900 text-base">
-                    {activeTab === 'am' ? '☀️ Étapes Matin' : '🌙 Étapes Soir'}
+                    {activeTab === 'am' ? t('routine.morningSteps') : t('routine.eveningSteps')}
                   </h3>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#0EA5E9]/10 text-[#0EA5E9]">
-                    {currentSteps.length} étapes
-                  </span>
+                  <div className="flex gap-2 items-center">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#0EA5E9]/10 text-[#0EA5E9]">
+                      {currentSteps.length} {t('routine.steps')}
+                    </span>
+                    {activeTab === 'am' && reminders.morningEnabled && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-700 flex items-center gap-1">
+                        <Bell className="w-2.5 h-2.5" />
+                        Rappel à {reminders.morningTime}
+                      </span>
+                    )}
+                    {activeTab === 'pm' && reminders.eveningEnabled && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-700 flex items-center gap-1">
+                        <Bell className="w-2.5 h-2.5" />
+                        Rappel à {reminders.eveningTime}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -399,7 +490,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
               <div className="flex items-start gap-2 p-3 rounded-xl bg-[#0EA5E9]/5 border border-[#0EA5E9]/10 mb-4">
                 <Info className="w-4 h-4 text-[#0EA5E9] flex-shrink-0 mt-0.5" />
                 <p className="text-[11px] text-[#0EA5E9]">
-                  Glissez-déposez pour réorganiser. Cliquez sur ✨ pour une recommandation produit IA.
+                  {t('routine.dragDropTip')}
                 </p>
               </div>
 
@@ -427,7 +518,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
               ) : (
                 <div className="text-center py-12">
                   <Sparkles className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">Aucune étape. Générez une routine IA !</p>
+                  <p className="text-gray-500 text-sm">{t('routine.noSteps')}</p>
                 </div>
               )}
 
@@ -441,7 +532,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
             {!show3D && (
               <div className="mt-6 grid sm:grid-cols-2 gap-4">
                 <InfoCard
-                  title="Ordre d'application"
+                  title={t('routine.applicationOrder')}
                   items={[
                     'Nettoyant',
                     'Tonique',
@@ -480,7 +571,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
             {/* Info Cards */}
             <div className={show3D ? 'grid sm:grid-cols-2 gap-4' : 'space-y-4'}>
               <InfoCard
-                title="Ordre d'application"
+                title={t('routine.applicationOrder')}
                 items={[
                   'Nettoyant',
                   'Tonique',
@@ -491,7 +582,19 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 ]}
               />
               <TipsCard />
-              <RoutineReminderCard />
+               <RoutineReminderCard 
+                 reminders={reminders}
+                 onUpdate={(newRems) => {
+                   setReminders(newRems);
+                   // Re-select tab based on new times
+                   const now = new Date();
+                   const curMinutes = now.getHours() * 60 + now.getMinutes();
+                   const [mH, mM] = newRems.morningTime.split(':').map(Number);
+                   const [eH, eM] = newRems.eveningTime.split(':').map(Number);
+                   if (curMinutes >= mH*60+mM && curMinutes < eH*60+eM) setActiveTab('am');
+                   else setActiveTab('pm');
+                 }}
+               />
             </div>
           </div>
         </div>
@@ -520,6 +623,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
 // ─── Sub Components ───
 
 function InfoCard({ title, items }: { title: string; items: string[] }) {
+  const { t } = useAccessibilityStore();
   return (
     <div
       className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
@@ -540,6 +644,7 @@ function InfoCard({ title, items }: { title: string; items: string[] }) {
 }
 
 function TipsCard() {
+  const { t } = useAccessibilityStore();
   const tips = [
     'Attendez 30-60s entre chaque étape',
     'Appliquez sur peau humide pour mieux absorber',
@@ -551,7 +656,7 @@ function TipsCard() {
     <div
       className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
     >
-      <h3 className="font-bold text-gray-900 text-sm mb-3">💡 Conseils Pro</h3>
+      <h3 className="font-bold text-gray-900 text-sm mb-3">{t('routine.proTips')}</h3>
       <div className="space-y-2">
         {tips.map((tip, i) => (
           <div key={i} className="flex items-start gap-2">
@@ -564,27 +669,41 @@ function TipsCard() {
   );
 }
 
-function RoutineReminderCard() {
-  const [loading, setLoading] = useState(true);
+function RoutineReminderCard({ 
+  reminders, 
+  onUpdate 
+}: { 
+  reminders: any, 
+  onUpdate: (rems: any) => void 
+}) {
+  const { t } = useAccessibilityStore();
   const [saving, setSaving] = useState(false);
-  const [reminders, setReminders] = useState({
-    morningEnabled: false,
-    morningTime: '08:00',
-    eveningEnabled: false,
-    eveningTime: '21:00'
-  });
+  const { success, error, show } = useNotification();
 
-  useEffect(() => {
-    usersService.getMe().then(user => {
-      if (user.settings?.reminders) {
-        setReminders(user.settings.reminders);
-      }
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
+  const handleTestNotification = () => {
+    if (!('Notification' in window)) {
+      error("Votre navigateur ne supporte pas les notifications.");
+      return;
+    }
+
+    if (Notification.permission === 'granted') {
+      new Notification("DeepSkyn Routine", {
+        body: "C'est l'heure de votre routine skincare ! ✨",
+        icon: "/favicon.ico"
+      });
+      success("Notification de test envoyée !");
+    } else {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          handleTestNotification();
+        } else {
+          error("Permission de notification refusée.");
+        }
+      });
+    }
+  };
 
   const handleUpdate = async (newReminders: typeof reminders) => {
-    setReminders(newReminders);
     setSaving(true);
     try {
       const user = await usersService.getMe();
@@ -595,31 +714,30 @@ function RoutineReminderCard() {
         }
       });
       
-      // If deployed in a PWA/Mobile context with actual push notifications, 
-      // here you would request browser Notification permissions
+      onUpdate(newReminders);
+      success("Rappels mis à jour !");
+      
       if ((newReminders.morningEnabled || newReminders.eveningEnabled) && 'Notification' in window) {
         if (Notification.permission === 'default') {
           Notification.requestPermission();
         }
       }
     } catch (e) {
+      error("Erreur lors de la mise à jour.");
       console.error(e);
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 flex justify-center py-8">
-      <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
-    </div>
-  );
-
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center gap-2 mb-4">
-        <Bell className="w-4 h-4 text-[#8B5CF6]" />
-        <h3 className="font-bold text-gray-900 text-sm">Rappels de Routine</h3>
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <Bell className="w-4 h-4 text-[#8B5CF6]" />
+          <h3 className="font-bold text-gray-900 text-sm">{t('routine.remindersTitle')}</h3>
+        </div>
+     
       </div>
 
       <div className="space-y-4">
@@ -630,7 +748,7 @@ function RoutineReminderCard() {
               <Sun className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-900">Matin</p>
+              <p className="text-xs font-semibold text-gray-900">{t('routine.morning')}</p>
               <input 
                 type="time" 
                 value={reminders.morningTime}
@@ -654,7 +772,7 @@ function RoutineReminderCard() {
               <Moon className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-900">Soir</p>
+              <p className="text-xs font-semibold text-gray-900">{t('routine.evening')}</p>
               <input 
                 type="time" 
                 value={reminders.eveningTime}
@@ -671,7 +789,7 @@ function RoutineReminderCard() {
           </button>
         </div>
         
-        {saving && <p className="text-[10px] text-gray-400 text-center animate-pulse">Enregistrement...</p>}
+        {saving && <p className="text-[10px] text-gray-400 text-center animate-pulse">{t('routine.saveInProgress')}</p>}
       </div>
     </div>
   );

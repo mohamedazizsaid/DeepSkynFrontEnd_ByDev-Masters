@@ -9,12 +9,15 @@ import { ChangePasswordSettings } from './change-password-settings';
 import { LanguageSettings } from './language-settings';
 import toast from 'react-hot-toast';
 
+import { useAccessibilityStore } from '../../stores/accessibility.store';
+
 interface SettingsPageProps {
   onBack?: () => void;
 }
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
   const { user, logout } = useAuthStore();
+  const { t } = useAccessibilityStore();
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<'main' | '2fa' | 'personal' | 'password' | 'language'>('main');
 
@@ -30,13 +33,13 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
 
   const settingsSections = [
     {
-      title: 'Compte',
+      title: t('settings.account'),
       items: [
         {
           id: 'personal',
           icon: <User className="w-5 h-5" />,
-          label: 'Informations personnelles',
-          description: 'Nom, email, photo de profil',
+          label: t('settings.personalInfo'),
+          description: t('settings.personalInfoDesc'),
           color: 'from-[#0EA5E9] to-[#06B6D4]',
           iconBg: 'bg-[#0EA5E9]/10',
           iconColor: 'text-[#0EA5E9]',
@@ -44,8 +47,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         {
           id: '2fa',
           icon: <Shield className="w-5 h-5" />,
-          label: 'Authentification 2FA',
-          description: 'Renforcez la sécurité de votre compte',
+          label: t('settings.twoFactor'),
+          description: t('settings.twoFactorDesc'),
           color: 'from-[#8B5CF6] to-[#6366F1]',
           iconBg: 'bg-[#8B5CF6]/10',
           iconColor: 'text-[#8B5CF6]',
@@ -53,8 +56,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         {
           id: 'password',
           icon: <Lock className="w-5 h-5" />,
-          label: 'Mot de passe',
-          description: 'Modifier votre mot de passe',
+          label: t('settings.password'),
+          description: t('settings.passwordDesc'),
           color: 'from-[#EC4899] to-[#F43F5E]',
           iconBg: 'bg-[#EC4899]/10',
           iconColor: 'text-[#EC4899]',
@@ -62,13 +65,13 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
       ],
     },
     {
-      title: 'Préférences',
+      title: t('settings.preferences'),
       items: [
         {
           id: 'notifications',
           icon: <Bell className="w-5 h-5" />,
-          label: 'Notifications',
-          description: 'Gérer les alertes et rappels',
+          label: t('settings.notifications'),
+          description: t('settings.notificationsDesc'),
           color: 'from-[#F59E0B] to-[#EF4444]',
           iconBg: 'bg-[#F59E0B]/10',
           iconColor: 'text-[#F59E0B]',
@@ -76,8 +79,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         {
           id: 'appearance',
           icon: <Palette className="w-5 h-5" />,
-          label: 'Apparence',
-          description: 'Thème, couleurs et affichage',
+          label: t('settings.appearance'),
+          description: t('settings.appearanceDesc'),
           color: 'from-[#10B981] to-[#06B6D4]',
           iconBg: 'bg-[#10B981]/10',
           iconColor: 'text-[#10B981]',
@@ -85,7 +88,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         {
           id: 'language',
           icon: <Globe className="w-5 h-5" />,
-          label: 'Langue & région',
+          label: t('settings.langAndRegion'),
           description: user?.preferredLanguage ? (['fr', 'en', 'ar', 'es', 'de', 'it'].includes(user.preferredLanguage) ? { fr: 'Français', en: 'English', ar: 'العربية', es: 'Español', de: 'Deutsch', it: 'Italiano' }[user.preferredLanguage] : user.preferredLanguage) : 'Français',
           color: 'from-[#6366F1] to-[#8B5CF6]',
           iconBg: 'bg-[#6366F1]/10',
@@ -94,13 +97,13 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
       ],
     },
     {
-      title: 'Support',
+      title: t('settings.support'),
       items: [
         {
           id: 'help',
           icon: <HelpCircle className="w-5 h-5" />,
-          label: 'Centre d\'aide',
-          description: 'FAQ et assistance',
+          label: t('settings.helpCenter'),
+          description: t('settings.helpDesc'),
           color: 'from-[#14B8A6] to-[#06B6D4]',
           iconBg: 'bg-[#14B8A6]/10',
           iconColor: 'text-[#14B8A6]',
@@ -108,8 +111,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         {
           id: 'terms',
           icon: <FileText className="w-5 h-5" />,
-          label: 'Conditions d\'utilisation',
-          description: 'Politique de confidentialité',
+          label: t('settings.terms'),
+          description: t('settings.termsDesc'),
           color: 'from-[#64748B] to-[#475569]',
           iconBg: 'bg-[#64748B]/10',
           iconColor: 'text-[#64748B]',
@@ -144,8 +147,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
               <Settings className="w-6 h-6 lg:w-7 lg:h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#111827]">Paramètres</h1>
-              <p className="text-sm text-[#6B7280] hidden sm:block">Gérez vos préférences et votre compte</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#111827]">{t('settings.title')}</h1>
+              <p className="text-sm text-[#6B7280] hidden sm:block">{t('settings.managePreferences')}</p>
             </div>
           </div>
         </div>
@@ -192,7 +195,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                   <p className="text-sm text-[#6B7280]">{user.email}</p>
                   <div className="mt-2 flex items-center gap-2">
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-[#0EA5E9]/10 to-[#06B6D4]/10 text-[#0EA5E9]">
-                      ✨ Membre Premium
+                      ✨ {t('settings.premiumMember')}
                     </span>
                   </div>
                 </div>
@@ -252,8 +255,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
               <LogOut className="w-5 h-5" />
             </div>
             <div className="flex-1 text-left">
-              <span className="font-medium text-[#EF4444]">Se déconnecter</span>
-              <p className="text-xs text-[#9CA3AF]">Fermer votre session</p>
+              <span className="font-medium text-[#EF4444]">{t('nav.logout')}</span>
+              <p className="text-xs text-[#9CA3AF]">{t('settings.closeSession')}</p>
             </div>
             <ChevronRight className="w-4 h-4 text-[#EF4444]/50 group-hover:text-[#EF4444] transition-colors duration-200" />
           </motion.button>

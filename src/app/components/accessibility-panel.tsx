@@ -28,8 +28,11 @@ import {
     ChevronDown,
     ChevronUp,
     FileText,
+    Globe,
+    Check,
 } from 'lucide-react';
 import { useAccessibilityStore } from '../../stores/accessibility.store';
+import { LANGUAGES, Language } from '../../lib/i18n/translations';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Toggle Switch
@@ -160,6 +163,7 @@ const VOICE_COMMANDS = [
 
 export function AccessibilityPanel() {
     const {
+        language,
         theme,
         contrastMode,
         zoomLevel,
@@ -176,6 +180,7 @@ export function AccessibilityPanel() {
         colorBlindFilter,
         readingGuide,
         speechRate,
+        setLanguage,
         toggleTheme,
         setContrastMode,
         resetContrastMode,
@@ -199,10 +204,12 @@ export function AccessibilityPanel() {
         clearSpokenText,
         togglePanel,
         closePanel,
+        t,
     } = useAccessibilityStore();
 
     // ── Section toggle state ────────────────────────────────────────────
     const [openSections, setOpenSections] = useState({
+        language: true,
         appearance: true,
         vision: true,
         tts: true,
@@ -350,8 +357,8 @@ export function AccessibilityPanel() {
                         <Accessibility size={18} className="text-white" />
                     </div>
                     <div>
-                        <h2 className="text-[15px] font-bold text-[var(--foreground)] leading-tight">Accessibilité</h2>
-                        <p className="text-[10px] text-[var(--muted-foreground)]">Personnalisez votre expérience</p>
+                        <h2 className="text-[15px] font-bold text-[var(--foreground)] leading-tight">{t('accessibility.title')}</h2>
+                        <p className="text-[10px] text-[var(--muted-foreground)]">{t('accessibilityPanel.customize')}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-[4px]">
@@ -365,7 +372,7 @@ export function AccessibilityPanel() {
                     </button>
                     <button
                         onClick={closePanel}
-                        aria-label="Fermer le panneau (Échap)"
+                        aria-label={t('accessibilityPanel.close')}
                         className="flex items-center justify-center w-[32px] h-[32px] rounded-lg hover:bg-[var(--secondary)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors duration-200"
                     >
                         <X size={16} />
@@ -376,7 +383,7 @@ export function AccessibilityPanel() {
             {/* ── Keyboard shortcuts popover ──────────────────────────────── */}
             {showCommands && (
                 <div className="mx-[20px] mb-[12px] p-[12px] rounded-xl bg-[var(--secondary)] border border-[var(--border)]">
-                    <p className="text-[11px] font-bold text-[var(--foreground)] mb-[8px] uppercase tracking-wider">Raccourcis clavier</p>
+                    <p className="text-[11px] font-bold text-[var(--foreground)] mb-[8px] uppercase tracking-wider">{t('accessibilityPanel.shortcuts')}</p>
                     <div className="grid grid-cols-2 gap-[4px]">
                         {[
                             { key: 'Alt + A', desc: 'Panneau' },
@@ -405,10 +412,46 @@ export function AccessibilityPanel() {
             <div className="flex flex-col gap-[20px] p-[20px]">
 
                 {/* ══════════════════════════════════════════════════════════════
+            LANGUAGE
+           ══════════════════════════════════════════════════════════════ */}
+                <section>
+                    <SectionHeader icon={Globe} label={t('accessibilityPanel.language')} isOpen={openSections.language} onToggle={() => toggle('language')} />
+                    
+                    {openSections.language && (
+                        <div className="grid grid-cols-2 gap-[8px]">
+                            {LANGUAGES.map((lang) => (
+                                <button
+                                    key={lang.code}
+                                    onClick={() => setLanguage(lang.code as Language)}
+                                    aria-pressed={language === lang.code}
+                                    className={`
+                                        flex flex-col items-center justify-center p-[12px] rounded-xl border transition-all duration-200
+                                        ${language === lang.code
+                                            ? 'bg-[var(--primary)]/10 border-[var(--primary)] shadow-sm'
+                                            : 'bg-[var(--card)] border-[var(--border)] hover:bg-[var(--secondary)] hover:border-[var(--muted-foreground)]'
+                                        }
+                                    `}
+                                >
+                                    <span className="text-[20px] mb-[4px]">{lang.flag}</span>
+                                    <span className={`text-[12px] font-semibold ${language === lang.code ? 'text-[var(--primary)]' : 'text-[var(--foreground)]'}`}>
+                                        {lang.label}
+                                    </span>
+                                    {language === lang.code && (
+                                        <div className="absolute top-[6px] right-[6px] w-[14px] h-[14px] rounded-full bg-[var(--primary)] text-white flex items-center justify-center">
+                                            <Check size={8} strokeWidth={3} />
+                                        </div>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </section>
+
+                {/* ══════════════════════════════════════════════════════════════
             APPEARANCE
            ══════════════════════════════════════════════════════════════ */}
                 <section>
-                    <SectionHeader icon={Eye} label="Apparence" isOpen={openSections.appearance} onToggle={() => toggle('appearance')} />
+                    <SectionHeader icon={Eye} label={t('accessibilityPanel.appearance')} isOpen={openSections.appearance} onToggle={() => toggle('appearance')} />
 
                     {openSections.appearance && (
                         <>
@@ -416,8 +459,8 @@ export function AccessibilityPanel() {
                             <FeatureCard
                                 icon={theme === 'dark' ? Moon : Sun}
                                 iconBg={theme === 'dark' ? 'bg-indigo-500' : 'bg-amber-400'}
-                                title="Mode sombre"
-                                description={theme === 'dark' ? 'Thème sombre activé' : 'Thème clair activé'}
+                                title={t('accessibilityPanel.darkMode')}
+                                description={theme === 'dark' ? t('accessibilityPanel.darkModeOn') : t('accessibilityPanel.lightModeOn')}
                                 action={
                                     <ToggleSwitch
                                         checked={theme === 'dark'}
@@ -434,8 +477,8 @@ export function AccessibilityPanel() {
                                         <Contrast size={15} className="text-yellow-600 dark:text-yellow-400" />
                                     </div>
                                     <div className="flex-1">
-                                        <span className="text-[14px] font-semibold text-[var(--foreground)]">Contraste élevé</span>
-                                        <p className="text-[10px] text-[var(--muted-foreground)] leading-snug mt-[1px]">Améliore la lisibilité pour les malvoyants</p>
+                                        <span className="text-[14px] font-semibold text-[var(--foreground)]">{t('accessibilityPanel.highContrast')}</span>
+                                        <p className="text-[10px] text-[var(--muted-foreground)] leading-snug mt-[1px]">{t('accessibilityPanel.highContrastDesc')}</p>
                                     </div>
                                 </div>
 
@@ -456,7 +499,7 @@ export function AccessibilityPanel() {
                                     >
                                         <span className={`w-[6px] h-[6px] rounded-full transition-colors duration-300 ${contrastMode === 'off' ? 'bg-green-400' : 'bg-[var(--muted-foreground)]/40'
                                             }`} />
-                                        Normal
+                                        {t('accessibilityPanel.contrastNormal')}
                                     </button>
 
                                     {/* Medium */}
@@ -475,7 +518,7 @@ export function AccessibilityPanel() {
                                     >
                                         <span className={`w-[6px] h-[6px] rounded-full transition-colors duration-300 ${contrastMode === 'medium' ? 'bg-white' : 'bg-[var(--muted-foreground)]/40'
                                             }`} />
-                                        Moyen
+                                        {t('accessibilityPanel.contrastMedium')}
                                     </button>
 
                                     {/* High */}
@@ -494,7 +537,7 @@ export function AccessibilityPanel() {
                                     >
                                         <span className={`w-[6px] h-[6px] rounded-full transition-colors duration-300 ${contrastMode === 'high' ? 'bg-black' : 'bg-[var(--muted-foreground)]/40'
                                             }`} />
-                                        Élevé
+                                        {t('accessibilityPanel.contrastHigh')}
                                     </button>
                                 </div>
 
@@ -515,7 +558,7 @@ export function AccessibilityPanel() {
                                         <div className="flex items-center justify-center w-[28px] h-[28px] rounded-lg bg-emerald-500/10">
                                             <Type size={15} className="text-emerald-600 dark:text-emerald-400" />
                                         </div>
-                                        <span className="text-[14px] font-semibold text-[var(--foreground)]">Taille du texte</span>
+                                        <span className="text-[14px] font-semibold text-[var(--foreground)]">{t('accessibilityPanel.textSize')}</span>
                                     </div>
                                     <span className="text-[12px] font-bold text-[var(--primary)] bg-[var(--primary)]/10 px-[10px] py-[4px] rounded-full">
                                         {zoomLevel}%
@@ -555,10 +598,10 @@ export function AccessibilityPanel() {
                                     <button
                                         onClick={resetZoom}
                                         className="flex items-center justify-center gap-[6px] mt-[10px] w-full py-[6px] text-[11px] font-medium text-[var(--muted-foreground)] hover:text-[var(--primary)] rounded-lg hover:bg-[var(--secondary)] transition-all duration-200"
-                                        aria-label="Réinitialiser le zoom"
+                                        aria-label={t('accessibilityPanel.resetZoom')}
                                     >
                                         <RotateCcw size={11} />
-                                        Réinitialiser à 100%
+                                        {t('accessibilityPanel.resetZoom')}
                                     </button>
                                 )}
                             </div>
@@ -570,15 +613,15 @@ export function AccessibilityPanel() {
             VISION & LECTURE — WCAG Features
            ══════════════════════════════════════════════════════════════ */}
                 <section>
-                    <SectionHeader icon={BookOpen} label="Vision & lecture" isOpen={openSections.vision} onToggle={() => toggle('vision')} />
+                    <SectionHeader icon={BookOpen} label={t('accessibilityPanel.vision')} isOpen={openSections.vision} onToggle={() => toggle('vision')} />
 
                     {openSections.vision && (
                         <div className="flex flex-col gap-[8px]">
                             <FeatureCard
                                 icon={Pause}
                                 iconBg={reduceMotion ? 'bg-teal-500' : 'bg-teal-500/60'}
-                                title="Réduire les animations"
-                                description="Désactive les animations et transitions (WCAG 2.3.3)"
+                                title={t('accessibilityPanel.reduceMotion')}
+                                description={t('accessibilityPanel.reduceMotionDesc')}
                                 action={
                                     <ToggleSwitch
                                         checked={reduceMotion}
@@ -591,8 +634,8 @@ export function AccessibilityPanel() {
                             <FeatureCard
                                 icon={BookOpen}
                                 iconBg={dyslexiaFont ? 'bg-pink-500' : 'bg-pink-500/60'}
-                                title="Police dyslexie"
-                                description="Utilise Lexend, adaptée aux dyslexiques (WCAG 1.4.8)"
+                                title={t('accessibilityPanel.dyslexicFont')}
+                                description={t('accessibilityPanel.dyslexicFontDesc')}
                                 action={
                                     <ToggleSwitch
                                         checked={dyslexiaFont}
@@ -605,8 +648,8 @@ export function AccessibilityPanel() {
                             <FeatureCard
                                 icon={Link}
                                 iconBg={linkHighlight ? 'bg-blue-500' : 'bg-blue-500/60'}
-                                title="Souligner les liens"
-                                description="Rend les liens toujours visibles et soulignés (WCAG 1.4.1)"
+                                title={t('accessibilityPanel.highlightLinks')}
+                                description={t('accessibilityPanel.highlightLinksDesc')}
                                 action={
                                     <ToggleSwitch
                                         checked={linkHighlight}
@@ -619,8 +662,8 @@ export function AccessibilityPanel() {
                             <FeatureCard
                                 icon={MousePointer}
                                 iconBg={bigCursor ? 'bg-orange-500' : 'bg-orange-500/60'}
-                                title="Grand curseur"
-                                description="Agrandit le curseur pour plus de visibilité"
+                                title={t('accessibilityPanel.bigCursor')}
+                                description={t('accessibilityPanel.bigCursorDesc')}
                                 action={
                                     <ToggleSwitch
                                         checked={bigCursor}
@@ -633,8 +676,8 @@ export function AccessibilityPanel() {
                             <FeatureCard
                                 icon={Space}
                                 iconBg={textSpacing ? 'bg-lime-500' : 'bg-lime-500/60'}
-                                title="Espacement du texte"
-                                description="Augmente l'espacement des lignes et lettres (WCAG 1.4.12)"
+                                title={t('accessibilityPanel.textSpacing')}
+                                description={t('accessibilityPanel.textSpacingDesc')}
                                 action={
                                     <ToggleSwitch
                                         checked={textSpacing}
@@ -647,8 +690,8 @@ export function AccessibilityPanel() {
                             <FeatureCard
                                 icon={Focus}
                                 iconBg={focusHighlight ? 'bg-cyan-500' : 'bg-cyan-500/60'}
-                                title="Indicateur de focus"
-                                description="Surligne fort l'élément actif au clavier (WCAG 2.4.7)"
+                                title={t('accessibilityPanel.focusHighlight')}
+                                description={t('accessibilityPanel.focusHighlightDesc')}
                                 action={
                                     <ToggleSwitch
                                         checked={focusHighlight}
@@ -661,8 +704,8 @@ export function AccessibilityPanel() {
                             <FeatureCard
                                 icon={Ruler}
                                 iconBg={readingGuide ? 'bg-emerald-500' : 'bg-emerald-500/60'}
-                                title="Guide de lecture"
-                                description="Bande horizontale suivant la souris pour faciliter la lecture"
+                                title={t('accessibilityPanel.readingGuide')}
+                                description={t('accessibilityPanel.readingGuideDesc')}
                                 action={
                                     <ToggleSwitch
                                         checked={readingGuide}
@@ -679,8 +722,8 @@ export function AccessibilityPanel() {
                                         <Palette size={15} className="text-purple-600 dark:text-purple-400" />
                                     </div>
                                     <div className="flex-1">
-                                        <span className="text-[14px] font-semibold text-[var(--foreground)]">Filtre daltonisme</span>
-                                        <p className="text-[10px] text-[var(--muted-foreground)] leading-snug mt-[1px]">Adapte les couleurs selon votre vision</p>
+                                        <span className="text-[14px] font-semibold text-[var(--foreground)]">{t('accessibilityPanel.colorBlind')}</span>
+                                        <p className="text-[10px] text-[var(--muted-foreground)] leading-snug mt-[1px]">{t('accessibilityPanel.colorBlindDesc')}</p>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-[4px]">
@@ -716,7 +759,7 @@ export function AccessibilityPanel() {
             TEXT-TO-SPEECH
            ══════════════════════════════════════════════════════════════ */}
                 <section>
-                    <SectionHeader icon={Volume2} label="Lecture vocale" isOpen={openSections.tts} onToggle={() => toggle('tts')} />
+                    <SectionHeader icon={Volume2} label={t('accessibilityPanel.tts')} isOpen={openSections.tts} onToggle={() => toggle('tts')} />
 
                     {openSections.tts && (
                         <div className="flex flex-col gap-[8px]">
@@ -724,12 +767,8 @@ export function AccessibilityPanel() {
                             <FeatureCard
                                 icon={isSpeaking ? VolumeX : Volume2}
                                 iconBg={isSpeaking ? 'bg-red-500' : 'bg-violet-500'}
-                                title={isSpeaking ? 'Lecture en cours' : 'Lire le texte sélectionné'}
-                                description={
-                                    isSpeaking
-                                        ? 'Cliquez pour arrêter la lecture'
-                                        : 'Sélectionnez du texte puis activez (Alt+R)'
-                                }
+                                title={isSpeaking ? t('accessibilityPanel.stopReading') : t('accessibilityPanel.readSelection')}
+                                description={t('accessibilityPanel.readSelectionDesc')}
                                 action={
                                     isSpeaking ? (
                                         <button
@@ -755,8 +794,8 @@ export function AccessibilityPanel() {
                             <FeatureCard
                                 icon={FileText}
                                 iconBg="bg-indigo-500"
-                                title="Lire toute la page"
-                                description="Lecture vocale de tout le contenu visible (Alt+P)"
+                                title={t('accessibilityPanel.readPage')}
+                                description={t('accessibilityPanel.readPageDesc')}
                                 action={
                                     <button
                                         onClick={speakPage}
@@ -775,7 +814,7 @@ export function AccessibilityPanel() {
                                     <div className="flex items-center justify-center w-[28px] h-[28px] rounded-lg bg-violet-500/10">
                                         <Gauge size={15} className="text-violet-600 dark:text-violet-400" />
                                     </div>
-                                    <span className="text-[13px] font-semibold text-[var(--foreground)] flex-1">Vitesse de lecture</span>
+                                    <span className="text-[13px] font-semibold text-[var(--foreground)] flex-1">{t('accessibilityPanel.speechRate')}</span>
                                     <span className="text-[11px] font-bold text-violet-600 dark:text-violet-400 bg-violet-500/10 px-[8px] py-[2px] rounded-full">
                                         {speechRate.toFixed(1)}x
                                     </span>
@@ -803,12 +842,12 @@ export function AccessibilityPanel() {
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
                                         <span className="relative inline-flex rounded-full h-[10px] w-[10px] bg-violet-500" />
                                     </span>
-                                    <span className="text-[11px] font-medium text-violet-600 dark:text-violet-400">Lecture en cours…</span>
+                                    <span className="text-[11px] font-medium text-violet-600 dark:text-violet-400">{t('accessibilityPanel.readingInProgress')}</span>
                                     <button
                                         onClick={stopSpeaking}
                                         className="ml-auto text-[10px] font-bold text-red-500 hover:text-red-600 transition-colors"
                                     >
-                                        Arrêter
+                                        {t('accessibilityPanel.stop')}
                                     </button>
                                 </div>
                             )}
@@ -820,19 +859,15 @@ export function AccessibilityPanel() {
             SPEECH-TO-TEXT / VOICE ASSISTANT
            ══════════════════════════════════════════════════════════════ */}
                 <section>
-                    <SectionHeader icon={Mic} label="Assistant vocal" isOpen={openSections.voice} onToggle={() => toggle('voice')} />
+                    <SectionHeader icon={Mic} label={t('accessibilityPanel.voiceActive')} isOpen={openSections.voice} onToggle={() => toggle('voice')} />
 
                     {openSections.voice && (
                         <div className="flex flex-col gap-[8px]">
                             <FeatureCard
                                 icon={isListening ? MicOff : Mic}
                                 iconBg={isListening ? 'bg-rose-500' : 'bg-sky-500'}
-                                title="Assistant vocal"
-                                description={
-                                    isListening
-                                        ? 'Dites une commande pour naviguer'
-                                        : 'Appuyez pour commander par la voix (Alt+M)'
-                                }
+                                title={t('accessibilityPanel.voiceActive')}
+                                description={t('accessibilityPanel.voiceDesc')}
                                 action={
                                     <ToggleSwitch
                                         checked={isListening}
@@ -873,7 +908,7 @@ export function AccessibilityPanel() {
                                 className="flex items-center gap-[6px] px-[12px] py-[6px] rounded-lg text-[11px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors"
                             >
                                 <HelpCircle size={13} />
-                                Commandes vocales disponibles
+                                {t('accessibilityPanel.voiceCommands')}
                                 {showCommands ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                             </button>
 
@@ -913,7 +948,7 @@ export function AccessibilityPanel() {
           "
                 >
                     <RotateCcw size={13} />
-                    Réinitialiser les paramètres
+                    {t('accessibilityPanel.resetAll')}
                 </button>
             </div>
         </div>

@@ -12,8 +12,10 @@ import toast from 'react-hot-toast';
 import ReCAPTCHA from "react-google-recaptcha";
 import { FaceIDScanner } from '../components/face-id-scanner';
 import { Scan } from 'lucide-react';
+import { useAccessibilityStore } from '../../stores/accessibility.store';
 
 export function LoginPage() {
+  const { t } = useAccessibilityStore();
   const navigate = useNavigate();
   const { login, isLoading, requiresTwoFactor, tempCredentials, clearTwoFactor } = useAuthStore();
 
@@ -39,9 +41,9 @@ export function LoginPage() {
       const result = await login(email, password, undefined, captchaValue || undefined);
       if (result.requiresTwoFactor) {
         setShow2FA(true);
-        toast('Code 2FA requis', { icon: '🔐' });
+        toast(t('auth.twoFactorReq'), { icon: '🔐' });
       } else if (result.success) {
-        toast.success('Connexion réussie !');
+        toast.success(t('auth.loginSuccess'));
         // Check if onboarding is completed
         const status = await skinProfileService.checkOnboardingStatus();
         if (!status.onboardingComplete) {
@@ -51,7 +53,7 @@ export function LoginPage() {
         }
       }
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Identifiants invalides');
+      toast.error(error?.response?.data?.message || t('auth.invalidCredentials'));
     }
   };
 
@@ -61,7 +63,7 @@ export function LoginPage() {
     try {
       const result = await login(tempCredentials.username, tempCredentials.password, twoFactorCode, captchaValue || undefined);
       if (result.success) {
-        toast.success('Connexion réussie !');
+        toast.success(t('auth.loginSuccess'));
         const status = await skinProfileService.checkOnboardingStatus();
         if (!status.onboardingComplete) {
           navigate('/onboarding');
@@ -70,7 +72,7 @@ export function LoginPage() {
         }
       }
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Code 2FA invalide');
+      toast.error(error?.response?.data?.message || t('auth.invalid2FA'));
       setTwoFactorCode('');
     }
   };
@@ -85,7 +87,7 @@ export function LoginPage() {
 
   const handleFaceIDClick = async () => {
     if (!email) {
-      toast.error('Veuillez entrer votre email pour le FaceID');
+      toast.error(t('auth.faceIdNoEmail'));
       return;
     }
     try {
@@ -94,10 +96,10 @@ export function LoginPage() {
         setAvatarUrl(res.avatar);
         setShowFaceScan(true);
       } else {
-        toast.error("Cet utilisateur n'a pas configuré d'avatar pour le FaceID");
+        toast.error(t('auth.faceIdNoAvatar'));
       }
     } catch (error) {
-      toast.error("Utilisateur non trouvé");
+      toast.error(t('auth.userNotFound'));
     }
   };
 
@@ -105,7 +107,7 @@ export function LoginPage() {
     try {
       const result = await faceLogin(email);
       if (result.success) {
-        toast.success('Connexion FaceID réussie !');
+        toast.success(t('auth.loginSuccess'));
         const status = await skinProfileService.checkOnboardingStatus();
         if (!status.onboardingComplete) {
           navigate('/onboarding');
@@ -114,7 +116,7 @@ export function LoginPage() {
         }
       }
     } catch (error) {
-      toast.error("Échec de la connexion FaceID");
+      toast.error(t('auth.faceIdError'));
     } finally {
       setShowFaceScan(false);
     }
@@ -135,7 +137,7 @@ export function LoginPage() {
             className="mb-8 flex items-center gap-2 text-[#6B7280] hover:text-[#0EA5E9] transition-colors group"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span>Retour</span>
+            <span>{t('auth.back')}</span>
           </button>
 
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/50">
@@ -143,8 +145,8 @@ export function LoginPage() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center shadow-lg shadow-[#0EA5E9]/20">
                 <Shield className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-2xl font-bold mb-2">Vérification 2FA</h1>
-              <p className="text-[#6B7280] text-sm">Entrez le code à 6 chiffres de votre application d'authentification</p>
+              <h1 className="text-2xl font-bold mb-2">{t('auth.twoFactorTitle')}</h1>
+              <p className="text-[#6B7280] text-sm">{t('auth.twoFactorSubtitle')}</p>
             </div>
 
             <form onSubmit={handle2FASubmit} className="space-y-6">
@@ -164,7 +166,7 @@ export function LoginPage() {
               </div>
 
               <Button type="submit" className="w-full h-12 text-lg shadow-lg shadow-[#0EA5E9]/20" loading={isLoading} disabled={twoFactorCode.length !== 6}>
-                Vérifier
+                {t('auth.verify')}
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </form>
@@ -177,14 +179,14 @@ export function LoginPage() {
   // ─── Main Login Form ───
   return (
     <AuthLayout
-      title="Bienvenue 👋"
-      subtitle="Connectez-vous pour accéder à votre tableau de bord."
+      title={t('auth.loginTitle')}
+      subtitle={t('auth.loginSubtitle')}
       imageSrc="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?q=80&w=2670&auto=format&fit=crop"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         <Input
           type="email"
-          label="Email"
+          label={t('auth.email')}
           placeholder="votre@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -195,7 +197,7 @@ export function LoginPage() {
         <div className="space-y-1">
           <Input
             type="password"
-            label="Mot de passe"
+            label={t('auth.password')}
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -208,7 +210,7 @@ export function LoginPage() {
               onClick={() => navigate('/forgot-password')}
               className="text-sm font-medium text-[#0EA5E9] hover:text-[#0284C7] transition-colors"
             >
-              Mot de passe oublié ?
+              {t('auth.forgotPassword')}
             </button>
           </div>
         </div>
@@ -221,7 +223,7 @@ export function LoginPage() {
         </div>
 
         <Button type="submit" className="w-full h-12 text-base shadow-lg shadow-[#0EA5E9]/20" loading={isLoading} disabled={!captchaValue}>
-          Se connecter
+          {t('auth.signIn')}
           <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
 
@@ -230,7 +232,7 @@ export function LoginPage() {
             <div className="w-full border-t border-[#E5E7EB]"></div>
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="px-2 bg-white text-[#6B7280]">ou</span>
+            <span className="px-2 bg-white text-[#6B7280]">{t('auth.or')}</span>
           </div>
         </div>
 
@@ -241,7 +243,7 @@ export function LoginPage() {
           onClick={handleFaceIDClick}
         >
           <Scan className="w-5 h-5 mr-2" />
-          Se connecter avec FaceID
+          {t('auth.faceId')}
         </Button>
       </form>
 
@@ -250,7 +252,7 @@ export function LoginPage() {
           <div className="w-full border-t border-[#E5E7EB]"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-4 bg-white text-[#6B7280]">Ou continuer avec</span>
+          <span className="px-4 bg-white text-[#6B7280]">{t('auth.orContinue')}</span>
         </div>
       </div>
 
@@ -275,13 +277,13 @@ export function LoginPage() {
       </div>
 
       <p className="text-center text-sm text-[#6B7280] mt-8">
-        Pas encore de compte ?{' '}
+        {t('auth.noAccount')}{' '}
         <button
           type="button"
           onClick={() => navigate('/signup')}
           className="text-[#0EA5E9] font-bold hover:underline"
         >
-          S'inscrire gratuitement
+          {t('auth.signUpFree')}
         </button>
       </p>
 

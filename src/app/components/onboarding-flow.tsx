@@ -10,34 +10,28 @@ import { SensitivitiesStep } from './onboarding/sensitivities-step';
 import { SummaryStep } from './onboarding/summary-step';
 import { skinProfileService } from '../../lib/services/skin-profile.service';
 import toast from 'react-hot-toast';
+import { useAccessibilityStore } from '../../stores/accessibility.store';
 
 interface OnboardingFlowProps {
   onComplete: () => void;
 }
 
 interface OnboardingData {
-  skinType?: string;
+  skinType?: any;
   fitzpatrickType?: number;
   concerns?: string[];
   sensitivities?: string[];
 }
 
 export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
+  const { t } = useAccessibilityStore();
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Total steps: Welcome(0), Profile(1), SkinType(2), Fitzpatrick(3), Concerns(4), Sensitivities(5), Summary(6)
-  const stepLabels = [
-    'Bienvenue',
-    'Profil',
-    'Type de peau',
-    'Phototype',
-    'Préoccupations',
-    'Sensibilités',
-    'Résumé'
-  ];
+  const stepLabels = t('onboarding.steps') as unknown as string[];
   const totalSteps = stepLabels.length;
 
   const nextStep = () => {
@@ -63,7 +57,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     setIsSubmitting(true);
     try {
       if (!onboardingData.skinType) {
-        toast.error('Type de peau manquant');
+        toast.error(t('onboarding.notProvided'));
         return;
       }
 
@@ -74,7 +68,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         sensitivities: onboardingData.sensitivities,
       });
 
-      toast.success('Profil créé avec succès !');
+      toast.success(t('auth.signupSuccess') || 'Success');
       setTimeout(() => {
         onComplete();
       }, 1500);
@@ -148,7 +142,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
               onClick={prevStep}
               className="absolute top-0 left-6 flex items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-colors z-10 font-medium"
             >
-              ← Retour
+              ← {t('onboarding.back')}
             </button>
           )}
 

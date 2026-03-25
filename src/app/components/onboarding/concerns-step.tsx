@@ -6,6 +6,7 @@ import {
     Wind, Eye, Droplets, Zap, Palette, Heart
 } from 'lucide-react';
 import { Button } from '../button';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 interface ConcernsStepProps {
     onNext: (data: { concerns: string[] }) => void;
@@ -125,6 +126,7 @@ const concerns = [
 ];
 
 export function ConcernsStep({ onNext, onBack, initialValue }: ConcernsStepProps) {
+    const { t } = useAccessibilityStore();
     const [selectedConcerns, setSelectedConcerns] = useState<string[]>(initialValue || []);
 
     const toggleConcern = (id: string) => {
@@ -163,10 +165,10 @@ export function ConcernsStep({ onNext, onBack, initialValue }: ConcernsStepProps
                     <AlertCircle className="w-8 h-8 text-white" />
                 </motion.div>
                 <h2 className="text-3xl font-extrabold mb-3 text-[#111827]">
-                    Quelles sont vos préoccupations ?
+                    {t('onboarding.concernTitle')}
                 </h2>
                 <p className="text-lg text-[#6B7280] max-w-xl mx-auto">
-                    Sélectionnez toutes celles qui vous concernent
+                    {t('onboarding.concernSub')}
                 </p>
             </motion.div>
 
@@ -240,8 +242,7 @@ export function ConcernsStep({ onNext, onBack, initialValue }: ConcernsStepProps
                     >
                         <div className="bg-gradient-to-r from-[#0EA5E9]/10 to-[#8B5CF6]/10 rounded-2xl p-5 border border-[#0EA5E9]/15">
                             <p className="text-sm text-[#374151] text-center">
-                                ✨ Vous avez sélectionné <strong className="text-[#0EA5E9]">{selectedConcerns.length}</strong> préoccupation{selectedConcerns.length > 1 ? 's' : ''}.
-                                Nous personnaliserons votre routine en conséquence.
+                                ✨ {t('onboarding.concernSelection')} <strong className="text-[#0EA5E9]">{selectedConcerns.length}</strong> {t('onboarding.concernSuffix')}
                             </p>
                         </div>
                     </motion.div>
@@ -257,10 +258,10 @@ export function ConcernsStep({ onNext, onBack, initialValue }: ConcernsStepProps
             >
                 <Button type="button" variant="outline" onClick={onBack} className="flex-1">
                     <ArrowLeft className="w-5 h-5" />
-                    Retour
+                    {t('onboarding.back')}
                 </Button>
                 <Button onClick={handleSubmit} className="flex-1" disabled={selectedConcerns.length === 0}>
-                    Continuer
+                    {t('onboarding.next')}
                     <ArrowRight className="w-5 h-5" />
                 </Button>
             </motion.div>

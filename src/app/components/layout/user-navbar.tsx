@@ -132,6 +132,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
         startListening,
         stopListening,
         clearSpokenText,
+        t,
     } = useAccessibilityStore();
 
     // Close dropdown on outside click
@@ -212,10 +213,10 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
     ];
 
     const rightNavItems = [
-        { id: 'analysis', label: 'Analyse', icon: <Scan className="w-5 h-5" /> },
-        { id: 'routine', label: 'Routine', icon: <Calendar className="w-5 h-5" /> },
-        { id: 'chat', label: 'Coach IA', icon: <MessageCircle className="w-5 h-5" /> },
-        { id: 'community', label: 'Communauté', icon: <Users className="w-5 h-5" /> },
+        { id: 'analysis', label: t('nav.analysis'), icon: <Scan className="w-5 h-5" /> },
+        { id: 'routine', label: t('nav.routine'), icon: <Calendar className="w-5 h-5" /> },
+        { id: 'chat', label: t('nav.coach'), icon: <MessageCircle className="w-5 h-5" /> },
+        { id: 'community', label: t('nav.community'), icon: <Users className="w-5 h-5" /> },
     ];
 
     return (
@@ -314,7 +315,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
                                         transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                                        className="absolute right-0 mt-3 rounded-2xl shadow-2xl bg-white/95 dark:bg-[#16213e]/95 backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10 focus:outline-none z-50 origin-top-right overflow-hidden border border-transparent dark:border-gray-800"
+                                        className="absolute ltr:right-0 rtl:left-0 mt-3 rounded-2xl shadow-2xl bg-white/95 dark:bg-[#16213e]/95 backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10 focus:outline-none z-50 ltr:origin-top-right rtl:origin-top-left overflow-hidden border border-transparent dark:border-gray-800"
                                         style={{ width: showAccessibility ? '420px' : '340px' }}
                                     >
                                         <AnimatePresence mode="wait">
@@ -364,7 +365,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-[#0EA5E9]/10 transition-colors duration-200">
                                                                 <User className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-[#0EA5E9] dark:group-hover:text-[#38bdf8] transition-colors duration-200" />
                                                             </div>
-                                                            <span className="font-medium">Profil</span>
+                                                            <span className="font-medium">{t('nav.profile')}</span>
                                                         </button>
 
                                                         <button
@@ -374,7 +375,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-[#EC4899]/10 transition-colors duration-200">
                                                                 <TrendingUp className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-[#EC4899] dark:group-hover:text-[#F472B6] transition-colors duration-200" />
                                                             </div>
-                                                            <span className="font-medium">Évolution</span>
+                                                            <span className="font-medium">{t('dashboard.healthEvolution')}</span>
                                                         </button>
 
                                                         <button
@@ -384,7 +385,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-[#F59E0B]/10 transition-colors duration-200">
                                                                 <CreditCard className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-[#F59E0B] dark:group-hover:text-[#FBBF24] transition-colors duration-200" />
                                                             </div>
-                                                            <span className="font-medium">Abonnement</span>
+                                                            <span className="font-medium">{t('community.subscriptions')}</span>
                                                         </button>
 
                                                         <button
@@ -394,7 +395,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-[#8B5CF6]/10 transition-colors duration-200">
                                                                 <Settings className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-[#8B5CF6] dark:group-hover:text-[#A78BFA] transition-colors duration-200" />
                                                             </div>
-                                                            <span className="font-medium">Paramètres</span>
+                                                            <span className="font-medium">{t('nav.settings')}</span>
                                                         </button>
 
                                                         <button
@@ -405,7 +406,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                                 <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-[#06B6D4]/10 transition-colors duration-200">
                                                                     <Monitor className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-[#06B6D4] dark:group-hover:text-[#22D3EE] transition-colors duration-200" />
                                                                 </div>
-                                                                <span className="font-medium">Affichage & Accessibilité</span>
+                                                                <span className="font-medium">{t('accessibility.title')}</span>
                                                             </div>
                                                             <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500 -rotate-90 group-hover:text-[#06B6D4] dark:group-hover:text-[#22D3EE] transition-colors duration-200" />
                                                         </button>
@@ -422,7 +423,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 dark:bg-red-500/10 group-hover:bg-red-100 dark:group-hover:bg-red-500/20 transition-colors duration-200">
                                                                 <LogOut className="h-4 w-4 text-red-500 dark:text-red-400" />
                                                             </div>
-                                                            <span className="font-medium">Déconnexion</span>
+                                                            <span className="font-medium">{t('nav.logout')}</span>
                                                         </button>
                                                     </div>
                                                 </motion.div>

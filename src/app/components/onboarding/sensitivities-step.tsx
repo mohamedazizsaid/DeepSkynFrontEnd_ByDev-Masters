@@ -5,6 +5,7 @@ import {
     FlaskConical, Wine, Droplet, Leaf, Beaker, Flame, Pill
 } from 'lucide-react';
 import { Button } from '../button';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 interface SensitivitiesStepProps {
     onNext: (data: { sensitivities: string[] }) => void;
@@ -116,6 +117,7 @@ const sensitivities = [
 ];
 
 export function SensitivitiesStep({ onNext, onBack, initialValue }: SensitivitiesStepProps) {
+    const { t } = useAccessibilityStore();
     const [selected, setSelected] = useState<string[]>(initialValue || []);
 
     const toggleSensitivity = (id: string) => {
@@ -162,10 +164,10 @@ export function SensitivitiesStep({ onNext, onBack, initialValue }: Sensitivitie
                     <ShieldAlert className="w-8 h-8 text-white" />
                 </motion.div>
                 <h2 className="text-3xl font-extrabold mb-3 text-[#111827]">
-                    Avez-vous des sensibilités ?
+                    {t('onboarding.sensTitle')}
                 </h2>
                 <p className="text-lg text-[#6B7280] max-w-xl mx-auto">
-                    Identifiez les ingrédients auxquels votre peau réagit
+                    {t('onboarding.sensSub')}
                 </p>
             </motion.div>
 
@@ -240,8 +242,7 @@ export function SensitivitiesStep({ onNext, onBack, initialValue }: Sensitivitie
                     >
                         <div className="bg-gradient-to-r from-[#EF4444]/10 to-[#EC4899]/10 rounded-2xl p-5 border border-[#EF4444]/15">
                             <p className="text-sm text-[#374151] text-center">
-                                ⚠️ <strong className="text-[#EF4444]">{selected.length}</strong> sensibilité{selected.length > 1 ? 's' : ''} identifiée{selected.length > 1 ? 's' : ''}.
-                                Nous éviterons ces ingrédients dans vos recommandations.
+                                ⚠️ <strong className="text-[#EF4444]">{selected.length}</strong> {t('onboarding.sensSelection')}
                             </p>
                         </div>
                     </motion.div>
@@ -257,10 +258,10 @@ export function SensitivitiesStep({ onNext, onBack, initialValue }: Sensitivitie
             >
                 <Button type="button" variant="outline" onClick={onBack} className="flex-1">
                     <ArrowLeft className="w-5 h-5" />
-                    Retour
+                    {t('onboarding.back')}
                 </Button>
                 <Button onClick={handleSubmit} className="flex-1" disabled={selected.length === 0}>
-                    Continuer
+                    {t('onboarding.next')}
                     <ArrowRight className="w-5 h-5" />
                 </Button>
             </motion.div>

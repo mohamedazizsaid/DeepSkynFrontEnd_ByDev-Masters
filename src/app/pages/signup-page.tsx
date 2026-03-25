@@ -9,8 +9,10 @@ import { AuthLayout } from '../components/auth-layout';
 import { authService } from '../../lib/services/auth.service';
 import toast from 'react-hot-toast';
 import ReCAPTCHA from "react-google-recaptcha";
+import { useAccessibilityStore } from '../../stores/accessibility.store';
 
 export function SignUpPage() {
+  const { t } = useAccessibilityStore();
   const navigate = useNavigate();
   const { register, isLoading } = useAuthStore();
 
@@ -34,12 +36,12 @@ export function SignUpPage() {
     e.preventDefault();
 
     if (!captchaValue) {
-      toast.error('Veuillez valider le captcha');
+      toast.error(t('auth.captchaError'));
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Les mots de passe ne correspondent pas');
+      toast.error(t('auth.passMismatch'));
       return;
     }
 
@@ -50,24 +52,24 @@ export function SignUpPage() {
         name: formData.name,
         captchaToken: captchaValue || undefined,
       });
-      toast.success('Compte créé avec succès !');
+      toast.success(t('auth.signupSuccess'));
       // Redirect to onboarding flow (which now starts with Profile Setup)
       navigate('/onboarding');
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Erreur lors de l\'inscription');
+      toast.error(error?.response?.data?.message || t('auth.registerError'));
     }
   };
 
   return (
     <AuthLayout
-      title="Commencez l'aventure"
-      subtitle="Créez un compte pour une analyse de peau personnalisée."
+      title={t('auth.signupTitle')}
+      subtitle={t('auth.signupSubtitle')}
       imageSrc="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=2670&auto=format&fit=crop"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <Input
           type="text"
-          label="Nom complet"
+          label={t('auth.fullName')}
           placeholder="John Doe"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -77,7 +79,7 @@ export function SignUpPage() {
 
         <Input
           type="email"
-          label="Email"
+          label={t('auth.email')}
           placeholder="vous@exemple.com"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -88,7 +90,7 @@ export function SignUpPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             type="password"
-            label="Mot de passe"
+            label={t('auth.password')}
             placeholder="••••••••"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -97,7 +99,7 @@ export function SignUpPage() {
           />
           <Input
             type="password"
-            label="Confirmer"
+            label={t('auth.confirmPassword')}
             placeholder="••••••••"
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
@@ -108,9 +110,9 @@ export function SignUpPage() {
 
         <div className="text-xs text-[#6B7280] flex items-center gap-2">
           <CheckCircle className="w-3.5 h-3.5 text-[#10B981]" />
-          <span>Au moins 8 caractères</span>
+          <span>{t('auth.minChars')}</span>
           <span className="w-1 h-1 bg-[#D1D5DB] rounded-full" />
-          <span>1 majuscule</span>
+          <span>{t('auth.uppercaseReq')}</span>
         </div>
 
         <div className="flex justify-center mb-4">
@@ -121,7 +123,7 @@ export function SignUpPage() {
         </div>
 
         <Button type="submit" className="w-full h-12 text-base shadow-lg shadow-[#0EA5E9]/20" loading={isLoading} disabled={!captchaValue}>
-          Créer mon compte
+          {t('auth.createAccount')}
           <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
 
@@ -130,7 +132,7 @@ export function SignUpPage() {
             <div className="w-full border-t border-[#E5E7EB]"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-white text-[#6B7280]">Ou continuer avec</span>
+            <span className="px-4 bg-white text-[#6B7280]">{t('auth.orContinue')}</span>
           </div>
         </div>
 
@@ -155,13 +157,13 @@ export function SignUpPage() {
         </div>
 
         <p className="text-center text-sm text-[#6B7280] mt-6">
-          Vous avez déjà un compte ?{' '}
+          {t('auth.haveAccount')}{' '}
           <button
             type="button"
             onClick={() => navigate('/login')}
             className="text-[#0EA5E9] font-medium hover:underline"
           >
-            Se connecter
+            {t('auth.signIn')}
           </button>
         </p>
       </form>

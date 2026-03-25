@@ -6,12 +6,14 @@ import { Input } from '../input';
 import { usersService } from '../../../lib/services/users.service';
 import { useAuthStore } from '../../../stores/auth.store';
 import toast from 'react-hot-toast';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 interface ProfileSetupStepProps {
     onComplete: () => void;
 }
 
 export function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) {
+    const { t } = useAccessibilityStore();
     const { loadUser } = useAuthStore();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -93,8 +95,8 @@ export function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) {
             className="w-full max-w-lg mx-auto"
         >
             <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold mb-2">Configurez votre profil</h2>
-                <p className="text-gray-500">Dites-nous en plus sur vous pour une expérience personnalisée.</p>
+                <h2 className="text-3xl font-bold mb-2">{t('onboarding.profTitle')}</h2>
+                <p className="text-gray-500">{t('onboarding.profSub')}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -113,13 +115,13 @@ export function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) {
                             <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                         </label>
                     </div>
-                    <p className="text-sm text-gray-400 mt-2">Cliquez pour changer (max 2MB)</p>
+                    <p className="text-sm text-gray-400 mt-2">{t('onboarding.avatarLim')}</p>
                 </div>
 
                 {/* Date of Birth */}
                 <Input
                     type="date"
-                    label="Date de naissance"
+                    label={t('onboarding.dob')}
                     value={formData.dateOfBirth}
                     onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
                     icon={<Calendar className="w-5 h-5" />}
@@ -128,7 +130,7 @@ export function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) {
 
                 {/* Gender */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Genre</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('onboarding.gender')}</label>
                     <div className="grid grid-cols-3 gap-3">
                         {['female', 'male', 'other'].map((g) => (
                             <button
@@ -140,7 +142,7 @@ export function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) {
                                     : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
                                     }`}
                             >
-                                {g === 'female' ? 'Femme' : g === 'male' ? 'Homme' : 'Autre'}
+                                {g === 'female' ? t('onboarding.genderF') : g === 'male' ? t('onboarding.genderM') : t('onboarding.genderO')}
                             </button>
                         ))}
                     </div>
@@ -148,7 +150,7 @@ export function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) {
 
                 {/* Language */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Langue préférée</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('onboarding.langTitle')}</label>
                     <div className="grid grid-cols-2 gap-3">
                         {[
                             { code: 'fr', label: 'Français', flag: '🇫🇷' },
@@ -173,7 +175,7 @@ export function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) {
                 </div>
 
                 <Button type="submit" className="w-full h-14 text-lg shadow-lg shadow-[#0EA5E9]/20" loading={loading}>
-                    Continuer
+                    {t('onboarding.next')}
                     <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
             </form>

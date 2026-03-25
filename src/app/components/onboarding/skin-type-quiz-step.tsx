@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Droplets, Sun, Layers, Leaf, Snowflake, ArrowLeft, ArrowRight, Check, Sparkles } from 'lucide-react';
+import { Droplets, Sun, Layers, Snowflake, ArrowLeft, ArrowRight, Check, Sparkles } from 'lucide-react';
 import { Button } from '../button';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 interface SkinTypeQuizStepProps {
     onNext: (data: { skinType: string }) => void;
@@ -68,8 +69,12 @@ const skinTypes = [
 ];
 
 export function SkinTypeQuizStep({ onNext, onBack, initialValue }: SkinTypeQuizStepProps) {
+    const { t } = useAccessibilityStore();
     const [selected, setSelected] = useState<string>(initialValue || '');
     const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+    // Dynamic translation access
+    const skinTypeLabels = t('onboarding.skinTypesLabels') as Record<string, string>;
 
     const handleSubmit = () => {
         if (selected) {
@@ -101,10 +106,10 @@ export function SkinTypeQuizStep({ onNext, onBack, initialValue }: SkinTypeQuizS
                     <Droplets className="w-8 h-8 text-white" />
                 </motion.div>
                 <h2 className="text-3xl font-extrabold mb-3 text-[#111827]">
-                    Quel est votre type de peau ?
+                    {t('onboarding.skinTitle')}
                 </h2>
                 <p className="text-lg text-[#6B7280] max-w-xl mx-auto">
-                    Sélectionnez celui qui correspond le mieux à votre peau au quotidien
+                    {t('onboarding.skinSub')}
                 </p>
             </motion.div>
 
@@ -149,7 +154,7 @@ export function SkinTypeQuizStep({ onNext, onBack, initialValue }: SkinTypeQuizS
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
                                         <span className="text-lg">{type.emoji}</span>
-                                        <h3 className="text-lg font-bold text-[#111827]">{type.label}</h3>
+                                        <h3 className="text-lg font-bold text-[#111827]">{skinTypeLabels[type.id] || type.label}</h3>
                                     </div>
                                     <p className="text-[#6B7280] text-sm mb-1">{type.description}</p>
                                     <AnimatePresence>
@@ -201,8 +206,7 @@ export function SkinTypeQuizStep({ onNext, onBack, initialValue }: SkinTypeQuizS
                 className="bg-gradient-to-r from-[#0EA5E9]/5 to-[#8B5CF6]/5 rounded-2xl p-5 mb-8 border border-[#0EA5E9]/10"
             >
                 <p className="text-sm text-[#374151] text-center">
-                    💡 <strong>Pas sûr(e) ?</strong> Lavez votre visage et attendez 30 minutes sans appliquer de produit.
-                    Observez comment votre peau réagit naturellement pour déterminer votre type.
+                    {t('onboarding.skinHelp')}
                 </p>
             </motion.div>
 
@@ -215,10 +219,10 @@ export function SkinTypeQuizStep({ onNext, onBack, initialValue }: SkinTypeQuizS
             >
                 <Button type="button" variant="outline" onClick={onBack} className="flex-1">
                     <ArrowLeft className="w-5 h-5" />
-                    Retour
+                    {t('onboarding.back')}
                 </Button>
                 <Button onClick={handleSubmit} className="flex-1" disabled={!selected}>
-                    Continuer
+                    {t('onboarding.next')}
                     <ArrowRight className="w-5 h-5" />
                 </Button>
             </motion.div>

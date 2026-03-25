@@ -18,60 +18,53 @@ export interface FaceZoneData {
 
 export const FACE_ZONES: FaceZoneData[] = [
   {
-    // Forehead — top center, tag left side
     id: 'forehead',
     label: 'Front',
-    position: [-0.09, 1.86, 0.14],
-    categories: ['sunscreen', 'moisturizer'],
-    description: 'Zone principale pour la protection solaire et l\'hydratation.',
+    position: [0, 1.82, 0.16],
+    categories: ['sunscreen', 'moisturizer', 'cleanser'],
+    description: 'Zone haute pour la protection et l\'hydratation.',
   },
   {
-    // Eyes — right side of face
-    id: 'eyes',
+    id: 'eyes-right',
     label: 'Contour yeux',
-    position: [0.11, 1.70, 0.14],
+    position: [0.08, 1.69, 0.13],
     categories: ['eye_cream'],
-    description: 'Zone sensible nécessitant un soin doux et ciblé.',
+    description: 'Soin délicat du contour des yeux.',
   },
   {
-    // Left cheek — left of nose
+    id: 'eyes-left',
+    label: 'Contour yeux',
+    position: [-0.08, 1.69, 0.13],
+    categories: ['eye_cream'],
+    description: 'Soin délicat du contour des yeux.',
+  },
+  {
     id: 'cheeks-left',
-    label: 'Joues',
-    position: [-0.11, 1.57, 0.14],
-    categories: ['serum', 'treatment'],
-    description: 'Idéal pour l\'application de sérums et de soins traitants.',
+    label: 'Joue gauche',
+    position: [-0.14, 1.58, 0.12],
+    categories: ['serum', 'treatment', 'moisturizer'],
+    description: 'Idéal pour l\'application des sérums.',
   },
   {
-    // Right cheek — right of nose
     id: 'cheeks-right',
-    label: 'Joues',
-    position: [0.11, 1.57, 0.14],
-    categories: ['serum', 'treatment'],
-    description: 'Idéal pour l\'application de sérums et de soins traitants.',
+    label: 'Joue droite',
+    position: [0.14, 1.58, 0.12],
+    categories: ['serum', 'treatment', 'moisturizer'],
+    description: 'Idéal pour l\'application des sérums.',
   },
   {
-    // Nose — center bridge, tag right
     id: 'nose',
-    label: 'Nez',
-    position: [0.09, 1.64, 0.17],
-    categories: ['exfoliant', 'deep_cleanser'],
-    description: 'Zone ciblée pour l\'exfoliation et le nettoyage en profondeur.',
+    label: 'Nez / Zone T',
+    position: [0, 1.62, 0.22],
+    categories: ['exfoliant', 'deep_cleanser', 'toner'],
+    description: 'Zone centrale pour le nettoyage et l\'exfoliation.',
   },
   {
-    // Lips — below nose, tag left
-    id: 'lips',
-    label: 'Lèvres',
-    position: [-0.08, 1.48, 0.15],
-    categories: ['treatment'],
-    description: 'Application de baumes et soins pour les lèvres hydratées.',
-  },
-  {
-    // Chin — bottom center, tag right
     id: 'chin',
-    label: 'Menton',
-    position: [0.08, 1.40, 0.14],
-    categories: ['cleanser', 'toner', 'makeup_remover'],
-    description: 'Zone d\'application pour nettoyants, toniques et démaquillants.',
+    label: 'Menton / Cou',
+    position: [0, 1.50, 0.18],
+    categories: ['cleanser', 'makeup_remover', 'toner'],
+    description: 'Application pour le bas du visage.',
   },
 ];
 
@@ -130,10 +123,12 @@ function FaceTag({ zone, matchedProducts, isActive, onClick }: FaceTagProps) {
   const hasProducts = matchedProducts.length > 0;
   if (!hasProducts) return null;
 
+  const isRightSide = zone.position[0] >= 0;
+
   return (
     <Html
       position={zone.position as [number, number, number]}
-      distanceFactor={0.45}
+      distanceFactor={0.5}
       zIndexRange={[100, 0]}
       occlude={false}
       style={{ pointerEvents: 'auto' }}
@@ -143,55 +138,53 @@ function FaceTag({ zone, matchedProducts, isActive, onClick }: FaceTagProps) {
         style={{
           cursor: 'pointer',
           userSelect: 'none',
-          transform: 'translate(0%, -50%)',
+          transform: isRightSide ? 'translate(0%, -50%)' : 'translate(-100%, -50%)',
           display: 'flex',
+          flexDirection: isRightSide ? 'row' : 'row-reverse',
           alignItems: 'center',
-          gap: '2px',
+          gap: '4px',
+          opacity: isActive ? 1 : 0.9,
+          transition: 'all 0.3s ease',
         }}
       >
         {/* Dot */}
         <div style={{
-          width: '4px',
-          height: '4px',
+          width: '6px',
+          height: '6px',
           borderRadius: '50%',
           flexShrink: 0,
-          background: isActive ? '#0EA5E9' : 'rgba(14,165,233,0.85)',
-          boxShadow: isActive ? '0 0 5px rgba(14,165,233,1)' : '0 0 3px rgba(14,165,233,0.6)',
-          border: '1px solid rgba(255,255,255,1)',
+          background: isActive ? '#0EA5E9' : '#fff',
+          boxShadow: isActive ? '0 0 8px rgba(14,165,233,0.8)' : '0 1px 3px rgba(0,0,0,0.2)',
+          border: `2px solid ${isActive ? '#fff' : '#0EA5E9'}`,
           transition: 'all 0.2s ease',
         }} />
-        {/* Connector line */}
-        <div style={{
-          width: "5px",
-          height: '1px',
-          background: isActive ? 'rgba(14,165,233,0.7)' : 'rgba(14,165,233,0.4)',
-          flexShrink: 0,
-        }} />
+        
         {/* Label pill */}
         <div style={{
-          background: isActive ? 'rgba(14,165,233,0.92)' : 'rgba(255,255,255,0.88)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          border: `1px solid ${isActive ? 'rgba(14,165,233,0.6)' : 'rgba(14,165,233,0.30)'}`,
-          borderRadius: '8px',
-          padding: '1px 5px',
-          fontSize: '7px',
-          fontWeight: 700,
+          background: isActive ? 'rgba(14,165,233,0.95)' : 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: `1px solid ${isActive ? '#0EA5E9' : 'rgba(14,165,233,0.3)'}`,
+          borderRadius: '10px',
+          padding: '3px 8px',
+          fontSize: '9px',
+          fontWeight: 600,
           color: isActive ? '#fff' : '#0369a1',
           whiteSpace: 'nowrap',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.10)',
-          lineHeight: '13px',
-          letterSpacing: '0.02em',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
           transition: 'all 0.2s ease',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
         }}>
           {matchedProducts[0]}
           {matchedProducts.length > 1 && (
             <span style={{
-              marginLeft: '2px',
-              background: isActive ? 'rgba(255,255,255,0.22)' : 'rgba(14,165,233,0.15)',
+              background: isActive ? 'rgba(255,255,255,0.2)' : 'rgba(14,165,233,0.1)',
               borderRadius: '6px',
-              padding: '0 3px',
-              fontSize: '6.5px',
+              padding: '0 4px',
+              fontSize: '8px',
+              fontWeight: 700,
             }}>
               +{matchedProducts.length - 1}
             </span>

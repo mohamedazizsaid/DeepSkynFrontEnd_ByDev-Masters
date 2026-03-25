@@ -2,12 +2,14 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, ArrowRight, Scan, Calendar, TrendingUp, Shield, Heart } from 'lucide-react';
 import { Button } from '../button';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 interface WelcomeStepProps {
   onNext: () => void;
 }
 
 export function WelcomeStep({ onNext }: WelcomeStepProps) {
+  const { t } = useAccessibilityStore();
   const features = [
     {
       icon: <Scan className="w-7 h-7" />,
@@ -72,7 +74,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.6 }}
         >
-          Bienvenue sur{' '}
+          {t('onboarding.welcomeTitle')}{' '}
           <span className="bg-gradient-to-r from-[#0EA5E9] via-[#06B6D4] to-[#8B5CF6] bg-clip-text text-transparent">
             DeepSkyn
           </span>
@@ -85,8 +87,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.6 }}
         >
-          Créons ensemble votre profil de peau personnalisé.{' '}
-          <span className="text-[#0EA5E9] font-medium">En quelques étapes simples</span>, nous allons comprendre votre peau pour vous offrir les meilleurs soins.
+          {t('onboarding.welcomeSub')}
         </motion.p>
 
         {/* Feature cards — equal width via grid + h-full */}
@@ -128,7 +129,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
             <div className="flex items-center justify-center gap-6 flex-wrap">
               <div className="flex items-center gap-2">
                 <Heart className="w-5 h-5 text-[#EF4444]" />
-                <span className="text-sm text-[#374151] font-medium">100% personnalisé</span>
+                <span className="text-sm text-[#374151] font-medium">{t('onboarding.customized')}</span>
               </div>
               <div className="w-px h-6 bg-[#E5E7EB] hidden sm:block" />
               <div className="flex items-center gap-2">
@@ -137,12 +138,12 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
                   animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 />
-                <span className="text-sm text-[#374151] font-medium">~3 minutes</span>
+                <span className="text-sm text-[#374151] font-medium">{t('onboarding.timeMin')}</span>
               </div>
               <div className="w-px h-6 bg-[#E5E7EB] hidden sm:block" />
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-[#0EA5E9]" />
-                <span className="text-sm text-[#374151] font-medium">Données sécurisées</span>
+                <span className="text-sm text-[#374151] font-medium">{t('onboarding.secure')}</span>
               </div>
             </div>
           </div>
@@ -159,7 +160,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
             whileTap={{ scale: 0.98 }}
           >
             <Button size="lg" onClick={onNext} className="px-12 py-5 text-lg shadow-xl shadow-[#0EA5E9]/25 hover:shadow-2xl hover:shadow-[#0EA5E9]/30">
-              Commencer mon profil
+              {t('onboarding.startInfo')}
               <motion.div
                 animate={{ x: [0, 5, 0] }}
                 transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
