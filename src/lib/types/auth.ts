@@ -42,7 +42,8 @@ export interface RegisterRequest {
 }
 
 export interface UserProfile {
-  sub: string;
+  id?: string;
+  sub?: string;
   email_verified: boolean;
   name: string;
   preferred_username: string;

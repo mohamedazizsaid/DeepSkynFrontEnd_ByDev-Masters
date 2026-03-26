@@ -9,6 +9,7 @@ export interface Post {
   user?: { name: string; avatar: string | null };
   _count?: { likes: number; comments: number };
   isLiked?: boolean;
+  reaction?: string | null;
 }
 
 export interface CreatePostDto {
@@ -20,13 +21,17 @@ export interface Comment {
   id: string;
   userId: string;
   postId: string;
+  parentId?: string | null;
   comment: string;
   createdAt: string;
   updatedAt: string;
   user?: { name: string; avatar: string | null };
+  _count?: { likes: number; replies?: number };
+  isLiked?: boolean;
 }
 
 export interface CreateCommentDto {
   postId: string;
   comment: string;
+  parentId?: string;
 }

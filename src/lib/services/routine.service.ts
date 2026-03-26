@@ -25,6 +25,11 @@ export const routineService = {
     return res.data;
   },
 
+  async getUserRoutine(userId: string): Promise<Routine[]> {
+    const res = await apiClient.get<Routine[]>(`/routines/user/${userId}`);
+    return res.data;
+  },
+
   async getById(id: string): Promise<Routine> {
     const res = await apiClient.get<Routine>(`/routines/${id}`);
     return res.data;

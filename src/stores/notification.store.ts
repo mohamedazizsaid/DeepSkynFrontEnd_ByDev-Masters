@@ -41,8 +41,13 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     try {
       const result = await notificationService.getAll(page, 20);
       // Handle both PaginatedResponse and direct Array
-      const notifications = Array.isArray(result) ? result : (result as any).data || [];
-      set({ notifications: notifications });
+      const notifications = Array.isArray(result) ? result : (result as any).notifications || [];
+      const unreadCount = Array.isArray(result) ? get().unreadCount : (result as any).unreadCount ?? get().unreadCount;
+      
+      set({ 
+        notifications: notifications,
+        unreadCount: unreadCount
+      });
     } catch {
       // silent fail
     }

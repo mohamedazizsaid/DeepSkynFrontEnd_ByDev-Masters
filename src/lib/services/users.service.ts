@@ -35,5 +35,20 @@ export const usersService = {
     async uploadAvatar3D(file: File): Promise<User> {
         const res = await apiClient.postForm<User>('/users/avatar3d', { file });
         return res.data;
+    },
+
+    async getSuggestions(): Promise<any[]> {
+        const res = await apiClient.get<any[]>('/users/suggestions');
+        return res.data;
+    },
+
+    async toggleFollow(id: string): Promise<{ followed: boolean }> {
+        const res = await apiClient.post<{ followed: boolean }>(`/users/follow/${id}`);
+        return res.data;
+    },
+
+    async getUserStats(userId: string): Promise<any> {
+        const res = await apiClient.get<any>(`/users/${userId}/stats`);
+        return res.data;
     }
 };

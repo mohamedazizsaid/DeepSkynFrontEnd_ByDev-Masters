@@ -10,6 +10,7 @@ import { SubscriptionPage } from './dashboard/subscription-page';
 import { ProfilePage } from './dashboard/profile-page';
 import { SettingsPage } from '../pages/settings-page';
 import { CommunityPage } from '../pages/community-page';
+import { PublicProfilePage } from '../pages/public-profile-page';
 import { WeatherPage } from './dashboard/weather-page';
 import { NotificationPanel } from './notification-panel';
 import { GuidedTour } from './guided-tour';
@@ -20,10 +21,11 @@ interface DashboardLayoutProps {
   onLogout: () => void;
 }
 
-export type DashboardPageType = 'dashboard' | 'analysis' | 'evolution' | 'routine' | 'chat' | 'subscription' | 'profile' | 'settings' | 'community' | 'meteo';
+export type DashboardPageType = 'dashboard' | 'analysis' | 'evolution' | 'routine' | 'chat' | 'subscription' | 'profile' | 'settings' | 'community' | 'meteo' | 'user-profile';
 
 export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
   const [currentPage, setCurrentPage] = useState<DashboardPageType>('dashboard');
+  const [viewedUserId, setViewedUserId] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const { connect, disconnect, fetchUnreadCount } = useNotificationStore();
@@ -50,6 +52,15 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
   }, []);
 
   const handleNavigate = (page: string) => setCurrentPage(page as DashboardPageType);
+
+  const handleViewProfile = (userId: string) => {
+    if (userId === user?.id || userId === user?.sub) {
+      setCurrentPage('profile');
+      return;
+    }
+    setViewedUserId(userId);
+    setCurrentPage('user-profile');
+  };
 
   // Check if user is admin
   // We check for 'admin', 'ADMIN', 'realm-admin', or 'super_admin' to be safe
@@ -78,7 +89,9 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
       case 'settings':
         return <SettingsPage />;
       case 'community':
-        return <CommunityPage />;
+        return <CommunityPage onViewProfile={handleViewProfile} />;
+      case 'user-profile':
+        return <PublicProfilePage userId={viewedUserId || ''} onBack={() => setCurrentPage('community')} onProfileClick={handleViewProfile} onNavigate={handleNavigate} />;
       case 'meteo':
         return <WeatherPage {...commonProps} />;
       default:

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ThumbsUp, MessageSquare, Share2, MoreHorizontal, Trash2, Globe2, Newspaper, Archive } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
+
 
 export interface PostCardData {
   id: string;
@@ -16,26 +18,30 @@ export interface PostCardData {
   shares: number;
   isLiked?: boolean;
   isByCurrentUser?: boolean;
+  reaction?: string | null;
+  status?: string;
 }
 
 interface PostCardProps {
   post: PostCardData;
-  onLike?: (postId: string) => void;
+  onLike?: (postId: string, type?: string) => void;
   onComment?: (postId: string) => void;
   onShare?: (postId: string) => void;
   onDelete?: (postId: string) => void;
+  onArchive?: (postId: string) => void;
+  onProfileClick?: (userId: string) => void;
 }
 
-const getRelativeTime = (date: string) => {
+const getRelativeTime = (date: string, t: any) => {
   const now = new Date();
   const postDate = new Date(date);
   const seconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
 
-  if (seconds < 60) return 'à l\'instant';
-  if (seconds < 3600) return `il y a ${Math.floor(seconds / 60)}m`;
-  if (seconds < 86400) return `il y a ${Math.floor(seconds / 3600)}h`;
-  if (seconds < 604800) return `il y a ${Math.floor(seconds / 86400)}j`;
-  return postDate.toLocaleDateString('fr-FR');
+  if (seconds < 60) return t('community.justNow') || "À l'instant";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} min`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} h`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)} j`;
+  return postDate.toLocaleDateString(t('common.loading') === '...جاري التحميل' ? 'ar-SA' : 'fr-FR', { day: 'numeric', month: 'long' });
 };
 
 export function PostCard({
@@ -44,152 +50,307 @@ export function PostCard({
   onComment,
   onShare,
   onDelete,
+  onArchive,
+  onProfileClick,
 }: PostCardProps) {
-  const [isLiked, setIsLiked] = useState(post.isLiked || false);
+  const { theme, contrastMode, t } = useAccessibilityStore();
+  const [reaction, setReaction] = useState<string | null>(post.reaction || (post.isLiked ? 'like' : null));
+  const [showReactions, setShowReactions] = useState(false);
+  const [isLiked, setIsLiked] = useState(post.isLiked);
   const [likeCount, setLikeCount] = useState(post.likes);
   const [showMenu, setShowMenu] = useState(false);
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikeCount(isLiked ? likeCount - 1 : likeCount + 1);
-    if (onLike) {
-      onLike(post.id);
-    }
-  };
+  // Styling based on accessibility store
+  const isHcHigh = contrastMode === 'high';
+  const isDark = theme === 'dark';
+
+  const cardBg = isHcHigh ? 'bg-black border-2 border-yellow-400' : isDark ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#E5E7EB]';
+  const textColor = isHcHigh ? 'text-cyan-400' : isDark ? 'text-gray-200' : 'text-[#111827]';
+  const subText = isHcHigh ? 'text-yellow-400' : isDark ? 'text-gray-400' : 'text-[#6B7280]';
+  const btnHover = isHcHigh ? 'hover:bg-yellow-400/20 text-yellow-500' : isDark ? 'hover:bg-[#334155] text-gray-400' : 'hover:bg-gray-100 text-[#6B7280]';
 
   const handleComment = () => {
     if (onComment) {
       onComment(post.id);
     }
-    toast('Commentaires - Fonctionnalité à venir', { icon: '💬' });
   };
 
   const handleShare = () => {
     if (onShare) {
       onShare(post.id);
     }
-    toast.success('Post partagé !');
+    toast.success(t('community.copyLinkSuccess') || 'Lien du post copié !');
   };
 
   const handleDelete = () => {
     if (onDelete) {
       onDelete(post.id);
     }
-    toast.success('Post supprimé');
   };
+
+  // Helper function to optionally render the dynamic injected templates (Location/Feelings) gracefully
+  const renderContent = () => {
+    if (!post.content) return null;
+    
+    const separatorIdx = post.content.indexOf('\n\n— ');
+    if (separatorIdx !== -1) {
+      const mainText = post.content.substring(0, separatorIdx);
+      const feelingLocationText = post.content.substring(separatorIdx + 4);
+      
+      // Determine if there is a location part
+      const locMarker = '📍 ';
+      const locIdx = feelingLocationText.indexOf(locMarker);
+      
+      let feelingPart = feelingLocationText;
+      let locationPart = '';
+      
+      if (locIdx !== -1) {
+        feelingPart = feelingLocationText.substring(0, locIdx);
+        locationPart = feelingLocationText.substring(locIdx + locMarker.length);
+      }
+
+      const openMap = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const query = encodeURIComponent(locationPart);
+        window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+      };
+
+      return (
+        <>
+          <p className={`${textColor} text-sm whitespace-pre-wrap leading-relaxed`}>{mainText}</p>
+          <div className={`mt-3 flex flex-wrap gap-2`}>
+            {feelingPart.trim() && (
+              <div className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${isHcHigh ? 'bg-yellow-400 text-black' : isDark ? 'bg-[#0f172a] text-[#0EA5E9] border border-[#334155]' : 'bg-[#e0f2fe] text-[#0284c7]'}`}>
+                {feelingPart}
+              </div>
+            )}
+            {locationPart && (
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={openMap}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isHcHigh ? 'bg-cyan-400 text-black hover:bg-cyan-300' : isDark ? 'bg-[#0f172a] text-[#10B981] border border-[#10B981]/30 hover:border-[#10B981]' : 'bg-[#D1FAE5] text-[#059669] hover:bg-[#A7F3D0]'}`}
+              >
+                📍 {locationPart}
+              </motion.button>
+            )}
+          </div>
+        </>
+      );
+    }
+    return <p className={`${textColor} text-sm whitespace-pre-wrap leading-relaxed`}>{post.content}</p>;
+  };
+
+
+
+  const REACTIONS = [
+    { id: 'like', icon: '👍', label: t('community.reactions.like'), color: 'text-blue-500' },
+    { id: 'love', icon: '❤️', label: t('community.reactions.love'), color: 'text-red-500' },
+    { id: 'haha', icon: '😆', label: t('community.reactions.haha'), color: 'text-yellow-500' },
+    { id: 'wow', icon: '😮', label: t('community.reactions.wow'), color: 'text-yellow-500' },
+    { id: 'sad', icon: '😢', label: t('community.reactions.sad'), color: 'text-yellow-500' },
+    { id: 'angry', icon: '😡', label: t('community.reactions.angry'), color: 'text-orange-500' },
+  ];
+
+  const handleLike = (reactId: string = 'like') => {
+    if (reaction === reactId) {
+      setReaction(null);
+      setIsLiked(false);
+      setLikeCount(likeCount - 1);
+    } else {
+      if (!reaction) setLikeCount(likeCount + 1);
+      setReaction(reactId);
+      setIsLiked(true);
+    }
+    setShowReactions(false);
+    if (onLike) onLike(post.id, reactId);
+  };
+
+  const currentReaction = REACTIONS.find(r => r.id === reaction) || REACTIONS[0];
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden mb-6 hover:shadow-md transition-shadow"
+      className={`rounded-xl shadow-sm overflow-visible mb-4 transition-all ${cardBg}`}
     >
       {/* Post Header */}
-      <div className="flex items-center justify-between p-4 pb-3">
+      <div className="flex items-start justify-between p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+          <div 
+            onClick={() => onProfileClick?.(post.userId)}
+            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 cursor-pointer hover:opacity-90 ${isHcHigh ? 'border-2 border-yellow-400 bg-black text-cyan-400' : 'bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] text-white'}`}
+          >
             {post.userAvatar ? (
-              <img
-                src={post.userAvatar}
-                alt={post.userName}
-                className="w-full h-full object-cover rounded-full"
-              />
+              <img src={post.userAvatar} alt={post.userName} className="w-full h-full object-cover rounded-full" />
             ) : (
               post.userName.charAt(0).toUpperCase()
             )}
           </div>
           <div>
-            <h4 className="font-semibold text-sm text-[#111827]">{post.userName}</h4>
-            <p className="text-xs text-[#9CA3AF]">{getRelativeTime(post.createdAt)}</p>
+            <h4 
+              onClick={() => onProfileClick?.(post.userId)}
+              className={`font-bold text-sm cursor-pointer hover:underline ${textColor}`}
+            >
+              {post.userName}
+            </h4>
+            <div className={`flex items-center gap-1.5 text-xs ${subText}`}>
+              <span>{getRelativeTime(post.createdAt, t)}</span>
+              <span>•</span>
+              <Globe2 className="w-3 h-3" />
+            </div>
           </div>
         </div>
 
         {/* Menu */}
         <div className="relative">
           <motion.button
-            whileHover={{ backgroundColor: 'rgba(107, 114, 128, 0.1)' }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowMenu(!showMenu)}
-            className="p-2 rounded-lg text-[#6B7280] hover:text-[#111827] transition-colors"
+            className={`p-2 rounded-full transition-colors ${btnHover}`}
           >
             <MoreHorizontal className="w-5 h-5" />
           </motion.button>
 
-          {showMenu && post.isByCurrentUser && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="absolute right-0 top-full mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-10 overflow-hidden"
-            >
-              <motion.button
-                whileHover={{ backgroundColor: '#FEF2F2' }}
-                onClick={() => {
-                  handleDelete();
-                  setShowMenu(false);
-                }}
-                className="w-full px-4 py-2 flex items-center gap-2 text-red-600 hover:text-red-700 text-sm transition-colors"
+          <AnimatePresence>
+            {showMenu && post.isByCurrentUser && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                className={`absolute right-0 top-full mt-2 border rounded-xl shadow-2xl z-50 overflow-hidden min-w-[180px] backdrop-blur-xl ${isHcHigh ? 'bg-black border-yellow-400' : isDark ? 'bg-[#1e293b]/95 border-white/10' : 'bg-white/95 border-gray-100'}`}
               >
-                <Trash2 className="w-4 h-4" />
-                Supprimer
-              </motion.button>
-            </motion.div>
-          )}
+                <div className="p-1.5 space-y-1">
+                  <button
+                    onClick={() => { if (onArchive) onArchive(post.id); setShowMenu(false); }}
+                    className="w-full px-3 py-2.5 flex items-center gap-3 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 rounded-lg text-sm font-semibold transition-all group"
+                  >
+                    <Archive className={`w-4 h-4 ${post.status === 'archived' ? 'text-green-500' : 'text-[#0EA5E9]'} group-hover:scale-110 transition-transform`} />
+                    {post.status === 'archived' ? t('community.restore') : t('community.archive')}
+                  </button>
+                  <button
+                    onClick={() => { handleDelete(); setShowMenu(false); }}
+                    className="w-full px-3 py-2.5 flex items-center gap-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg text-sm font-semibold transition-all group"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500 group-hover:scale-110 transition-transform" />
+                    {t('common.delete')}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Post Content */}
-      <div className="px-4 pb-3">
-        <p className="text-[#374151] text-sm whitespace-pre-wrap leading-relaxed">
-          {post.content}
-        </p>
+      <div className="px-4 pb-2">
+        {renderContent()}
       </div>
 
-      {/* Post Media */}
       {post.media && (
-        <div className="px-4 pb-3">
-          <img
-            src={post.media}
-            alt="Post media"
-            className="w-full rounded-xl object-cover max-h-96"
-          />
+        <div className={`mt-2 ${isHcHigh ? 'border-y-2 border-yellow-400' : isDark ? 'border-y border-white/5' : 'border-y border-gray-100'}`}>
+          {post.media.includes('video') ? (
+            <video src={post.media} controls className="w-full max-h-[500px] object-cover bg-black" />
+          ) : (
+            <img src={post.media} alt="Post media" className="w-full max-h-[500px] object-cover bg-gray-100 dark:bg-[#0f172a]" />
+          )}
         </div>
       )}
 
-      {/* Post Actions */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-[#E5E7EB] text-sm text-[#6B7280]">
-        <motion.button
-          whileHover={{ scale: 1.05, color: '#EF4444' }}
-          onClick={handleLike}
-          className={`flex items-center gap-2 transition-colors ${
-            isLiked ? 'text-[#EF4444]' : 'text-[#6B7280] hover:text-[#EF4444]'
-          }`}
+      {(likeCount > 0 || post.comments > 0) && (
+        <div className={`flex items-center justify-between px-4 py-2 text-xs ${subText} ${!post.media ? (isHcHigh ? 'border-t border-yellow-400/30 mt-3' : isDark ? 'border-t border-white/5 mt-3' : 'border-t border-gray-100 mt-3') : ''}`}>
+          <div className="flex items-center gap-1.5 cursor-pointer hover:underline">
+            {likeCount > 0 && (
+              <div className="flex -space-x-1 items-center">
+                 <div className={`w-5 h-5 rounded-full flex items-center justify-center border border-white dark:border-[#1e293b] z-[1] ${reaction ? '' : 'bg-blue-500'}`}>
+                   {reaction ? (
+                     <span className="text-xs -mt-0.5">{currentReaction.icon}</span>
+                   ) : (
+                     <ThumbsUp className="w-2.5 h-2.5 text-white fill-white" />
+                   )}
+                 </div>
+                 {likeCount > 1 && !reaction && (
+                   <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center border border-white dark:border-[#1e293b]">
+                     <span className="text-[8px]">❤️</span>
+                   </div>
+                 )}
+                 <span className="ml-2 font-medium">{likeCount}</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {post.comments > 0 && <span onClick={handleComment} className="cursor-pointer hover:underline">{post.comments} {t('community.comments')}</span>}
+          </div>
+        </div>
+      )}
+
+      {/* Post Actions (Buttons) */}
+      <div className={`flex items-center justify-between px-2 py-1 mx-2 mb-2 border-t ${isHcHigh ? 'border-yellow-400/30' : isDark ? 'border-[#334155]' : 'border-[#E5E7EB]'} mt-1`}>
+        <div 
+          className="relative flex-1"
+          onMouseEnter={() => setShowReactions(true)}
+          onMouseLeave={() => setShowReactions(false)}
         >
-          <motion.div
-            animate={isLiked ? { scale: [1, 1.3, 1] } : {}}
-            transition={{ duration: 0.3 }}
+          <AnimatePresence>
+            {showReactions && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                animate={{ opacity: 1, y: -45, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.8 }}
+                className={`absolute left-0 bottom-full mb-2 bg-white dark:bg-[#1e293b] p-1.5 rounded-full shadow-2xl flex items-center gap-1 border border-gray-100 dark:border-[#334155] z-30`}
+              >
+                {REACTIONS.map((r, i) => (
+                  <motion.button
+                    key={r.id}
+                    whileHover={{ scale: 1.3 }}
+                    whileTap={{ scale: 0.9 }}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0, transition: { delay: i * 0.05 } }}
+                    onClick={() => handleLike(r.id)}
+                    className="p-2 text-xl hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors relative group"
+                  >
+                    {r.icon}
+                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      {r.label}
+                    </span>
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => handleLike('like')}
+            className={`w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-colors ${btnHover} ${
+              reaction ? currentReaction.color : ''
+            }`}
           >
-            <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-          </motion.div>
-          <span className={`font-medium ${isLiked ? 'text-[#EF4444]' : ''}`}>
-            {likeCount}
-          </span>
-        </motion.button>
+            {reaction ? (
+              <span className="text-xl">{currentReaction.icon}</span>
+            ) : (
+              <ThumbsUp className="w-5 h-5" />
+            )}
+            <span>{reaction ? currentReaction.label : t('community.reactions.like')}</span>
+          </motion.button>
+        </div>
 
         <motion.button
-          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleComment}
-          className="flex items-center gap-2 hover:text-[#0EA5E9] transition-colors"
+          className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-colors ${btnHover}`}
         >
-          <MessageCircle className="w-5 h-5" />
-          <span className="font-medium">{post.comments}</span>
+          <MessageSquare className="w-5 h-5" />
+          <span>{t('community.comments')}</span>
         </motion.button>
 
         <motion.button
-          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleShare}
-          className="flex items-center gap-2 hover:text-[#0EA5E9] transition-colors"
+          className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-colors ${btnHover}`}
         >
           <Share2 className="w-5 h-5" />
-          <span className="font-medium">{post.shares}</span>
+          <span>{t('stats.shares') || 'Partager'}</span>
         </motion.button>
       </div>
     </motion.div>

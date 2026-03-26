@@ -10,28 +10,7 @@ interface TermsSettingsProps {
 export function TermsSettings({ onBack }: TermsSettingsProps) {
   const { t } = useAccessibilityStore();
 
-  const sections = [
-    {
-      title: "1. Acceptation des conditions",
-      content: "En accédant et en utilisant DeepSkyn, vous acceptez de vous conformer à ces conditions d'utilisation. Si vous n'êtes pas d'accord avec une partie des termes, vous n'êtes pas autorisé à utiliser notre application."
-    },
-    {
-      title: "2. Avis médical",
-      content: "DeepSkyn fournit des informations générales basées sur l'intelligence artificielle. Ces informations ne constituent en aucun cas un avis médical, un diagnostic ou un traitement professionnel. Consultez toujours votre dermatologue pour des problèmes spécifiques."
-    },
-    {
-      title: "3. Traitement des données (Confidentialité)",
-      content: "La protection de votre vie privée est notre priorité. Vos clichés cutanés sont traités d'une manière sécurisée et ne sont jamais vendus à des tiers. Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et de suppression."
-    },
-    {
-      title: "4. Licence d'utilisation",
-      content: "Nous vous accordons une licence personnelle, non exclusive, et non transférable pour utiliser le service. Vous ne pouvez pas copier, modifier, ou distribuer nos algorithmes IA ou le code de l'application."
-    },
-    {
-      title: "5. Abonnement Premium",
-      content: "Les abonnements Premium sont facturés selon la durée choisie (mensuelle/annuelle). Le renouvellement est automatique sauf annulation 24h avant la fin de la période en cours. Aucun remboursement n'est effectué pour une période partiellement entamée."
-    }
-  ];
+  const sections = t('settings.terms.sections') || [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -43,7 +22,7 @@ export function TermsSettings({ onBack }: TermsSettingsProps) {
         className="flex lg:hidden items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-all w-fit"
       >
         <ArrowLeft className="w-5 h-5" />
-        <span className="text-sm font-medium">{t('common.back') || 'Retour'}</span>
+        <span className="text-sm font-medium">{t('common.back')}</span>
       </motion.button>
 
       {/* Header */}
@@ -76,16 +55,16 @@ export function TermsSettings({ onBack }: TermsSettingsProps) {
             <CheckCircle2 className="w-6 h-6 text-emerald-500" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-[#111827]">Transparence & Sécurité</h3>
+            <h3 className="text-sm font-bold text-[#111827]">{t('settings.terms.transparency')}</h3>
             <p className="text-xs font-medium text-[#6B7280] mt-1 leading-relaxed">
-              DeepSkyn s'engage à protéger vos données et vous offrir une expérience sécurisée. Lisez attentivement ces termes.
+              {t('settings.terms.transparencyDesc')}
             </p>
           </div>
         </div>
 
         {/* Text Sections */}
         <div className="space-y-8">
-          {sections.map((section, index) => (
+          {sections.map((section: any, index: number) => (
             <div key={index} className="scroll-mt-20 group">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center text-[10px] font-bold text-gray-400 group-hover:bg-[#0EA5E9]/10 group-hover:text-[#0EA5E9] transition-all border border-gray-100 shrink-0">
@@ -100,9 +79,9 @@ export function TermsSettings({ onBack }: TermsSettingsProps) {
           {/* Footer Note */}
           <div className="pt-6 mt-6 border-t border-gray-100">
             <div className="p-5 rounded-xl bg-gray-50 border border-gray-100">
-              <h4 className="text-sm font-bold text-[#111827] mb-1">Besoin d'éclaircissements ?</h4>
+              <h4 className="text-sm font-bold text-[#111827] mb-1">{t('settings.terms.needHelp')}</h4>
               <p className="text-xs font-medium text-[#6B7280] leading-relaxed">
-                Pour toute interrogation relative à nos conditions d'utilisation ou notre politique de vie privée, contactez notre équipe légale à <span className="text-[#0EA5E9] font-bold">support@deepskyn.com</span>.
+                {t('settings.terms.contactSupport', { email: 'support@deepskyn.com' })}
               </p>
             </div>
           </div>

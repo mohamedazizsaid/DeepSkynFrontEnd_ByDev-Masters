@@ -293,7 +293,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#111827]">{t('nav.profile')}</h1>
-            <p className="text-sm text-[#6B7280] hidden sm:block tracking-wide">{t('settings.personalInfoDesc')}</p>
+            <p className="text-sm text-[#6B7280] hidden sm:block tracking-wide">{t('settings.personal.subtitle')}</p>
           </div>
         </div>
 
@@ -358,37 +358,37 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                 <div className="w-12 h-12 rounded-2xl bg-[#0EA5E9]/10 flex items-center justify-center shadow-inner">
                   <UserIcon className="w-6 h-6 text-[#0EA5E9]" />
                 </div>
-                <h3 className="text-xl font-bold text-[#111827]">{t('settings.personalInfo')}</h3>
+                <h3 className="text-xl font-bold text-[#111827]">{t('settings.personal.title')}</h3>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-grow">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 flex items-center gap-2 uppercase tracking-widest opacity-80">
                     <UserIcon className="w-3.5 h-3.5 text-[#0EA5E9]" />
-                    {t('common.name') || 'Nom'}
+                    {t('settings.personal.fullName')}
                   </label>
                   <p className="p-4 bg-white/60 rounded-2xl border border-gray-100/50 text-gray-800 font-bold shadow-sm text-sm truncate">{user?.name}</p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 flex items-center gap-2 uppercase tracking-widest opacity-80">
                     <Mail className="w-3.5 h-3.5 text-[#0EA5E9]" />
-                    Email
+                    {t('settings.personal.email')}
                   </label>
                   <p className="p-4 bg-white/60 rounded-2xl border border-gray-100/50 text-gray-800 font-bold shadow-sm text-sm truncate">{user?.email}</p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 flex items-center gap-2 uppercase tracking-widest opacity-80">
                     <Calendar className="w-3.5 h-3.5 text-[#0EA5E9]" />
-                    {t('profile.age') || 'Âge'}
+                    {t('profile.age')}
                   </label>
                   <p className="p-4 bg-white/60 rounded-2xl border border-gray-100/50 text-gray-800 font-bold shadow-sm text-sm">{formData.age || 'N/A'} {t('common.years')}</p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 flex items-center gap-2 uppercase tracking-widest opacity-80">
                     <Activity className="w-3.5 h-3.5 text-[#0EA5E9]" />
-                    {t('onboarding.gender') || 'Genre'}
+                    {t('onboarding.gender')}
                   </label>
-                  <p className="p-4 bg-white/60 rounded-2xl border border-gray-100/50 text-gray-800 font-bold shadow-sm text-sm">{formData.gender || 'N/A'}</p>
+                  <p className="p-4 bg-white/60 rounded-2xl border border-gray-100/50 text-gray-800 font-bold shadow-sm text-sm">{formData.gender ? (t(`settings.personal.genderOptions.${formData.gender}`) as string) || formData.gender : 'N/A'}</p>
                 </div>
               </div>
             </Card>
@@ -421,14 +421,14 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                 <div className="w-12 h-12 rounded-2xl bg-[#10B981]/10 flex items-center justify-center shadow-inner">
                   <Activity className="w-6 h-6 text-[#10B981]" />
                 </div>
-                <h3 className="text-xl font-bold text-[#111827]">Activité récente</h3>
+                <h3 className="text-xl font-bold text-[#111827]">{t('profile.activityTitle')}</h3>
               </div>
               
               <div className="space-y-3.5 flex-grow">
                 {[
-                  { action: 'Analyse effectuée', date: 'Il y a 2h', icon: Scan, color: 'text-[#0EA5E9]', bg: 'bg-[#0EA5E9]/10' },
-                  { action: 'Routine matinale', date: 'Hier', icon: Calendar, color: 'text-[#F9A8D4]', bg: 'bg-[#F9A8D4]/10' },
-                  { action: 'Coach IA', date: 'Il y a 2 jours', icon: MessageCircle, color: 'text-[#FBBF24]', bg: 'bg-[#FBBF24]/10' },
+                  { action: t('profile.activityActions.analysis'), date: t('profile.times.hoursAgo', { count: 2 }), icon: Scan, color: 'text-[#0EA5E9]', bg: 'bg-[#0EA5E9]/10' },
+                  { action: t('profile.activityActions.routine'), date: t('profile.times.yesterday'), icon: Calendar, color: 'text-[#F9A8D4]', bg: 'bg-[#F9A8D4]/10' },
+                  { action: t('profile.activityActions.chat'), date: t('profile.times.daysAgo', { count: 2 }), icon: MessageCircle, color: 'text-[#FBBF24]', bg: 'bg-[#FBBF24]/10' },
                 ].map((act, i) => (
                   <div key={i} className="flex items-center justify-between p-4 bg-white/50 rounded-2xl border border-gray-100/30 hover:bg-white transition-all group shadow-sm hover:shadow-md cursor-pointer">
                     <div className="flex items-center gap-5">
