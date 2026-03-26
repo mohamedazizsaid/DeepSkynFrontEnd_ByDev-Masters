@@ -4,7 +4,7 @@ import {
   ArrowLeft, Download, Sparkles, TrendingUp, TrendingDown,
   Upload, Camera, Loader2, RefreshCw, AlertTriangle,
   Droplets, Eye, CircleDot, Sun, Smile, Flame, Heart, Zap,
-  Package, Leaf, Shield,
+  Package, Leaf, Shield, Microscope,
 } from 'lucide-react';
 import { Button } from '../button';
 import { Card } from '../card';
@@ -139,11 +139,7 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
   if (loading) {
     return (
       <div className="p-8 max-w-7xl mx-auto">
-        <div className="flex items-center gap-2 text-[#6B7280] mb-8">
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back to Dashboard</span>
-        </div>
-        <div className="space-y-6">
+        <div className="space-y-6 mt-12">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-48 bg-[#F3F4F6] rounded-2xl animate-pulse" />
           ))}
@@ -156,13 +152,9 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
   if (!hasAnalysis) {
     return (
       <div className="p-8 max-w-7xl mx-auto">
-        <button onClick={onBack} className="flex items-center gap-2 text-[#6B7280] hover:text-[#0EA5E9] mb-8 transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back to Dashboard</span>
-        </button>
-        <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="flex flex-col items-center justify-center py-20 text-center mt-12">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center mb-6">
-            <Camera className="w-10 h-10 text-white" />
+            <Microscope className="w-10 h-10 text-white" />
           </div>
           <h2 className="text-2xl font-bold mb-2">No Analysis Yet</h2>
           <p className="text-[#6B7280] mb-8 max-w-md">
@@ -209,18 +201,19 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
     );
   }
 
-  // ─── Main analysis view ───
+  // ─── Main analysis view ─── with icon
   return (
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <button onClick={onBack} className="flex items-center gap-2 text-[#6B7280] hover:text-[#0EA5E9] mb-4 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back to Dashboard</span>
-          </button>
-          <h1 className="text-3xl font-bold mb-2">Detailed Skin Analysis</h1>
-          <p className="text-[#6B7280]">Analyzed on {formatAnalysisDate(analysis.createdAt)}</p>
+      <div className="mb-12">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center flex-shrink-0">
+            <Microscope className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Detailed Skin Analysis</h1>
+            <p className="text-[#6B7280]">Analyzed on {formatAnalysisDate(analysis.createdAt)}</p>
+          </div>
         </div>
         <div className="flex gap-3">
           <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />

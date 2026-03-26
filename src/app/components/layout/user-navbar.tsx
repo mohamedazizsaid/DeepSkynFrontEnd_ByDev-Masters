@@ -16,6 +16,7 @@ import {
     Menu,
     X,
     ChevronDown,
+    
     Eye,
     ChevronLeft,
     Sun,
@@ -35,6 +36,8 @@ import {
     BookOpen,
     Pause,
     Monitor,
+    Cloud,
+    ChevronRight,
 } from 'lucide-react';
 import { useNotificationStore } from '../../../stores/notification.store';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
@@ -401,6 +404,16 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                         </button>
 
                                                         <button
+                                                            onClick={() => { onNavigate('meteo'); setIsProfileOpen(false); setShowAccessibility(false); }}
+                                                            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-[#06B6D4]/5 hover:to-[#0EA5E9]/5 dark:hover:from-[#06B6D4]/10 dark:hover:to-[#0EA5E9]/10 hover:text-[#06B6D4] dark:hover:text-[#22D3EE] transition-all duration-200 group"
+                                                        >
+                                                            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-[#06B6D4]/10 transition-colors duration-200">
+                                                                <Cloud className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-[#06B6D4] dark:group-hover:text-[#22D3EE] transition-colors duration-200" />
+                                                            </div>
+                                                            <span className="font-medium">Météo</span>
+                                                        </button>
+
+                                                        <button
                                                             onClick={() => setShowAccessibility(true)}
                                                             className="flex w-full items-center justify-between px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-[#06B6D4]/5 hover:to-[#0EA5E9]/5 dark:hover:from-[#06B6D4]/10 dark:hover:to-[#0EA5E9]/10 hover:text-[#06B6D4] dark:hover:text-[#22D3EE] transition-all duration-200 group"
                                                         >
@@ -464,6 +477,21 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                     <div className="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-600 to-transparent mx-4" />
 
                                                     <div className="flex flex-col gap-4 p-4">
+
+                                                        {/* ── MÉTÉO SHORTCUT ─────────────────────────── */}
+                                                        <button
+                                                            onClick={() => { onNavigate('meteo'); setIsProfileOpen(false); setShowAccessibility(false); }}
+                                                            className="flex items-center gap-3 w-full p-3 rounded-xl bg-gradient-to-r from-[#06B6D4]/10 to-[#0EA5E9]/10 dark:from-[#06B6D4]/20 dark:to-[#0EA5E9]/20 border border-[#06B6D4]/30 dark:border-[#06B6D4]/40 hover:border-[#0EA5E9] dark:hover:border-[#0EA5E9] hover:shadow-md transition-all duration-200 group"
+                                                        >
+                                                            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-[#06B6D4] to-[#0EA5E9] shadow-sm group-hover:shadow-md transition-shadow">
+                                                                <Cloud className="w-5 h-5 text-white" />
+                                                            </div>
+                                                            <div className="flex-1 text-left">
+                                                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Page Météo</p>
+                                                                <p className="text-xs text-gray-600 dark:text-gray-400">Conseils skincare selon la météo</p>
+                                                            </div>
+                                                            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#0EA5E9] transition-colors" />
+                                                        </button>
 
                                                         {/* ── APPEARANCE ─────────────────────────── */}
                                                         <section>

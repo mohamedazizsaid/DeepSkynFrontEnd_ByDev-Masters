@@ -129,21 +129,14 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     return (
         <div className="p-8 max-w-7xl mx-auto h-[calc(100vh-4rem)]">
             {/* Header */}
-            <div className="mb-6">
-                <button
-                    onClick={onBack}
-                    className="flex items-center gap-2 text-[#6B7280] hover:text-[#0EA5E9] mb-4 transition-colors"
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                    <span>Back to Dashboard</span>
-                </button>
+            <div className="mb-8">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center">
-                            <Sparkles className="w-6 h-6 text-white" />
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center flex-shrink-0">
+                            <Sparkles className="w-7 h-7 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold">AI Dermatology Coach</h1>
+                            <h1 className="text-3xl font-bold">AI Dermatology Coach</h1>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></div>
                                 <span className="text-sm text-[#6B7280]">Online</span>

@@ -17,6 +17,7 @@ export interface ChatHistory {
   isPremium: boolean;
   createdAt: string;
   updatedAt: string;
+  
 }
 
 export interface SendMessageDto {

@@ -378,26 +378,23 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
     <div className="animate-fade-in w-full pb-12">
       <div className="max-w-7xl mx-auto">
         {/* ═══ Header ═══ */}
-        <div className="mb-8">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-gray-500 hover:text-[#0EA5E9] mb-6 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="text-sm">{t('routine.backToDashboard')}</span>
-          </button>
-
+        <div className="mb-12">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-1 tracking-tight">
-                {t('routine.title')}{' '}
-                <span className={isHcHigh ? 'text-cyan-400' : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent'}>
-                  {t('routine.skincare')}
-                </span>
-              </h1>
-              <p className="text-gray-500 text-sm">
-                {t('routine.subtitle')}
-              </p>
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold mb-1 tracking-tight bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent">
+                  {t('routine.title')}{' '}
+                  <span className={isHcHigh ? 'text-cyan-400' : 'inherit'}>
+                    {t('routine.skincare')}
+                  </span>
+                </h1>
+                <p className="text-gray-500 text-sm">
+                  {t('routine.subtitle')}
+                </p>
+              </div>
             </div>
 
             <div className="flex gap-3">

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Share2 } from 'lucide-react';
+import { Button } from '../button';
 import type { Routine } from '../../../lib/types';
 
 interface ShareRoutineButtonProps {
@@ -16,14 +17,16 @@ export function ShareRoutineButton({
   if (!routine) return null;
 
   return (
-    <button
+    <Button
       onClick={onShare}
       disabled={isLoading}
-      className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-cyan-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+      loading={isLoading}
+      variant="primary"
+      size="md"
       title="Partager cette routine sur votre fil"
     >
       <Share2 size={18} />
       <span>Partager</span>
-    </button>
+    </Button>
   );
 }

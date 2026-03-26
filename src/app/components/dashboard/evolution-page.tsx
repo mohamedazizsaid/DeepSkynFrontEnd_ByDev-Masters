@@ -120,16 +120,17 @@ export function EvolutionPage({ onBack }: EvolutionPageProps) {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <button onClick={onBack} className="flex items-center gap-2 text-[#6B7280] hover:text-[#0EA5E9] mb-4 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-            <span>{t('evolution.back')}</span>
-          </button>
-          <h1 className="text-3xl font-bold mb-2">{t('evolution.title')}</h1>
-          <p className="text-[#6B7280]">
-            {stats ? `${stats.totalAnalyses} ${t('evolution.totalAnalyses')}` : t('evolution.subtitle')}
-          </p>
+      <div className="mb-12">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center flex-shrink-0">
+            <TrendingUp className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold mb-2">{t('evolution.title')}</h1>
+            <p className="text-[#6B7280]">
+              {stats ? `${stats.totalAnalyses} ${t('evolution.totalAnalyses')}` : t('evolution.subtitle')}
+            </p>
+          </div>
         </div>
       </div>
 

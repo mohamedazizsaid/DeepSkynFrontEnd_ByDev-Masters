@@ -117,13 +117,7 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-[#6B7280] hover:text-[#0EA5E9] mb-4 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back to Dashboard</span>
-        </button>
+       
         <div className="text-center mb-4">
           <h1 className="text-4xl font-bold mb-2">Choose Your Plan</h1>
           <p className="text-lg text-[#6B7280]">Unlock premium features for better skin health</p>

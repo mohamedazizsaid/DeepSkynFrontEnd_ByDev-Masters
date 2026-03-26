@@ -93,101 +93,146 @@ const WeatherNavbar: React.FC<WeatherNavbarProps> = ({ className = '' }) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
+            className="absolute right-0 mt-2 w-full bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
+                    style={{ maxWidth: '720px', width: 'calc(100vw - 40px)' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* En-tête */}
             <div
-              className={`p-4 text-white transition ${
+              className={`p-6 text-white transition ${
                 weather.weatherCode === 0 || weather.weatherCode === 1
-                  ? 'bg-gradient-to-br from-yellow-400 to-orange-400'
+                  ? 'bg-gradient-to-br from-yellow-400 via-orange-400 to-orange-500'
                   : weather.weatherCode >= 51 && weather.weatherCode <= 82
-                    ? 'bg-gradient-to-br from-blue-400 to-blue-600'
-                    : 'bg-gradient-to-br from-gray-400 to-gray-600'
+                    ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600'
+                    : 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600'
               }`}
             >
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <div className="text-3xl font-bold">{Math.round(weather.temperature)}°C</div>
-                  <div className="text-sm opacity-90">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="text-5xl font-bold mb-2">{Math.round(weather.temperature)}°C</div>
+                  <div className="text-base opacity-95 font-semibold">
                     {weather.city && `${weather.city}, `}
                     {weather.country}
                   </div>
+                  <div className="text-sm opacity-85 mt-1">
+                    Ressenti: {Math.round(weather.feelsLike)}°C
+                  </div>
                 </div>
-                <div className="text-4xl">{getWeatherIcon()}</div>
+                <div className="text-6xl">{getWeatherIcon()}</div>
               </div>
-              <div className="text-sm opacity-90">
-                Ressenti: {Math.round(weather.feelsLike)}°C
+              <div className="h-1 bg-white/20 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: '100%' }}
+                  transition={{ duration: 1 }}
+                  className="h-full bg-white/40"
+                />
               </div>
             </div>
 
-            {/* Détails */}
-            <div className="p-4 space-y-3">
-              {/* Ligne 1: Humidité & Pression */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <Droplets className="w-4 h-4 text-blue-500" />
-                  <div className="text-xs">
-                    <div className="text-gray-600 dark:text-gray-400">Humidité</div>
-                    <div className="font-bold text-gray-900 dark:text-white">
-                      {weather.humidity}%
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <Wind className="w-4 h-4 text-teal-500" />
-                  <div className="text-xs">
-                    <div className="text-gray-600 dark:text-gray-400">Vent</div>
-                    <div className="font-bold text-gray-900 dark:text-white">
-                      {Math.round(weather.windSpeed)} km/h
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Ligne 2: UV & Visibilité */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <Sun className="w-4 h-4 text-yellow-500" />
-                  <div className="text-xs">
-                    <div className="text-gray-600 dark:text-gray-400">Indice UV</div>
-                    <div className="font-bold text-gray-900 dark:text-white">
-                      {weather.uvIndex}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <Eye className="w-4 h-4 text-purple-500" />
-                  <div className="text-xs">
-                    <div className="text-gray-600 dark:text-gray-400">Visibilité</div>
-                    <div className="font-bold text-gray-900 dark:text-white">
-                      {weather.visibility ? `${Math.round(weather.visibility / 1000)} km` : 'N/A'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Lever/Coucher du soleil */}
-              <div className="p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-xs">
-                <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                  <span>🌅 Lever: {new Date(weather.sunrise).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
-                  <span>🌇 Coucher: {new Date(weather.sunset).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              </div>
-
-              {/* Conseil IA */}
-              {advice && (
-                <motion.button
-                  onClick={handleShowAdvice}
-                  className="w-full p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-semibold text-sm hover:shadow-lg transition"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+            {/* Détails - Layout Horizontal */}
+            <div className="p-4 px-6">
+              {/* Toutes les métriques en une ligne */}
+              <div className="flex flex-wrap gap-3">
+                {/* Humidité */}
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className="flex-1 min-w-[140px] flex items-center gap-2 p-3 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-700 hover:shadow-md transition"
                 >
-                  {advice.emoji} Conseil IA
-                </motion.button>
-              )}
+                  <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <Droplets className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="text-sm">
+                    <div className="text-gray-600 dark:text-gray-400 font-semibold uppercase text-xs">Humidité</div>
+                    <div className="font-bold text-gray-900 dark:text-white">{weather.humidity}%</div>
+                  </div>
+                </motion.div>
+
+                {/* Vent */}
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className="flex-1 min-w-[140px] flex items-center gap-2 p-3 bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 rounded-xl border border-teal-200 dark:border-teal-700 hover:shadow-md transition"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-teal-500/20 flex items-center justify-center flex-shrink-0">
+                    <Wind className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div className="text-sm">
+                    <div className="text-gray-600 dark:text-gray-400 font-semibold uppercase text-xs">Vent</div>
+                    <div className="font-bold text-gray-900 dark:text-white">{Math.round(weather.windSpeed)} km/h</div>
+                  </div>
+                </motion.div>
+
+                {/* Indice UV */}
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className="flex-1 min-w-[140px] flex items-center gap-2 p-3 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-xl border border-yellow-200 dark:border-yellow-700 hover:shadow-md transition"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                    <Sun className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <div className="text-sm">
+                    <div className="text-gray-600 dark:text-gray-400 font-semibold uppercase text-xs">UV</div>
+                    <div className="font-bold text-gray-900 dark:text-white">{weather.uvIndex}</div>
+                  </div>
+                </motion.div>
+
+                {/* Visibilité */}
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className="flex-1 min-w-[140px] flex items-center gap-2 p-3 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl border border-purple-200 dark:border-purple-700 hover:shadow-md transition"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                    <Eye className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div className="text-sm">
+                    <div className="text-gray-600 dark:text-gray-400 font-semibold uppercase text-xs">Visibilité</div>
+                    <div className="font-bold text-gray-900 dark:text-white">{weather.visibility ? `${Math.round(weather.visibility / 1000)} km` : 'N/A'}</div>
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* Lever/Coucher + Conseil */}
+              <div className="flex gap-3 mt-3">
+                {/* Lever du soleil */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  className="flex-1 min-w-[120px] p-3 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl border border-orange-200 dark:border-orange-700 text-center text-sm"
+                >
+                  <div className="text-lg mb-1">🌅</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-0.5">LEVER</div>
+                  <div className="font-bold text-gray-900 dark:text-white text-xs">
+                    {new Date(weather.sunrise).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </motion.div>
+
+                {/* Coucher du soleil */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  className="flex-1 min-w-[120px] p-3 bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20 rounded-xl border border-pink-200 dark:border-pink-700 text-center text-sm"
+                >
+                  <div className="text-lg mb-1">🌇</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-0.5">COUCHER</div>
+                  <div className="font-bold text-gray-900 dark:text-white text-xs">
+                    {new Date(weather.sunset).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </motion.div>
+
+                {/* Conseil IA Compact */}
+                {advice && (
+                  <motion.button
+                    onClick={handleShowAdvice}
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex-1 min-w-[140px] p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-bold text-xs hover:shadow-lg transition flex items-center justify-center gap-1.5"
+                  >
+                    <span className="text-base">{advice.emoji}</span>
+                    Conseil IA
+                  </motion.button>
+                )}
+              </div>
             </div>
           </motion.div>
+          
         )}
       </AnimatePresence>
 
