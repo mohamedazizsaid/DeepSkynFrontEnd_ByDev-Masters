@@ -773,26 +773,6 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                       onMyStoryClick={() => setOpenMyStory(true)}
                     />
 
-                    {/* Premium Story Timeline - Feed Version */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.1 }}
-                      className={`rounded-3xl shadow-2xl overflow-hidden mb-6 backdrop-blur-xl border-2 ${isHcHigh ? 'border-yellow-400 bg-black/40' : isDark ? 'bg-gradient-to-br from-gray-900/80 via-blue-900/20 to-gray-900/80 border-blue-500/30' : 'bg-gradient-to-br from-blue-50/80 via-white/80 to-blue-50/80 border-blue-200/50'}`}
-                    >
-                      {/* Animated Background */}
-                      <div className={`absolute inset-0 opacity-10 pointer-events-none ${isHcHigh ? 'bg-yellow-400' : isDark ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500' : 'bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400'}`} />
-                      
-                      {/* Shine Effect */}
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none">
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent animate-pulse" />
-                      </div>
-
-                      <div className="relative p-6">
-                        <StoryTimeline userId={user?.id || ''} />
-                      </div>
-                    </motion.div>
-
                     {/* Post Composer */}
                     <PostComposer
                       userAvatar={user?.avatar}
@@ -826,12 +806,11 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                                 isLiked: post.isLiked || false,
                                 isByCurrentUser: post.userId === user?.sub || post.userId === user?.id,
                                 reaction: post.reaction,
-                                status: post.status,
                               }}
                               onLike={handleToggleLike}
                               onComment={loadComments}
                               onDelete={handleDeletePost}
-                              onArchive={(id) => handleArchivePost(id, post.status === 'archived')}
+                              onArchive={(id) => handleArchivePost(id, false)}
                               onProfileClick={onViewProfile}
                             />
                             <AnimatePresence>
@@ -1059,14 +1038,14 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
               </motion.div>
 
               {/* Posts Section */}
-              {posts.filter(p => p.status !== 'archived').length === 0 ? (
+              {posts.length === 0 ? (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`text-center py-16 rounded-2xl border ${cardBg}`}>
                   <Users className={`w-16 h-16 mx-auto mb-4 ${isHcHigh ? 'text-yellow-400' : 'text-[#D1D5DB]'}`} />
                   <h3 className={`text-lg font-semibold ${subText}`}>{t('community.noPosts')}</h3>
                 </motion.div>
               ) : (
                 <div className="space-y-4">
-                  {posts.filter(p => p.status !== 'archived').map((post) => (
+                  {posts.map((post) => (
                     <React.Fragment key={post.id}>
                       <PostCard
                         post={{
@@ -1081,7 +1060,6 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                           isLiked: post.isLiked || false,
                           isByCurrentUser: post.userId === user?.sub || post.userId === user?.id,
                           reaction: post.reaction,
-                          status: post.status,
                         }}
                         onLike={handleToggleLike}
                         onComment={loadComments}
@@ -1165,55 +1143,14 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                 </div>
               </div>
 
-              {posts.filter(p => p.status === 'archived').filter(p => {
-                const date = new Date(p.createdAt);
-                const now = new Date();
-                if (dateFilter === 'month') return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-                if (dateFilter === 'year') return date.getFullYear() === now.getFullYear();
-                return true;
-              }).length === 0 ? (
-                <div className={`text-center py-20 rounded-3xl border-2 border-dashed transition-colors ${isDark ? 'border-white/5 bg-white/[0.02]' : 'border-gray-100 bg-gray-50/30'}`}>
-                   <div className="w-16 h-16 rounded-full bg-gray-100/50 dark:bg-white/5 flex items-center justify-center mx-auto mb-4">
-                     <Newspaper className={`w-8 h-8 opacity-20 ${textColor}`} />
-                   </div>
-                   <p className={`${subText} font-black uppercase tracking-widest text-[10px]`}>{t('community.noArchiveFound')}</p>
-                   <p className={`${subText} text-xs mt-1 opacity-60`}>{t('community.noArchiveDesc')}</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {posts.filter(p => p.status === 'archived').filter(p => {
-                    const date = new Date(p.createdAt);
-                    const now = new Date();
-                    if (dateFilter === 'month') return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-                    if (dateFilter === 'year') return date.getFullYear() === now.getFullYear();
-                    return true;
-                  }).map(post => (
-                    <PostCard
-                       key={post.id}
-                       post={{
-                         id: post.id, userId: post.userId,
-                         userName: post.user?.name || 'Utilisateur',
-                         userAvatar: post.user?.avatar ?? undefined,
-                         content: post.message, media: post.media ?? undefined,
-                         createdAt: post.createdAt,
-                         likes: post._count?.likes || 0,
-                         comments: post._count?.comments || 0,
-                         shares: 0,
-                         isLiked: post.isLiked || false,
-                         isByCurrentUser: true,
-                         reaction: post.reaction,
-                         status: post.status,
-                       }}
-                       onLike={handleToggleLike}
-                       onDelete={handleDeletePost}
-                       onArchive={async (id) => {
-                         await handleArchivePost(id, true);
-                         setPosts(prev => prev.filter(p => p.id !== id || p.status !== 'archived')); // Remove from archive list if unarchived
-                       }}
-                    />
-                  ))}
-                </div>
-              )}
+              {/* Archive section - No posts stored locally after archiving */}
+              <div className={`text-center py-20 rounded-3xl border-2 border-dashed transition-colors ${isDark ? 'border-white/5 bg-white/[0.02]' : 'border-gray-100 bg-gray-50/30'}`}>
+                 <div className="w-16 h-16 rounded-full bg-gray-100/50 dark:bg-white/5 flex items-center justify-center mx-auto mb-4">
+                   <Newspaper className={`w-8 h-8 opacity-20 ${textColor}`} />
+                 </div>
+                 <p className={`${subText} font-black uppercase tracking-widest text-[10px]`}>{t('community.noArchiveFound')}</p>
+                 <p className={`${subText} text-xs mt-1 opacity-60`}>{t('community.noArchiveDesc')}</p>
+              </div>
             </motion.div>
           )}
 

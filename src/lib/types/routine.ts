@@ -92,3 +92,9 @@ export interface ProductRecommendation {
   rating: 'excellent' | 'good' | 'alternative';
   sourceArticles: { title: string; url: string }[];
 }
+
+export interface ShareRoutineDto {
+  routineId: string;
+  customMessage?: string;
+  coverImage?: string;
+}

@@ -198,12 +198,10 @@ export function StoryHighlights({ userId, isOwnProfile = false, onHighlightCreat
       {/* Story Viewer Modal */}
       {selectedStoryId && selectedHighlight && (
         <StoryViewerModal
-          story={selectedHighlight.stories.find((s) => s.id === selectedStoryId)}
-          allStories={selectedHighlight.stories}
+          isOpen={true}
+          stories={selectedHighlight.stories}
           onClose={() => setSelectedStoryId(null)}
-          onStoryChange={(story) => {
-            setSelectedStoryId(story.id);
-          }}
+          initialUserIndex={0}
         />
       )}
     </div>

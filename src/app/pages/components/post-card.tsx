@@ -88,6 +88,32 @@ export function PostCard({
     }
   };
 
+  // Helper function to render content with hashtag styling
+  const renderContentWithHashtags = (content: string) => {
+    if (!content) return null;
+
+    // Split content by hashtags and render with styling
+    const parts = content.split(/(\#\w+)/g);
+    
+    return (
+      <p className={`${textColor} text-sm whitespace-pre-wrap leading-relaxed`}>
+        {parts.map((part, idx) => {
+          if (part?.startsWith('#')) {
+            return (
+              <span
+                key={idx}
+                className={`font-semibold ${isHcHigh ? 'text-cyan-400' : isDark ? 'text-[#0EA5E9]' : 'text-[#0284c7]'} hover:underline cursor-pointer transition-colors`}
+              >
+                {part}
+              </span>
+            );
+          }
+          return <span key={idx}>{part}</span>;
+        })}
+      </p>
+    );
+  };
+
   // Helper function to optionally render the dynamic injected templates (Location/Feelings) gracefully
   const renderContent = () => {
     if (!post.content) return null;
@@ -117,7 +143,7 @@ export function PostCard({
 
       return (
         <>
-          <p className={`${textColor} text-sm whitespace-pre-wrap leading-relaxed`}>{mainText}</p>
+          {renderContentWithHashtags(mainText)}
           <div className={`mt-3 flex flex-wrap gap-2`}>
             {feelingPart.trim() && (
               <div className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${isHcHigh ? 'bg-yellow-400 text-black' : isDark ? 'bg-[#0f172a] text-[#0EA5E9] border border-[#334155]' : 'bg-[#e0f2fe] text-[#0284c7]'}`}>
@@ -138,7 +164,7 @@ export function PostCard({
         </>
       );
     }
-    return <p className={`${textColor} text-sm whitespace-pre-wrap leading-relaxed`}>{post.content}</p>;
+    return renderContentWithHashtags(post.content);
   };
 
 

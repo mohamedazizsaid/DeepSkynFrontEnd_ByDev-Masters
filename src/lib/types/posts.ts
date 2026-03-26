@@ -10,11 +10,13 @@ export interface Post {
   _count?: { likes: number; comments: number };
   isLiked?: boolean;
   reaction?: string | null;
+  status?: 'active' | 'archived';
 }
 
 export interface CreatePostDto {
   message: string;
   media?: string;
+  status?: 'active' | 'archived';
 }
 
 export interface Comment {

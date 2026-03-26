@@ -7,6 +7,7 @@ import type {
   AIAdviceResponse,
   RecommendProductDto,
   ProductRecommendation,
+  ShareRoutineDto,
 } from '../types';
 
 export const routineService = {
@@ -96,6 +97,11 @@ export const routineService = {
 
   async recommendProduct(data: RecommendProductDto): Promise<ProductRecommendation> {
     const res = await apiClient.post<ProductRecommendation>('/routines/recommend-product', data);
+    return res.data;
+  },
+
+  async shareRoutine(routineId: string, data: Partial<ShareRoutineDto>): Promise<any> {
+    const res = await apiClient.post<any>(`/routines/${routineId}/share`, data);
     return res.data;
   },
 };

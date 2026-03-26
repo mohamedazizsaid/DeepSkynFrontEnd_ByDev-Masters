@@ -1389,9 +1389,34 @@ const en: TranslationKeys = {
     help: {
       title: 'Help Center',
       subtitle: 'FAQs and Support',
-      faq: 'Frequent Questions',
-      contact: 'Contact Support',
       searchPlaceholder: 'How can we help you?',
+      introTitle: 'Need a hand?',
+      introDesc: 'Whether you have a question about AI or need help with your subscription, our team and tools are here for you 24/7.',
+      emailTitle: 'Email Support',
+      emailDesc: 'Our expert team typically responds within 24 business hours.',
+      coachTitle: 'Personal AI Coach',
+      coachDesc: 'For any questions about your routine, consult our specialized AI.',
+      goToHome: 'Go to Home',
+      faqTitle: 'Frequently Asked Questions',
+      faqSubtitle: 'Everything you need to know about DeepSkyn',
+      faqs: [
+        {
+          question: 'How does skin analysis work?',
+          answer: 'The analysis uses artificial intelligence to examine your photo. Take a selfie in good natural light, and the AI will detect areas of dryness, spots, acne or wrinkles to advise you.'
+        },
+        {
+          question: 'Is the "AI Coach" feature paid?',
+          answer: 'You get 10 free messages per day. For unlimited interactions and highly personalized product recommendations, a Premium subscription is required.'
+        },
+        {
+          question: 'How do I cancel my subscription?',
+          answer: 'You can cancel your subscription in your account settings on the platform (Google Play, Apple Store or Stripe) via the subscription interface. Premium access will remain active until the end of the billing period.'
+        },
+        {
+          question: 'Are my photos saved?',
+          answer: 'Your photos are processed securely for analysis. You can request their complete deletion from the privacy settings of your profile.'
+        }
+      ]
     },
     terms: {
       title: 'Terms of Use',
@@ -1793,6 +1818,8 @@ const ar: TranslationKeys = {
     thisWeek: 'هذا الأسبوع',
     stable: 'مستقر',
     list: 'قائمة',
+    enable: 'تفعيل',
+    disable: 'تعطيل',
     reply: 'رد',
     user: 'مستخدم',
     you: 'أنت',
@@ -2238,9 +2265,34 @@ const ar: TranslationKeys = {
     help: {
       title: 'مركز المساعدة',
       subtitle: 'الأسئلة الشائعة والدعم',
-      faq: 'الأسئلة المتكررة',
-      contact: 'الاتصال بالدعم',
       searchPlaceholder: 'كيف يمكننا مساعدتك؟',
+      introTitle: 'هل تحتاج إلى يد عاملة؟',
+      introDesc: 'سواء كان لديك سؤال عن الذكاء الاصطناعي أو تحتاج إلى مساعدة في الاشتراك، فريقنا والأدوات الخاصة بنا هنا لك 24/7.',
+      emailTitle: 'دعم البريد الإلكتروني',
+      emailDesc: 'يرد فريقنا من الخبراء عادة خلال 24 ساعة عمل.',
+      coachTitle: 'مدرب الذكاء الاصطناعي الشخصي',
+      coachDesc: 'لأي أسئلة حول روتينك، استشر ذكاء اصطناعي متخصص.',
+      goToHome: 'اذهب إلى الرئيسية',
+      faqTitle: 'الأسئلة الشائعة',
+      faqSubtitle: 'كل ما تحتاج إلى معرفته عن ديب سكين',
+      faqs: [
+        {
+          question: 'كيف يعمل تحليل البشرة؟',
+          answer: 'يستخدم التحليل الذكاء الاصطناعي لفحص صورتك. التقط صورة شخصية في ضوء طبيعي جيد، وسيكتشف الذكاء الاصطناعي مناطق الجفاف والبقع والعد والتجاعيد لتقديم المشورة لك.'
+        },
+        {
+          question: 'هل ميزة "مدرب الذكاء الاصطناعي" مدفوعة؟',
+          answer: 'تحصل على 10 رسائل مجانية يومياً. للتفاعلات غير المحدودة والتوصيات المنتجة شخصية جداً، يلزم الاشتراك في Premium.'
+        },
+        {
+          question: 'كيف يمكنني إلغاء اشتراكي؟',
+          answer: 'يمكنك إلغاء اشتراكك في إعدادات حسابك على النظام الأساسي (Google Play أو Apple Store أو Stripe) عبر واجهة الاشتراك. سيبقى الوصول إلى Premium نشطاً حتى نهاية فترة الفوترة.'
+        },
+        {
+          question: 'هل يتم حفظ صوري؟',
+          answer: 'يتم معالجة صورك بشكل آمن للتحليل. يمكنك طلب حذفها بالكامل من إعدادات الخصوصية في ملفك الشخصي.'
+        }
+      ]
     },
     terms: {
       title: 'شروط الاستخدام',
@@ -3089,14 +3141,50 @@ const es: TranslationKeys = {
     help: {
       title: 'Centro de Ayuda',
       subtitle: 'FAQs y Soporte',
-      faq: 'Preguntas Frecuentes',
-      contact: 'Contactar Soporte',
       searchPlaceholder: '¿Cómo podemos ayudarte?',
+      introTitle: '¿Necesitas ayuda?',
+      introDesc: 'Ya sea que tengas una pregunta sobre IA o necesites ayuda con tu suscripción, nuestro equipo y herramientas están aquí para ti 24/7.',
+      emailTitle: 'Soporte por Correo Electrónico',
+      emailDesc: 'Nuestro equipo de expertos generalmente responde dentro de 24 horas hábiles.',
+      coachTitle: 'Entrenador IA Personal',
+      coachDesc: 'Para cualquier pregunta sobre tu rutina, consulta nuestro IA especializado.',
+      goToHome: 'Ir a Inicio',
+      faqTitle: 'Preguntas Frecuentes',
+      faqSubtitle: 'Todo lo que necesitas saber sobre DeepSkyn',
+      faqs: [
+        {
+          question: '¿Cómo funciona el análisis de piel?',
+          answer: 'El análisis utiliza inteligencia artificial para examinar tu foto. Toma una selfie bajo buena luz natural y la IA detectará áreas de sequedad, manchas, acné o arrugas para aconsejarte.'
+        },
+        {
+          question: '¿Es la función "Entrenador IA" de pago?',
+          answer: 'Obtienes 10 mensajes gratuitos al día. Para interacciones ilimitadas y recomendaciones de productos altamente personalizadas, se requiere una suscripción Premium.'
+        },
+        {
+          question: '¿Cómo cancelo mi suscripción?',
+          answer: 'Puedes cancelar tu suscripción en la configuración de tu cuenta en la plataforma (Google Play, Apple Store o Stripe) a través de la interfaz de suscripción. El acceso Premium se mantendrá activo hasta el final del período de facturación.'
+        },
+        {
+          question: '¿Se guardan mis fotos?',
+          answer: 'Tus fotos se procesan de forma segura para el análisis. Puedes solicitar su eliminación completa en la configuración de privacidad de tu perfil.'
+        }
+      ]
     },
     terms: {
       title: 'Condiciones de uso',
       subtitle: 'Menciones legales y privacidad',
       updateDate: 'Última actualización: {date}',
+      transparency: 'Transparencia y Seguridad',
+      transparencyDesc: 'DeepSkyn se compromete a proteger tus datos y proporcionar una experiencia segura. Lee estos términos cuidadosamente.',
+      needHelp: '¿Necesitas aclaración?',
+      contactSupport: 'Para cualquier pregunta sobre nuestros términos de uso o política de privacidad, contacta a nuestro equipo legal en {email}.',
+      sections: [
+        { title: '1. Aceptación de Términos', content: 'Al acceder y utilizar DeepSkyn, aceptas cumplir con estos términos de uso. Si no estás de acuerdo con ninguna parte de los términos, no estás autorizado para usar nuestra aplicación.' },
+        { title: '2. Descargo de Responsabilidad Médica', content: 'DeepSkyn proporciona información general basada en inteligencia artificial. Esta información de ninguna manera constituye asesoramiento médico, diagnóstico o tratamiento profesional. Siempre consulta con tu dermatólogo para problemas específicos.' },
+        { title: '3. Procesamiento de Datos (Privacidad)', content: 'Proteger tu privacidad es nuestra prioridad. Tus imágenes de piel se procesan de forma segura y nunca se venden a terceros. De conformidad con el RGPD, tienes derecho a acceso, rectificación y eliminación.' },
+        { title: '4. Licencia de Uso', content: 'Te otorgamos una licencia personal, no exclusiva e intransferible para usar el servicio. No puedes copiar, modificar o distribuir nuestros algoritmos de IA o el código de la aplicación.' },
+        { title: '5. Suscripción Premium', content: 'Las suscripciones Premium se facturan según la duración elegida (mensual/anual). La renovación es automática a menos que canceles 24 horas antes del final del período actual. No se realiza reembolso por un período parcialmente iniciado.' }
+      ]
     },
     sections: {
       account: 'Cuenta y Seguridad',

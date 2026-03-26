@@ -16,6 +16,8 @@ import { RoutineStepCard } from '../routines/RoutineStepCard';
 import { AddStepForm } from '../routines/AddStepForm';
 import { AIAdviceModal } from '../routines/AIAdviceModal';
 import { AIProductRecommendModal } from '../routines/AIProductRecommendModal';
+import { ShareRoutineButton } from '../routines/ShareRoutineButton';
+import { ShareRoutineModal } from '../routines/ShareRoutineModal';
 import { routineService } from '../../../lib/services/routine.service';
 import { usersService } from '../../../lib/services/users.service';
 import type { Routine, RoutineStep, AIAdviceResponse, ProductRecommendation } from '../../../lib/types';
@@ -70,6 +72,12 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
   const [productLoading, setProductLoading] = useState(false);
   const [currentRecommendation, setCurrentRecommendation] = useState<ProductRecommendation | null>(null);
   const [recommendStepName, setRecommendStepName] = useState<string>('');
+
+  // Share routine state
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [currentRoutine, setCurrentRoutine] = useState<Routine | null>(null);
+  const [amRoutine, setAmRoutine] = useState<Routine | null>(null);
+  const [pmRoutine, setPmRoutine] = useState<Routine | null>(null);
 
   const { theme, contrastMode, t } = useAccessibilityStore();
   const isHcHigh = contrastMode === 'high';
@@ -179,10 +187,12 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
 
         if (am) {
           setAmSteps(mapRoutineSteps(am.steps || [], t));
+          setAmRoutine(am);
           setRoutineId(am.id);
         }
         if (pm) {
           setPmSteps(mapRoutineSteps(pm.steps || [], t));
+          setPmRoutine(pm);
           if (!am) setRoutineId(pm.id);
         }
 
@@ -211,8 +221,13 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
 
       if (routine?.steps) {
         const steps = mapRoutineSteps(routine.steps, t);
-        if (type === 'AM') setAmSteps(steps);
-        else setPmSteps(steps);
+        if (type === 'AM') {
+          setAmSteps(steps);
+          setAmRoutine(routine);
+        } else {
+          setPmSteps(steps);
+          setPmRoutine(routine);
+        }
         setRoutineId(routine.id);
       }
     } catch {
@@ -400,6 +415,25 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 )}
                 {generating ? t('routine.generating') : t('routine.regenerateAI')}
               </motion.button>
+
+              {activeTab === 'am' && amRoutine && (
+                <ShareRoutineButton
+                  routine={amRoutine}
+                  onShare={() => {
+                    setCurrentRoutine(amRoutine);
+                    setShowShareModal(true);
+                  }}
+                />
+              )}
+              {activeTab === 'pm' && pmRoutine && (
+                <ShareRoutineButton
+                  routine={pmRoutine}
+                  onShare={() => {
+                    setCurrentRoutine(pmRoutine);
+                    setShowShareModal(true);
+                  }}
+                />
+              )}
 
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -614,6 +648,16 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
           recommendation={currentRecommendation}
           isLoading={productLoading}
           stepName={recommendStepName}
+        />
+
+        {/* ═══ Share Routine Modal ═══ */}
+        <ShareRoutineModal
+          routine={currentRoutine}
+          isOpen={showShareModal}
+          onClose={() => {
+            setShowShareModal(false);
+            setCurrentRoutine(null);
+          }}
         />
       </div>
     </div>
