@@ -2,6 +2,8 @@ import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Camera, MapPin, Link2, Calendar, MessageCircle, UserPlus, Loader2 } from 'lucide-react';
 import { Button } from '../../components/button';
+import { StoryHighlights } from './story-highlights';
+import { StoryTimeline } from './story-timeline';
 import toast from 'react-hot-toast';
 
 interface UserProfile {
@@ -215,7 +217,7 @@ export function ProfileHero({
             ) : (
               <>
                 <Button
-                  variant={isFollowing ? 'outline' : 'default'}
+                  variant={isFollowing ? 'outline' : 'primary'}
                   onClick={onFollow}
                 >
                   <UserPlus className="w-4 h-4" />
@@ -286,6 +288,20 @@ export function ProfileHero({
             <p className="font-bold text-[#111827]">{user.followingCount || 0}</p>
             <p className="text-sm text-[#6B7280]">Abonnements</p>
           </motion.div>
+        </div>
+
+        {/* Story Highlights */}
+        <div className="mt-8 pt-6 border-t border-[#E5E7EB]">
+          <StoryHighlights
+            userId={user.id}
+            isOwnProfile={isOwnProfile}
+            onHighlightCreate={onEditProfile}
+          />
+        </div>
+
+        {/* Story Timeline */}
+        <div className="mt-8 pt-6 border-t border-[#E5E7EB]">
+          <StoryTimeline userId={user.id} />
         </div>
       </div>
     </motion.div>

@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 import { ProfileHero } from './components/profile-hero';
 import { PostComposer } from './components/post-composer';
 import { PostCard } from './components/post-card';
+import { StoryTimeline } from './components/story-timeline';
 import type { PostCardData } from './components/post-card';
 import { StoryBar, StoryUser } from './components/story-bar';
 import { StoryUploadModal } from './components/story-upload-modal';
@@ -366,7 +367,12 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
            groupedMap.get(s.userId)!.items.push({
               id: s.id,
               mediaUrl: s.mediaUrl,
-              createdAt: s.createdAt
+              createdAt: s.createdAt,
+              musicUrl: s.musicUrl,
+              musicTitle: s.musicTitle,
+              likesCount: s.likesCount || 0,
+              commentsCount: s.commentsCount || 0,
+              isLiked: s.isLiked || false,
            });
         });
 
@@ -418,18 +424,30 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
   };
 
   // ─── Story Upload Handler ───
-  const handleStoryUpload = async (file: File) => {
-    // We convert the file to a base64 string so it can be persisted in the DB directly without S3 for now.
+  const handleStoryUpload = async (file: File, musicFile?: File, musicTitle?: string) => {
     const reader = new FileReader();
 
     reader.onload = async (e) => {
       const base64Data = e.target?.result as string;
 
+      let musicBase64: string | undefined;
+      if (musicFile) {
+        musicBase64 = await new Promise<string>((resolve) => {
+          const musicReader = new FileReader();
+          musicReader.onload = (ev) => resolve(ev.target?.result as string);
+          musicReader.readAsDataURL(musicFile);
+        });
+      }
+
       try {
-        // Persist in backend with true persistent base64 data instead of ephemeral blob
-        const created = await postsService.createStory(base64Data, user?.id || user?.sub);
+        const created = await postsService.createStory(
+          base64Data,
+          user?.id || user?.sub,
+          musicBase64,
+          musicTitle
+        );
         
-        loadStories(); // Dynamically reload from backend to group properly
+        loadStories();
         
         toast.success(t('community.storySuccess'));
       } catch {
@@ -440,12 +458,14 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
     reader.readAsDataURL(file);
   };
 
-  const handleUserStoryFinished = (userId: string) => {
+  const handleUserStoryFinished = useCallback((userId: string) => {
     setStories(prev => {
       const storyUserIndex = prev.findIndex(s => s.id === userId);
       if (storyUserIndex === -1) return prev;
       
       const newArr = [...prev];
+      if (newArr[storyUserIndex].isAllViewed) return prev; // prevent redundant update causing loops
+      
       const viewedUser = { ...newArr[storyUserIndex], isAllViewed: true };
       
       // Move to the end
@@ -454,7 +474,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
       
       return newArr;
     });
-  };
+  }, []);
 
   // ─── Post actions ───
   const handleCreatePost = async (content: string, media?: string) => {
@@ -527,44 +547,48 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
   };
 
   const handleArchivePost = async (postId: string, isArchived: boolean = false) => {
-    toast((toastInstance) => (
-      <div className="flex flex-col gap-3 min-w-[280px]">
-        <div className="flex items-start gap-4">
-          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${isArchived ? 'bg-green-500/10' : 'bg-[#0EA5E9]/10'}`}>
-            <Archive className={`w-5 h-5 ${isArchived ? 'text-green-500' : 'text-[#0EA5E9]'}`} />
+    return new Promise<void>((resolve) => {
+      toast((toastInstance) => (
+        <div className="flex flex-col gap-3 min-w-[280px]">
+          <div className="flex items-start gap-4">
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${isArchived ? 'bg-green-500/10' : 'bg-[#0EA5E9]/10'}`}>
+              <Archive className={`w-5 h-5 ${isArchived ? 'text-green-500' : 'text-[#0EA5E9]'}`} />
+            </div>
+            <div>
+              <p className="text-sm font-black text-gray-900 dark:text-white">
+                {isArchived ? t('community.restorePostTitle') : t('community.archivePostTitle')}
+              </p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">
+                {isArchived ? t('community.restorePostDesc') : t('community.archivePostDesc')}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-black text-gray-900 dark:text-white">
-              {isArchived ? t('community.restorePostTitle') : t('community.archivePostTitle')}
-            </p>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">
-              {isArchived ? t('community.restorePostDesc') : t('community.archivePostDesc')}
-            </p>
+          <div className="flex gap-2 justify-end mt-2">
+            <button onClick={() => { toast.dismiss(toastInstance.id); resolve(); }} className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider text-gray-400 hover:text-gray-500 transition-colors">
+              {t('common.cancel')}
+            </button>
+            <button
+              onClick={async () => {
+                toast.dismiss(toastInstance.id);
+                try {
+                  const loadingToast = toast.loading(t('common.loading') || "Traitement...");
+                  await postsService.toggleArchive(postId);
+                  setPosts((prev) => prev.filter((p) => p.id !== postId));
+                  toast.success(t('common.success') || "Action réussie", { id: loadingToast });
+                  resolve();
+                } catch {
+                  toast.error(t('common.error') || "Erreur lors de l'action");
+                  resolve();
+                }
+              }}
+              className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider text-white shadow-lg transition-all hover:scale-105 active:scale-95 ${isArchived ? 'bg-green-600 shadow-green-500/20 hover:bg-green-700' : 'bg-[#0EA5E9] shadow-[#0EA5E9]/20 hover:bg-[#0284C7]'}`}
+            >
+              {isArchived ? t('community.restore') : t('community.archive')}
+            </button>
           </div>
         </div>
-        <div className="flex gap-2 justify-end mt-2">
-          <button onClick={() => toast.dismiss(toastInstance.id)} className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider text-gray-400 hover:text-gray-500 transition-colors">
-            {t('common.cancel')}
-          </button>
-          <button
-            onClick={async () => {
-              toast.dismiss(toastInstance.id);
-              try {
-                const loadingToast = toast.loading(t('common.loading') || "Traitement...");
-                await postsService.toggleArchive(postId);
-                setPosts((prev) => prev.filter((p) => p.id !== postId));
-                toast.success(t('common.success') || "Action réussie", { id: loadingToast });
-              } catch {
-                toast.error(t('common.error') || "Erreur lors de l'action");
-              }
-            }}
-            className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider text-white shadow-lg transition-all hover:scale-105 active:scale-95 ${isArchived ? 'bg-green-600 shadow-green-500/20 hover:bg-green-700' : 'bg-[#0EA5E9] shadow-[#0EA5E9]/20 hover:bg-[#0284C7]'}`}
-          >
-            {isArchived ? t('community.restore') : t('community.archive')}
-          </button>
-        </div>
-      </div>
-    ), { duration: 5000, position: 'bottom-center', className: isDark ? '!bg-[#0F172A] !border-white/10 !text-white backdrop-blur-xl' : '!bg-white !border-gray-100 !text-gray-900' });
+      ), { duration: 5000, position: 'bottom-center', className: isDark ? '!bg-[#0F172A] !border-white/10 !text-white backdrop-blur-xl' : '!bg-white !border-gray-100 !text-gray-900' });
+    });
   };
 
   const loadComments = async (postId: string) => {
@@ -748,6 +772,26 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                       onStoryClick={(i) => setSelectedStoryIndex(i)}
                       onMyStoryClick={() => setOpenMyStory(true)}
                     />
+
+                    {/* Premium Story Timeline - Feed Version */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: 0.1 }}
+                      className={`rounded-3xl shadow-2xl overflow-hidden mb-6 backdrop-blur-xl border-2 ${isHcHigh ? 'border-yellow-400 bg-black/40' : isDark ? 'bg-gradient-to-br from-gray-900/80 via-blue-900/20 to-gray-900/80 border-blue-500/30' : 'bg-gradient-to-br from-blue-50/80 via-white/80 to-blue-50/80 border-blue-200/50'}`}
+                    >
+                      {/* Animated Background */}
+                      <div className={`absolute inset-0 opacity-10 pointer-events-none ${isHcHigh ? 'bg-yellow-400' : isDark ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500' : 'bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400'}`} />
+                      
+                      {/* Shine Effect */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent animate-pulse" />
+                      </div>
+
+                      <div className="relative p-6">
+                        <StoryTimeline userId={user?.id || ''} />
+                      </div>
+                    </motion.div>
 
                     {/* Post Composer */}
                     <PostComposer
@@ -1005,6 +1049,16 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
               {/* User's Posts (Profile Tab) */}
               <PostComposer userAvatar={user?.avatar} userName={user?.name || 'Utilisateur'} onSubmit={handleCreatePost} isLoading={posting} />
 
+              {/* Story Timeline */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`rounded-3xl shadow-xl overflow-hidden mb-8 p-6 ${isHcHigh ? 'border-2 border-yellow-400 bg-black' : isDark ? 'bg-[#1e293b] border border-[#334155]' : 'bg-white border border-gray-100'}`}
+              >
+                <StoryTimeline userId={user?.id || ''} />
+              </motion.div>
+
+              {/* Posts Section */}
               {posts.filter(p => p.status !== 'archived').length === 0 ? (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`text-center py-16 rounded-2xl border ${cardBg}`}>
                   <Users className={`w-16 h-16 mx-auto mb-4 ${isHcHigh ? 'text-yellow-400' : 'text-[#D1D5DB]'}`} />

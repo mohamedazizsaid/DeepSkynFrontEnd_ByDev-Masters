@@ -104,9 +104,66 @@ export const postsService = {
     return res.data;
   },
 
-  async createStory(mediaUrl: string, userId?: string): Promise<any> {
-    const res = await apiClient.post<any>('/stories', { mediaUrl, userId });
+  async getUserStories(userId: string): Promise<any[]> {
+    const res = await apiClient.get<any[]>(`/stories/user/${userId}`);
     return res.data;
   },
+
+  async createStory(mediaUrl: string, userId?: string, musicUrl?: string, musicTitle?: string): Promise<any> {
+    const res = await apiClient.post<any>('/stories', { mediaUrl, userId, musicUrl, musicTitle });
+    return res.data;
+  },
+
+  // ─── Story Likes ───
+  async toggleStoryLike(storyId: string): Promise<{ liked: boolean; likesCount: number }> {
+    const res = await apiClient.post<{ liked: boolean; likesCount: number }>(`/stories/${storyId}/like`);
+    return res.data;
+  },
+
+  // ─── Story Comments ───
+  async getStoryComments(storyId: string): Promise<any[]> {
+    const res = await apiClient.get<any[]>(`/stories/${storyId}/comments`);
+    return res.data;
+  },
+
+  async addStoryComment(storyId: string, comment: string): Promise<any> {
+    const res = await apiClient.post<any>(`/stories/${storyId}/comments`, { comment });
+    return res.data;
+  },
+
+  async deleteStoryComment(commentId: string): Promise<void> {
+    await apiClient.delete(`/stories/comments/${commentId}`);
+  },
+
+  // ─── Free Music for Stories ───
+  async getFreeMusicForStories(): Promise<any[]> {
+    const res = await apiClient.get<any[]>('/stories/music/free');
+    return res.data;
+  },
+
+  async searchFreeMusic(query: string = 'royalty free'): Promise<any[]> {
+    const res = await apiClient.get<any[]>('/stories/music/search', {
+      params: { query },
+    });
+    return res.data;
+  },
+
+  // ─── Story Highlights ───
+  async getUserHighlights(userId: string): Promise<any[]> {
+    const res = await apiClient.get<any[]>(`/stories/highlights/${userId}`);
+    return res.data;
+  },
+
+  async saveStoryAsHighlight(storyId: string, highlightTitle?: string): Promise<any> {
+    const res = await apiClient.post<any>(`/stories/${storyId}/highlight`, {
+      highlightTitle,
+    });
+    return res.data;
+  },
+
+  async removeStoryFromHighlight(storyId: string): Promise<void> {
+    await apiClient.delete(`/stories/${storyId}/highlight`);
+  },
 };
+
 

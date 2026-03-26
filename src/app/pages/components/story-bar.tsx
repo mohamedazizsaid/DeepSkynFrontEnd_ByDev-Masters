@@ -7,6 +7,11 @@ export interface StoryItem {
   id: string;
   mediaUrl: string;
   createdAt: string;
+  musicUrl?: string;
+  musicTitle?: string;
+  likesCount?: number;
+  commentsCount?: number;
+  isLiked?: boolean;
 }
 
 export interface StoryUser {
