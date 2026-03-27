@@ -6,10 +6,9 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Play, Pause, Volume2, VolumeX, Settings, Loader, Users, X } from 'lucide-react';
-import { SignLanguageAvatarCanvas } from '../3d/sign-language-avatar-canvas';
+import { ProSignAvatar } from '../sign-avatar/pro-sign-avatar';
 import { getSpeechToTextService } from '../../lib/services/speech-to-text.service';
-import { getSignLanguageService } from '../../lib/services/sign-language.service';
-import type { GestureData, TranscriptionResult } from '../../lib/services/speech-to-text.service';
+import type { TranscriptionResult } from '../../lib/services/speech-to-text.service';
 
 interface VideoAccessibilityPlayerProps {
   videoUrl: string;
@@ -18,6 +17,7 @@ interface VideoAccessibilityPlayerProps {
   showTranscription?: boolean;
   avatarPosition?: 'left' | 'right' | 'bottom';
   onTranscriptionUpdate?: (text: string) => void;
+  onAvatarClick?: () => void;
   className?: string;
 }
 
@@ -28,6 +28,7 @@ export function VideoAccessibilityPlayer({
   showTranscription = true,
   avatarPosition = 'right',
   onTranscriptionUpdate,
+  onAvatarClick,
   className = '',
 }: VideoAccessibilityPlayerProps) {
   // États modal avatar LSF
@@ -46,13 +47,9 @@ export function VideoAccessibilityPlayer({
   // États d'accessibilité
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcription, setTranscription] = useState('');
-  const [currentGestures, setCurrentGestures] = useState<GestureData[]>([]);
   const [gestureFeedback, setGestureFeedback] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-
-  // Services
   const speechService = useMemo(() => getSpeechToTextService(), []);
-  const signLanguageService = useMemo(() => getSignLanguageService(), []);
 
   /**
    * Démarrer la traduction de la vidéo
@@ -63,7 +60,6 @@ export function VideoAccessibilityPlayer({
     try {
       setIsTranscribing(true);
       setTranscription('');
-      setCurrentGestures([]);
 
       // Démarrer la transcription
       const finalText = await speechService.transcribeAudioElement(
@@ -77,19 +73,11 @@ export function VideoAccessibilityPlayer({
           onResult: (result: TranscriptionResult) => {
             setTranscription(result.text);
             onTranscriptionUpdate?.(result.text);
-
-            // Traduire en gestes immédiatement
-            const gestures = signLanguageService.translateToGestures(result.text, 'fr');
-            setCurrentGestures(gestures);
-
-            // Feedback
-            if (gestures.length > 0) {
-              setGestureFeedback(`${gestures.length} geste(s) détecté(s)`);
-            }
+            setGestureFeedback('Traduction en cours...');
           },
           onError: (error: string) => {
             console.error('Erreur de transcription:', error);
-            setGestureFeedback('Erreur de transcription');
+            setGestureFeedback('Erreur: Vérifiez votre microphone (requis par le navigateur)');
           },
           onComplete: (text: string) => {
             setTranscription(text);
@@ -104,7 +92,7 @@ export function VideoAccessibilityPlayer({
     } finally {
       setIsTranscribing(false);
     }
-  }, [videoRef, speechService, signLanguageService, isTranscribing, onTranscriptionUpdate]);
+  }, [videoRef, speechService, isTranscribing, onTranscriptionUpdate]);
 
   /**
    * Gérer la lecture/pause
@@ -203,11 +191,11 @@ export function VideoAccessibilityPlayer({
     <>
       <div
         ref={containerRef}
-        className={`relative bg-black rounded-xl overflow-hidden shadow-2xl ${className}`}
-        style={{ aspectRatio: '16/9', maxWidth: '100%' }}
+        className={`relative bg-black rounded-xl overflow-hidden shadow-2xl flex items-center justify-center ${className}`}
+        style={{ width: '100%', maxHeight: '500px' }}
       >
         {/* Vidéo - Plein écran */}
-        <div className="w-full h-full bg-black relative">
+        <div className="w-full h-full flex items-center justify-center bg-black relative" style={{ maxHeight: '500px' }}>
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-40">
               <Loader className="w-8 h-8 animate-spin text-white" />
@@ -310,8 +298,14 @@ export function VideoAccessibilityPlayer({
               animate={{ opacity: 1, scale: 1 }}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setShowAvatarModal(true)}
-              className="absolute bottom-4 right-4 w-16 h-16 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] border-2 border-white/20 shadow-lg hover:shadow-xl transition-all flex items-center justify-center text-2xl hover:border-white/40"
+              onClick={() => {
+                if (onAvatarClick) {
+                  onAvatarClick();
+                } else {
+                  setShowAvatarModal(true);
+                }
+              }}
+              className="absolute bottom-20 right-6 z-[60] w-14 h-14 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] border-2 border-white/20 shadow-[0_10px_25px_-5px_rgba(14,165,233,0.5)] hover:shadow-[0_15px_30px_-5px_rgba(14,165,233,0.7)] transition-all flex items-center justify-center text-2xl hover:border-white/60"
             >
               <Users className="w-8 h-8 text-white" />
             </motion.button>
@@ -391,11 +385,9 @@ export function VideoAccessibilityPlayer({
                     <Users className="w-5 h-5 text-[#0EA5E9]" />
                     Avatar Traducteur LSF
                   </h2>
-                  {currentGestures.length > 0 && (
-                    <p className="text-xs text-gray-400 mt-1">
-                      {currentGestures.length} geste(s) - {gestureFeedback}
-                    </p>
-                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {gestureFeedback || 'Prêt pour la traduction'}
+                  </p>
                 </div>
                 <button
                   onClick={() => setShowAvatarModal(false)}
@@ -405,14 +397,17 @@ export function VideoAccessibilityPlayer({
                 </button>
               </div>
 
-              {/* Avatar Canvas */}
-              <div className="p-4 bg-gradient-to-br from-slate-900 to-slate-800">
-                <SignLanguageAvatarCanvas
-                  gestures={currentGestures}
-                  isAnimating={isPlaying && isTranscribing}
-                  width="100%"
-                  height="400px"
-                />
+              {/* Avatar 2D Pro LSF */}
+              <div className="p-4 bg-gradient-to-br from-[#1e293b] to-[#0f172a]">
+                <div className="rounded-xl overflow-hidden border border-white/5 shadow-2xl bg-black">
+                  <ProSignAvatar
+                    text={transcription || '...'}
+                    autoPlay={isPlaying && isTranscribing}
+                    height="400px"
+                    showControls={true}
+                    isDark={true}
+                  />
+                </div>
               </div>
 
               {/* Info Footer */}

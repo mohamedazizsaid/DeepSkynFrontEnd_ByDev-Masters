@@ -115,6 +115,7 @@ class SpeechToTextService {
     }
 
     this.callbacks = callbacks;
+    this.currentTranscription = '';
 
     if (config.language) {
       this.recognition.lang = config.language;

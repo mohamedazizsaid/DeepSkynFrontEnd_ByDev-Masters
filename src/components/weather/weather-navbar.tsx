@@ -223,7 +223,7 @@ const WeatherNavbar: React.FC<WeatherNavbarProps> = ({ className = '' }) => {
                     onClick={handleShowAdvice}
                     whileHover={{ scale: 1.02, y: -1 }}
                     whileTap={{ scale: 0.98 }}
-                    className="flex-1 min-w-[140px] p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-bold text-xs hover:shadow-lg transition flex items-center justify-center gap-1.5"
+                    className="flex-1 min-w-[140px] p-3 bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white rounded-xl shadow-md shadow-[#0EA5E9]/20 font-bold text-xs hover:shadow-lg hover:shadow-[#0EA5E9]/30 transition flex items-center justify-center gap-1.5"
                   >
                     <span className="text-base">{advice.emoji}</span>
                     Conseil IA

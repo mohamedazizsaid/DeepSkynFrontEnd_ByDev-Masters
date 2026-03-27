@@ -1,129 +1,26 @@
 /**
- * Composant Modal d'Affichage de la Traduction LSF d'un Texte
- * Affiche un avatar qui traduit le texte en gestes de langage des signes
+ * Modal d'Affichage de la Traduction LSF d'un Texte
+ * Utilise ProSignAvatar pour afficher les gestes LSF (backend + fallback local)
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Loader, AlertCircle, Volume2 } from 'lucide-react';
-import { SignLanguageAvatarCanvas } from './3d/sign-language-avatar-canvas';
-import { getSignLanguageService } from '../lib/services/sign-language.service';
-import type { GestureData, HandGesture } from '../lib/services/sign-language.service';
+import { X, Loader, AlertCircle, Volume2, Info, Hand } from 'lucide-react';
+import { ProSignAvatar } from './sign-avatar/pro-sign-avatar';
+import { useSignTranslation } from '../hooks/use-sign-translation';
+import { getSpeechToTextService } from '../lib/services/speech-to-text.service';
+import type { TranscriptionResult } from '../lib/services/speech-to-text.service';
 import type { Frame, SignTranslationMetadata } from '../lib/services/sign-translation.service';
 
 interface SignTranslationModalProps {
   isOpen: boolean;
   onClose: () => void;
   text: string;
+  videoUrl?: string;
   frames?: Frame[];
   metadata?: SignTranslationMetadata;
   isLoading?: boolean;
   error?: string | null;
-}
-
-/**
- * Converti les frames du backend en gestes LSF locaux
- * Chaque frame du backend est transformée en GestureData
- */
-function convertFramesToGestures(frames: Frame[], metadata?: any): GestureData[] {
-  if (!frames || frames.length === 0) return [];
-  
-  // Calculer la durée par frame en fonction du FPS (par défaut 30fps)
-  const fps = metadata?.fps || 30;
-  const frameDuration = 1000 / fps; // en millisecondes
-  
-  const gestures: GestureData[] = frames.map((frame, index) => {
-    // Convertir hand_right_keypoints - prendre moyenne de tous les keypoints comme position
-    const rightKeypoints = frame.hand_right_keypoints || [];
-    const rightAvgX = rightKeypoints.length > 0 
-      ? rightKeypoints.reduce((sum, kp) => sum + (kp.x || 0), 0) / rightKeypoints.length 
-      : 0;
-    const rightAvgY = rightKeypoints.length > 0 
-      ? rightKeypoints.reduce((sum, kp) => sum + (kp.y || 0), 0) / rightKeypoints.length 
-      : 0;
-    const rightAvgZ = rightKeypoints.length > 0 
-      ? rightKeypoints.reduce((sum, kp) => sum + (kp.z || 0), 0) / rightKeypoints.length 
-      : 0;
-
-    const rightHand: HandGesture = {
-      hand: 'right',
-      position: {
-        x: rightAvgX,
-        y: rightAvgY,
-        z: rightAvgZ,
-      },
-      rotation: { x: 0, y: 0, z: 0 },
-      fingers: rightKeypoints.slice(0, 5).map((kp, i) => ({
-        finger: (['thumb', 'index', 'middle', 'ring', 'pinky'] as const)[i],
-        extended: true,
-        curled: 0,
-        rotation: { x: (kp.x || 0) * 0.1, y: (kp.y || 0) * 0.1, z: (kp.z || 0) * 0.1 },
-      })),
-      speed: 0.7,
-    };
-
-    // Convertir hand_left_keypoints
-    const leftKeypoints = frame.hand_left_keypoints || [];
-    const leftAvgX = leftKeypoints.length > 0 
-      ? leftKeypoints.reduce((sum, kp) => sum + (kp.x || 0), 0) / leftKeypoints.length 
-      : 0;
-    const leftAvgY = leftKeypoints.length > 0 
-      ? leftKeypoints.reduce((sum, kp) => sum + (kp.y || 0), 0) / leftKeypoints.length 
-      : 0;
-    const leftAvgZ = leftKeypoints.length > 0 
-      ? leftKeypoints.reduce((sum, kp) => sum + (kp.z || 0), 0) / leftKeypoints.length 
-      : 0;
-
-    const leftHand: HandGesture = {
-      hand: 'left',
-      position: {
-        x: leftAvgX,
-        y: leftAvgY,
-        z: leftAvgZ,
-      },
-      rotation: { x: 0, y: 0, z: 0 },
-      fingers: leftKeypoints.slice(0, 5).map((kp, i) => ({
-        finger: (['thumb', 'index', 'middle', 'ring', 'pinky'] as const)[i],
-        extended: true,
-        curled: 0,
-        rotation: { x: (kp.x || 0) * 0.1, y: (kp.y || 0) * 0.1, z: (kp.z || 0) * 0.1 },
-      })),
-      speed: 0.7,
-    };
-
-    const hands = [];
-    if (rightKeypoints.length > 0) hands.push(rightHand);
-    if (leftKeypoints.length > 0) hands.push(leftHand);
-
-    return {
-      id: `frame-${index}`,
-      name: `Geste ${index + 1}`,
-      description: `Geste du frame ${index + 1}`,
-      movement: {
-        duration: frameDuration,
-        hands: hands.length > 0 ? hands : [rightHand], // Fallback si pas de keypoints
-        bodyRotation: 0,
-        headTilt: 0,
-        facialExpression: 'neutral',
-      },
-      confidence: 0.95,
-    };
-  });
-
-  return gestures;
-}
-
-/**
- * Converti le texte en gestes LSF locaux
- * Utilisé comme fallback ou en complément des frames du backend
- */
-function generateGesturesFromText(text: string): GestureData[] {
-  const signLanguageService = getSignLanguageService();
-  if (!text?.trim()) return [];
-
-  // Traduire le texte en gestes
-  const gestures = signLanguageService.translateToGestures(text, 'fr');
-  return gestures;
 }
 
 export function SignTranslationModal({
@@ -134,40 +31,133 @@ export function SignTranslationModal({
   metadata,
   isLoading = false,
   error = null,
+  videoUrl,
 }: SignTranslationModalProps) {
-  const [isAnimating, setIsAnimating] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const lastTranslatedTextRef = useRef('');
 
-  // Générer les gestes à partir des frames du backend ou du texte
-  const gestures = useMemo(() => {
-    // Priorité 1: Utiliser les frames du backend
-    if (frames && frames.length > 0) {
-      return convertFramesToGestures(frames, metadata);
-    }
-    // Fallback: Générer à partir du texte
-    return generateGesturesFromText(text);
-  }, [text, frames, metadata]);
+  // Video translation states
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [liveTranscription, setLiveTranscription] = useState('');
+  const [isVideoTranscribing, setIsVideoTranscribing] = useState(false);
+  const speechService = useMemo(() => getSpeechToTextService(), []);
+  const {
+    isLoading: isVideoTranslationLoading,
+    error: videoTranslationError,
+    data: videoTranslationData,
+    translate: translateVideoText,
+    reset: resetVideoTranslation,
+  } = useSignTranslation();
 
   useEffect(() => {
     if (isOpen) {
-      setIsAnimating(true);
-      setIsPlaying(true);
+      setLiveTranscription('');
+      setIsVideoTranscribing(false);
+      lastTranslatedTextRef.current = '';
+      resetVideoTranslation();
+    } else {
+      speechService.stop();
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+      resetVideoTranslation();
+      lastTranslatedTextRef.current = '';
     }
-  }, [isOpen]);
+  }, [isOpen, speechService, resetVideoTranslation]);
 
-  const handleAnimationComplete = () => {
-    setIsAnimating(false);
+  const translateTranscription = useCallback(
+    async (transcription: string) => {
+      const cleanText = transcription.trim();
+      if (!cleanText || cleanText === lastTranslatedTextRef.current) {
+        return;
+      }
+
+      lastTranslatedTextRef.current = cleanText;
+      await translateVideoText(cleanText);
+    },
+    [translateVideoText],
+  );
+
+  const handleStartVideoTranslation = async () => {
+    if (!videoRef.current || isVideoTranscribing) return;
+
+    try {
+      setIsVideoTranscribing(true);
+      setLiveTranscription('');
+      resetVideoTranslation();
+      lastTranslatedTextRef.current = '';
+
+      await speechService.transcribeAudioElement(
+        videoRef.current,
+        { language: 'fr-FR', continuous: true, interimResults: true },
+        {
+          onResult: (result: TranscriptionResult) => {
+            setLiveTranscription(result.text);
+            if (result.isFinal) {
+              void translateTranscription(result.text);
+            }
+          },
+          onError: (err: string) => {
+            console.error('Erreur de transcription vidéo:', err);
+            setIsVideoTranscribing(false);
+            setLiveTranscription('Erreur: Impossible d\'extraire le texte. Le microphone est peut-être bloqué ou la voix est inaudible.');
+          },
+          onComplete: (finalText: string) => {
+            const textToSet = finalText.trim() ? finalText : "Aucune voix détectée ou extraction impossible.";
+            setLiveTranscription(textToSet);
+            setIsVideoTranscribing(false);
+            if (finalText.trim()) {
+              void translateTranscription(finalText);
+            }
+          }
+        }
+      );
+    } catch (err) {
+      console.error(err);
+      setIsVideoTranscribing(false);
+    }
   };
 
-  const handlePlayAgain = () => {
-    setIsAnimating(true);
-    setIsPlaying(true);
-  };
+  const textForDisplay = videoUrl
+    ? (
+      liveTranscription ||
+      (isVideoTranscribing
+        ? 'Extraction en cours...'
+        : (text?.trim() || 'Veuillez scanner la video pour extraire le texte.'))
+    )
+    : text;
+
+  const activeFrames = videoUrl ? (videoTranslationData?.frames ?? frames) : frames;
+  const activeMetadata = videoUrl ? (videoTranslationData?.metadata ?? metadata) : metadata;
+  const activeError = videoUrl ? (videoTranslationError || error) : error;
+  const isAvatarLoading = videoUrl ? isVideoTranslationLoading : isLoading;
+  const normalizedDisplayText = textForDisplay
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const normalizedGloss = (activeMetadata?.gloss || '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const isExplicitRealTranslation = activeMetadata?.translation_quality === 'real';
+  const looksLikeMockGloss = !isExplicitRealTranslation
+    && Boolean(normalizedDisplayText && normalizedGloss)
+    && normalizedGloss === normalizedDisplayText.slice(0, normalizedGloss.length);
+  const shouldIgnoreServerFrames = !isExplicitRealTranslation || looksLikeMockGloss;
+  const trustedFrames = shouldIgnoreServerFrames ? undefined : activeFrames;
+  const trustedMetadata = shouldIgnoreServerFrames ? undefined : activeMetadata;
+  const isUsingServerTranslation = Boolean(trustedFrames && trustedFrames.length > 0);
 
   const handleSpeak = () => {
+    const textToSpeak = textForDisplay.trim();
+    if (!textToSpeak) return;
+
     if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = 'fr-FR';
+      utterance.rate = 0.9;
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -175,127 +165,249 @@ export function SignTranslationModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-        >
+        <>
+          {/* Light Backdrop */}
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(255, 255, 255, 0.3)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              zIndex: 200,
+            }}
+          />
+
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, y: 60, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 30, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-5xl mx-auto p-4 md:p-0"
+            style={{ zIndex: 201 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-[#334155]">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                  <span className="text-2xl">🤟</span>
-                </div>
-                <div>
-                  <h2 className="font-bold text-lg dark:text-white">Traduction LSF</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Langage des Signes Français</p>
-                </div>
-              </div>
+            <div className="relative rounded-3xl border border-gray-100 shadow-2xl overflow-hidden bg-white max-h-[90vh] flex flex-col">
+              {/* Top gradient accent bar */}
+              <div className="h-1.5 w-full bg-gradient-to-r from-[#0EA5E9] via-[#8B5CF6] to-[#EC4899] flex-shrink-0" />
+
+              {/* Decorative glow circles */}
+              <div
+                className="absolute -top-24 -right-24 w-48 h-48 rounded-full opacity-10 pointer-events-none"
+                style={{
+                  background: 'radial-gradient(circle, #8B5CF6, transparent)',
+                  filter: 'blur(60px)',
+                }}
+              />
+              <div
+                className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full opacity-5 pointer-events-none"
+                style={{
+                  background: 'radial-gradient(circle, #0EA5E9, transparent)',
+                  filter: 'blur(50px)',
+                }}
+              />
+
+              {/* Close button */}
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-[#334155] rounded-lg transition-colors"
+                className="absolute top-5 right-5 p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors z-20"
               >
-                <X className="w-5 h-5 dark:text-gray-300" />
+                <X className="w-5 h-5" />
               </button>
-            </div>
 
-            {/* Content */}
-            <div className="p-6 space-y-6">
-              {/* Texte original */}
-              <div>
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Texte original :</p>
-                <div className="p-4 bg-gray-50 dark:bg-[#0f172a] rounded-lg border border-gray-200 dark:border-[#334155]">
-                  <p className="text-gray-800 dark:text-gray-100 leading-relaxed">{text}</p>
+              {/* Content Container (scrollable) */}
+              <div className="p-6 md:p-8 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 6px)' }}>
+                <div className="flex flex-col md:flex-row gap-8">
+                  
+                  {/* Left Column: Text & Video */}
+                  <div className="flex-1 md:w-[50%] flex flex-col">
+                    {/* Header */}
+                    <div className="flex items-center gap-3 mb-6 relative z-10">
+                      <div
+                        className="p-2.5 rounded-2xl flex-shrink-0"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(14,165,233,0.1), rgba(139,92,246,0.1))',
+                          border: '1px solid rgba(14,165,233,0.2)',
+                        }}
+                      >
+                        <Hand className="w-6 h-6 text-[#0EA5E9]" />
+                      </div>
+                      <div>
+                        <h2 className="text-gray-900 font-bold text-xl leading-tight">
+                          Traduction LSF
+                        </h2>
+                        <p className="text-gray-500 text-xs mt-0.5 font-medium">
+                          Langue des Signes Française
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Text extracted/original */}
+                    <motion.div
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                      className="rounded-2xl p-6 flex-1 mb-5"
+                      style={{
+                        background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)',
+                        border: '1px solid #e2e8f0',
+                      }}
+                    >
+                      <p className="text-xs font-bold text-[#8B5CF6] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                        {videoUrl ? 'Texte extrait de la vidéo' : 'Texte original'}
+                      </p>
+                      <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                        {textForDisplay}
+                      </p>
+                    </motion.div>
+
+                    {/* Video Player */}
+                    {videoUrl && (
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="bg-black rounded-2xl overflow-hidden shadow-lg border border-gray-100 mb-5 flex-shrink-0"
+                      >
+                        <video
+                          ref={videoRef}
+                          src={videoUrl}
+                          className="w-full h-48 object-contain bg-black"
+                          controls
+                          crossOrigin="anonymous"
+                          onEnded={() => {
+                            setIsVideoTranscribing(false);
+                          }}
+                        />
+                        <div className="p-4 bg-white border-t border-gray-100 flex items-center justify-between">
+                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            {isVideoTranscribing
+                              ? 'Extraction audio...'
+                              : isVideoTranslationLoading
+                                ? 'Traduction gestes...'
+                                : 'Prêt pour l\'extraction'}
+                          </p>
+                          <motion.button
+                            whileHover={!isVideoTranscribing ? { scale: 1.05 } : {}}
+                            whileTap={!isVideoTranscribing ? { scale: 0.95 } : {}}
+                            onClick={handleStartVideoTranslation}
+                            disabled={isVideoTranscribing}
+                            className={`text-xs px-4 py-2 rounded-xl font-bold transition-all ${
+                              isVideoTranscribing
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white shadow-md hover:shadow-lg hover:shadow-[#0EA5E9]/20'
+                            }`}
+                          >
+                            Scanner la vidéo
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Info banner */}
+                    <div className="p-4 rounded-xl flex items-start gap-3 mt-auto" style={{ background: 'rgba(14,165,233,0.05)', border: '1px solid rgba(14,165,233,0.1)' }}>
+                      <Info className="w-5 h-5 text-[#0EA5E9] flex-shrink-0" />
+                      <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                        L'avatar affiche une interprétation LSF.
+                        {isUsingServerTranslation
+                          ? ' Les gestes proviennent du moteur de traduction.'
+                          : ' Les gestes viennent du dictionnaire local LSF et de l\'épellation des mots inconnus.'
+                        }
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Vertical Divider */}
+                  <div className="hidden md:block w-px bg-gradient-to-b from-transparent via-gray-200 to-transparent flex-shrink-0" />
+
+                  {/* Right Column: Avatar & Actions */}
+                  <div className="flex-1 md:w-[50%] flex flex-col justify-between">
+                    <div className="w-full relative rounded-3xl overflow-hidden shadow-inner flex-1 min-h-[350px] md:min-h-[400px]">
+                      {isAvatarLoading ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 border border-gray-100 rounded-3xl">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="relative w-16 h-16">
+                              <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                                className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#0EA5E9] border-r-[#8B5CF6]"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Loader className="w-6 h-6 text-[#0EA5E9] animate-pulse" />
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-gray-900 font-bold">Génération en cours...</p>
+                              <p className="text-xs text-gray-500 mt-1">Connexion au moteur LSF</p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : activeError ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-red-50 border border-red-100 rounded-3xl">
+                           <div className="p-4 bg-red-100 rounded-full mb-3">
+                             <AlertCircle className="w-8 h-8 text-red-500" />
+                           </div>
+                           <p className="text-sm font-bold text-red-600">{activeError}</p>
+                           <p className="text-xs text-red-500 mt-1">L'avatar utilisera un mode hors ligne simplifié.</p>
+                        </div>
+                      ) : (
+                        <div className="absolute inset-0 border border-[#1e293b] rounded-3xl overflow-hidden bg-black shadow-2xl">
+                          <ProSignAvatar
+                            text={textForDisplay}
+                            frames={trustedFrames}
+                            metadata={trustedMetadata}
+                            autoPlay={videoUrl ? (!!liveTranscription || isVideoTranscribing || isVideoTranslationLoading) : true}
+                            width="100%"
+                            height="100%"
+                            showControls={true}
+                            isDark={true}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bottom Actions */}
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                      className="mt-6 flex flex-col gap-3 flex-shrink-0"
+                    >
+                      <motion.button
+                        whileHover={!(isAvatarLoading || !!activeError) ? { scale: 1.02 } : {}}
+                        whileTap={!(isAvatarLoading || !!activeError) ? { scale: 0.98 } : {}}
+                        onClick={handleSpeak}
+                        disabled={isAvatarLoading || !!activeError || !textForDisplay.trim()}
+                        className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white shadow-lg shadow-[#0EA5E9]/20 hover:shadow-xl hover:shadow-[#0EA5E9]/30 transition-all disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+                      >
+                        <Volume2 className="w-5 h-5" />
+                        Écouter la traduction
+                      </motion.button>
+                      
+                      <motion.button
+                        whileHover={{ backgroundColor: '#f9fafb' }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={onClose}
+                        className="w-full py-4 rounded-xl font-bold text-sm text-gray-500 hover:text-gray-700 transition-all border border-transparent hover:border-gray-100"
+                      >
+                        Fermer la fenêtre
+                      </motion.button>
+                    </motion.div>
+                  </div>
+
                 </div>
-              </div>
-
-              {/* Avatar ou état chargement/erreur */}
-              <div>
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Avatar Traducteur :</p>
-                
-                {isLoading ? (
-                  <div className="h-[400px] bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl flex items-center justify-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <Loader className="w-8 h-8 animate-spin text-purple-500" />
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Génération de la traduction...</p>
-                    </div>
-                  </div>
-                ) : error ? (
-                  <div className="h-[400px] bg-red-50 dark:bg-red-900/20 rounded-xl flex items-center justify-center border border-red-200 dark:border-red-800">
-                    <div className="flex flex-col items-center gap-3">
-                      <AlertCircle className="w-8 h-8 text-red-500" />
-                      <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-                    </div>
-                  </div>
-                ) : gestures.length > 0 ? (
-                  <SignLanguageAvatarCanvas
-                    gestures={gestures}
-                    isAnimating={isAnimating}
-                    onGestureComplete={handleAnimationComplete}
-                    width="100%"
-                    height="400px"
-                    showControls={false}
-                  />
-                ) : (
-                  <div className="h-[400px] bg-gray-50 dark:bg-[#0f172a] rounded-xl flex items-center justify-center border border-gray-200 dark:border-[#334155]">
-                    <p className="text-gray-500 dark:text-gray-400">Aucune traduction disponible</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3 flex-wrap">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handlePlayAgain}
-                  disabled={isLoading || error !== null || gestures.length === 0}
-                  className="flex-1 px-4 py-3 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <span>▶️</span>
-                  <span>Rejouer</span>
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleSpeak}
-                  disabled={isLoading || error !== null}
-                  className="flex-1 px-4 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Volume2 className="w-4 h-4" />
-                  <span>Écouter</span>
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={onClose}
-                  className="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-[#334155] dark:hover:bg-[#475569] text-gray-800 dark:text-white font-semibold rounded-lg transition-colors"
-                >
-                  Fermer
-                </motion.button>
-              </div>
-
-              {/* Info */}
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-xs text-blue-600 dark:text-blue-400">
-                  ℹ️ L'avatar montre une interprétation en Langage des Signes Français (LSF).
-                  {frames && frames.length > 0 && ' Les gestes sont basés sur les données du serveur.'}
-                </p>
               </div>
             </div>
           </motion.div>
-        </motion.div>
+        </>
       )}
     </AnimatePresence>
   );

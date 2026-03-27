@@ -15,6 +15,10 @@ export interface SignTranslationMetadata {
   gloss: string;
   fps: number;
   total_frames: number;
+  duration_ms?: number;
+  sign_language?: string;
+  translation_quality?: 'real' | 'mock';
+  source?: string;
 }
 
 export interface SignTranslationResponse {

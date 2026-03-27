@@ -6,6 +6,7 @@ import { useAccessibilityStore } from '../../../stores/accessibility.store';
 import { VideoAccessibilityPlayer } from '../../../components/video/video-accessibility-player';
 import { SignTranslationModal } from '../../../components/sign-translation-modal';
 import { useSignTranslation } from '../../../hooks/use-sign-translation';
+import { getSpeechToTextService } from '../../../lib/services/speech-to-text.service';
 
 
 export interface PostCardData {
@@ -66,6 +67,8 @@ export function PostCard({
   // Sign Translation LSF
   const [showLSFModal, setShowLSFModal] = useState(false);
   const { isLoading: isTranslating, error: translationError, data: translationData, translate, reset } = useSignTranslation();
+  const [isExtractingAudio, setIsExtractingAudio] = useState(false);
+
 
   // Styling based on accessibility store
   const isHcHigh = contrastMode === 'high';
@@ -90,12 +93,22 @@ export function PostCard({
   };
 
   const handleLSFTranslate = async () => {
-    if (!post.content?.trim()) {
-      toast.error('Aucun texte à traduire');
-      return;
+    try {
+      if (post.media && post.media.includes('video')) {
+        // Pour les vidéos, le modal affichera le lecteur vidéo avec transcription intégrée
+        setShowLSFModal(true);
+      } else {
+        // Comportement standard pour les posts texte/image
+        if (!post.content?.trim()) {
+          toast.error('Aucun texte à traduire');
+          return;
+        }
+        setShowLSFModal(true);
+        await translate(post.content);
+      }
+    } catch (e) {
+      console.error(e);
     }
-    setShowLSFModal(true);
-    await translate(post.content);
   };
 
   const handleCloseLSFModal = () => {
@@ -297,7 +310,7 @@ export function PostCard({
       {post.media && (
         <div className={`mt-2 ${isHcHigh ? 'border-y-2 border-yellow-400' : isDark ? 'border-y border-white/5' : 'border-y border-gray-100'}`}>
           {post.media.includes('video') ? (
-            <div className="w-full max-h-[500px] overflow-hidden rounded-lg">
+            <div className="w-full relative rounded-lg">
               <Suspense 
                 fallback={
                   <div className="w-full h-[300px] bg-black flex items-center justify-center">
@@ -312,6 +325,7 @@ export function PostCard({
                   showTranscription={true}
                   avatarPosition="right"
                   className="rounded-lg"
+                  onAvatarClick={handleLSFTranslate}
                 />
               </Suspense>
             </div>
@@ -417,40 +431,43 @@ export function PostCard({
           <span>{t('stats.shares') || 'Partager'}</span>
         </motion.button>
 
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={handleLSFTranslate}
-          disabled={isTranslating}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-colors ${
-            isTranslating
-              ? 'opacity-50 cursor-not-allowed'
-              : isHcHigh
-                ? 'hover:bg-yellow-400/20 text-yellow-500'
-                : isDark
-                  ? 'hover:bg-[#334155] text-gray-400'
-                  : 'hover:bg-gray-100 text-[#6B7280]'
-          }`}
-          title="Traduire en Langage des Signes Français (LSF)"
-        >
-          {isTranslating ? (
-            <>
-              <Loader className="w-5 h-5 animate-spin" />
-              <span>LSF</span>
-            </>
-          ) : (
-            <>
-              <Hand className="w-5 h-5" />
-              <span>LSF</span>
-            </>
-          )}
-        </motion.button>
+        {!post.media?.includes('video') && (
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleLSFTranslate}
+            disabled={isTranslating}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-colors ${
+              isTranslating
+                ? 'opacity-50 cursor-not-allowed'
+                : isHcHigh
+                  ? 'hover:bg-yellow-400/20 text-yellow-500'
+                  : isDark
+                    ? 'hover:bg-[#334155] text-gray-400'
+                    : 'hover:bg-gray-100 text-[#6B7280]'
+            }`}
+            title="Traduire le texte en LSF"
+          >
+            {isTranslating ? (
+              <>
+                <Loader className="w-5 h-5 animate-spin" />
+                <span>LSF</span>
+              </>
+            ) : (
+              <>
+                <Hand className="w-5 h-5" />
+                <span>LSF</span>
+              </>
+            )}
+          </motion.button>
+        )}
       </div>
 
       {/* Sign Translation Modal */}
       <SignTranslationModal
         isOpen={showLSFModal}
         onClose={handleCloseLSFModal}
-        text={post.content}
+        text={post.content || ''}
+        videoUrl={post.media?.includes('video') ? post.media : undefined}
         frames={translationData?.frames}
         metadata={translationData?.metadata}
         isLoading={isTranslating}
