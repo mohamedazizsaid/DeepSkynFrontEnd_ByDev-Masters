@@ -17,3 +17,11 @@ export {
   type LocationData,
   type AIAdviceResponse,
 } from './weather.service';
+export {
+  signTranslationService,
+  type Frame,
+  type Keypoint,
+  type SignTranslationMetadata,
+  type SignTranslationResponse,
+  type SignTranslationData,
+} from './sign-translation.service';

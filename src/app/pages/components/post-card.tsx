@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ThumbsUp, MessageSquare, Share2, MoreHorizontal, Trash2, Globe2, Newspaper, Archive } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, MoreHorizontal, Trash2, Globe2, Newspaper, Archive, Loader, Hand } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
+import { VideoAccessibilityPlayer } from '../../../components/video/video-accessibility-player';
+import { SignTranslationModal } from '../../../components/sign-translation-modal';
+import { useSignTranslation } from '../../../hooks/use-sign-translation';
 
 
 export interface PostCardData {
@@ -60,6 +63,10 @@ export function PostCard({
   const [likeCount, setLikeCount] = useState(post.likes);
   const [showMenu, setShowMenu] = useState(false);
 
+  // Sign Translation LSF
+  const [showLSFModal, setShowLSFModal] = useState(false);
+  const { isLoading: isTranslating, error: translationError, data: translationData, translate, reset } = useSignTranslation();
+
   // Styling based on accessibility store
   const isHcHigh = contrastMode === 'high';
   const isDark = theme === 'dark';
@@ -80,6 +87,20 @@ export function PostCard({
       onShare(post.id);
     }
     toast.success(t('community.copyLinkSuccess') || 'Lien du post copié !');
+  };
+
+  const handleLSFTranslate = async () => {
+    if (!post.content?.trim()) {
+      toast.error('Aucun texte à traduire');
+      return;
+    }
+    setShowLSFModal(true);
+    await translate(post.content);
+  };
+
+  const handleCloseLSFModal = () => {
+    setShowLSFModal(false);
+    reset();
   };
 
   const handleDelete = () => {
@@ -276,7 +297,24 @@ export function PostCard({
       {post.media && (
         <div className={`mt-2 ${isHcHigh ? 'border-y-2 border-yellow-400' : isDark ? 'border-y border-white/5' : 'border-y border-gray-100'}`}>
           {post.media.includes('video') ? (
-            <video src={post.media} controls className="w-full max-h-[500px] object-cover bg-black" />
+            <div className="w-full max-h-[500px] overflow-hidden rounded-lg">
+              <Suspense 
+                fallback={
+                  <div className="w-full h-[300px] bg-black flex items-center justify-center">
+                    <Loader className="w-8 h-8 animate-spin text-[#0EA5E9]" />
+                  </div>
+                }
+              >
+                <VideoAccessibilityPlayer
+                  videoUrl={post.media}
+                  videoId={post.id}
+                  showAvatar={true}
+                  showTranscription={true}
+                  avatarPosition="right"
+                  className="rounded-lg"
+                />
+              </Suspense>
+            </div>
           ) : (
             <img src={post.media} alt="Post media" className="w-full max-h-[500px] object-cover bg-gray-100 dark:bg-[#0f172a]" />
           )}
@@ -378,7 +416,46 @@ export function PostCard({
           <Share2 className="w-5 h-5" />
           <span>{t('stats.shares') || 'Partager'}</span>
         </motion.button>
+
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={handleLSFTranslate}
+          disabled={isTranslating}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-colors ${
+            isTranslating
+              ? 'opacity-50 cursor-not-allowed'
+              : isHcHigh
+                ? 'hover:bg-yellow-400/20 text-yellow-500'
+                : isDark
+                  ? 'hover:bg-[#334155] text-gray-400'
+                  : 'hover:bg-gray-100 text-[#6B7280]'
+          }`}
+          title="Traduire en Langage des Signes Français (LSF)"
+        >
+          {isTranslating ? (
+            <>
+              <Loader className="w-5 h-5 animate-spin" />
+              <span>LSF</span>
+            </>
+          ) : (
+            <>
+              <Hand className="w-5 h-5" />
+              <span>LSF</span>
+            </>
+          )}
+        </motion.button>
       </div>
+
+      {/* Sign Translation Modal */}
+      <SignTranslationModal
+        isOpen={showLSFModal}
+        onClose={handleCloseLSFModal}
+        text={post.content}
+        frames={translationData?.frames}
+        metadata={translationData?.metadata}
+        isLoading={isTranslating}
+        error={translationError}
+      />
     </motion.div>
   );
 }

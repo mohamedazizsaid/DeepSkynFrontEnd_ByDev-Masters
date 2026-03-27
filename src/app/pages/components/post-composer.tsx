@@ -1,6 +1,6 @@
 import React, { useState, useRef, DragEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Image as ImageIcon, Smile, MapPin, Send, X, Loader2, Navigation } from 'lucide-react';
+import { Image as ImageIcon, Smile, MapPin, Send, X, Loader2, Navigation, Video, FileVideo } from 'lucide-react';
 import { Button } from '../../components/button';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
 import toast from 'react-hot-toast';
@@ -111,12 +111,16 @@ export function PostComposer({
   };
 
   const processFile = (file: File) => {
-    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-      toast.error('Veuillez sélectionner une image ou une vidéo.');
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    
+    if (!isImage && !isVideo) {
+      toast.error('📸 Veuillez sélectionner une image ou 🎬 une vidéo.');
       return;
     }
+
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('Le fichier est trop volumineux (max 10MB).');
+      toast.error('❌ Le fichier est trop volumineux (max 10MB).');
       return;
     }
     
@@ -125,6 +129,13 @@ export function PostComposer({
     reader.onload = (e) => {
       setMediaFile(file);
       setMediaPreview(e.target?.result as string);
+      
+      // Toast de confirmation
+      if (isVideo) {
+        toast.success('✅ Vidéo ajoutée ! Cliquez sur envoyer pour publier.');
+      } else {
+        toast.success('✅ Image ajoutée ! Cliquez sur envoyer pour publier.');
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -259,14 +270,33 @@ export function PostComposer({
                   {mediaPreview ? (
                     <div className="relative mt-4 rounded-xl overflow-hidden group border border-gray-200 dark:border-[#334155]">
                       {mediaFile?.type.startsWith('video/') ? (
-                         <video src={mediaPreview} controls className="w-full max-h-[400px] object-cover bg-black" />
+                         <div className="relative">
+                           <video 
+                             src={mediaPreview} 
+                             controls 
+                             className="w-full max-h-[400px] object-cover bg-black"
+                             poster={mediaPreview}
+                           />
+                           {/* Badge Vidéo */}
+                           <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-white/20 rounded-lg">
+                             <Video className="w-4 h-4 text-[#0EA5E9]" />
+                             <span className={`text-xs font-bold ${isHcHigh ? 'text-yellow-300' : 'text-white'}`}>VIDÉO</span>
+                           </div>
+                         </div>
                       ) : (
-                         <img src={mediaPreview} alt="Preview" className="w-full max-h-[400px] object-cover bg-gray-100" />
+                         <div className="relative">
+                           <img src={mediaPreview} alt="Preview" className="w-full max-h-[400px] object-cover bg-gray-100 dark:bg-[#0f172a]" />
+                           {/* Badge Image */}
+                           <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1.5 bg-white/90 dark:bg-black/70 backdrop-blur-sm border border-gray-200 dark:border-white/20 rounded-lg">
+                             <ImageIcon className="w-4 h-4 text-[#0EA5E9]" />
+                             <span className={`text-xs font-bold ${isDark ? 'text-white' : 'text-black'}`}>IMAGE</span>
+                           </div>
+                         </div>
                       )}
                       
                       <button
                         onClick={handleRemoveMedia}
-                        className="absolute top-3 right-3 p-2 bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-black hover:scale-110"
+                        className="absolute top-3 right-3 p-2 bg-red-500/80 hover:bg-red-600 text-white rounded-full opacity-100 hover:opacity-100 transition-all hover:scale-110 shadow-lg"
                       >
                         <X className="w-5 h-5" />
                       </button>
@@ -280,10 +310,12 @@ export function PostComposer({
                           : isDark ? 'border-[#334155] hover:border-[#475569] bg-[#0f172a]' : 'border-gray-200 hover:border-[#0EA5E9]/50 bg-gray-50'
                       }`}
                     >
-                       <div className={`p-3 rounded-full ${isDark ? 'bg-[#1e293b]' : 'bg-white'} shadow-sm`}>
+                       <div className={`p-3 rounded-full ${isDark ? 'bg-[#1e293b]' : 'bg-white'} shadow-sm flex items-center gap-2`}>
                           <ImageIcon className={`w-6 h-6 ${isHcHigh ? 'text-yellow-400' : 'text-[#0EA5E9]'}`} />
+                          <FileVideo className={`w-5 h-5 ${isHcHigh ? 'text-yellow-300' : 'text-[#06B6D4]'}`} />
                        </div>
                        <p className={`text-sm font-medium ${textColor}`}>Glissez ou sélectionnez une photo / vidéo</p>
+                       <p className={`text-xs ${subText}`}>📸 Images • 🎬 Vidéos (Max 10 MB)</p>
                     </div>
                   )}
 
