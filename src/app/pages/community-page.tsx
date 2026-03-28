@@ -245,6 +245,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
     followersDetail: []
   });
   const [dateFilter, setDateFilter] = useState<'recent' | 'month' | 'year'>('recent');
+  const [suggestionsFilter, setSuggestionsFilter] = useState<'all' | 'followers'>('all');
 
   const { theme, contrastMode, t } = useAccessibilityStore();
   const isHcHigh = contrastMode === 'high';
@@ -722,8 +723,11 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
             <motion.button
               key={tab.key}
               onClick={() => {
-                if (tab.key === 'profile' && activeTab === 'profile') {
+                if (tab.key === 'profile') {
                   loadUserStats();
+                }
+                if (tab.key === 'suggestions') {
+                  setSuggestionsFilter('all');
                 }
                 setActiveTab(tab.key as any);
               }}
@@ -921,6 +925,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                               try {
                                 const res = await usersService.toggleFollow(suggestion.id);
                                 if (res.followed) toast.success(t('common.success'));
+                                loadUserStats();
                               } catch { toast.error(t('common.error')); }
                             }}
                             className={`text-[10px] font-semibold px-3 py-1.5 rounded-lg transition-colors ${isHcHigh ? 'bg-yellow-400 text-black' : 'bg-[#0EA5E9]/10 text-[#0EA5E9] hover:bg-[#0EA5E9]/20'}`}
@@ -1025,78 +1030,135 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                 </div>
               </motion.div>
 
-              {/* User's Posts (Profile Tab) */}
-              <PostComposer userAvatar={user?.avatar} userName={user?.name || 'Utilisateur'} onSubmit={handleCreatePost} isLoading={posting} />
-
-              {/* Story Timeline */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`rounded-3xl shadow-xl overflow-hidden mb-8 p-6 ${isHcHigh ? 'border-2 border-yellow-400 bg-black' : isDark ? 'bg-[#1e293b] border border-[#334155]' : 'bg-white border border-gray-100'}`}
-              >
-                <StoryTimeline userId={user?.id || ''} />
-              </motion.div>
-
-              {/* Posts Section */}
-              {posts.length === 0 ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`text-center py-16 rounded-2xl border ${cardBg}`}>
-                  <Users className={`w-16 h-16 mx-auto mb-4 ${isHcHigh ? 'text-yellow-400' : 'text-[#D1D5DB]'}`} />
-                  <h3 className={`text-lg font-semibold ${subText}`}>{t('community.noPosts')}</h3>
-                </motion.div>
-              ) : (
-                <div className="space-y-4">
-                  {posts.map((post) => (
-                    <React.Fragment key={post.id}>
-                      <PostCard
-                        post={{
-                          id: post.id, userId: post.userId,
-                          userName: post.user?.name || 'Utilisateur',
-                          userAvatar: post.user?.avatar ?? undefined,
-                          content: post.message, media: post.media ?? undefined,
-                          createdAt: post.createdAt,
-                          likes: post._count?.likes || 0,
-                          comments: post._count?.comments || 0,
-                          shares: 0,
-                          isLiked: post.isLiked || false,
-                          isByCurrentUser: post.userId === user?.sub || post.userId === user?.id,
-                          reaction: post.reaction,
+              {/* Profile Two-Column Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
+                {/* Left Column: Followers/Friends */}
+                <div className="space-y-6 lg:sticky lg:top-24 z-10">
+                  <div className={`rounded-3xl shadow-xl overflow-hidden p-5 ${isHcHigh ? 'border-2 border-yellow-400 bg-black' : isDark ? 'bg-[#1e293b] border border-[#334155]' : 'bg-white border border-gray-100'}`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className={`text-xl font-bold ${textColor}`}>Ami(e)s</h2>
+                        <p className={`text-xs mt-0.5 ${subText}`}>{userStats.followers} ami(e)s</p>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setSuggestionsFilter('followers');
+                          setActiveTab('suggestions');
                         }}
-                        onLike={handleToggleLike}
-                        onComment={loadComments}
-                        onDelete={handleDeletePost}
-                        onArchive={handleArchivePost}
-                        onProfileClick={onViewProfile}
-                      />
-                      <AnimatePresence>
-                        {selectedPost === post.id && (
-                          <CommentsSection
-                            postId={post.id}
-                            comments={comments}
-                            loading={commentLoading}
-                            onAddComment={handleAddComment}
-                            newComment={newComment}
-                            setNewComment={setNewComment}
-                            userAvatar={user?.avatar}
-                            userName={user?.name || 'Utilisateur'}
-                            t={t}
-                            isDark={isDark}
-                            isHcHigh={isHcHigh}
-                            cardBg={cardBg}
-                            textColor={textColor}
-                            subText={subText}
-                            onLikeComment={handleLikeComment}
-                            onReplyComment={setReplyingTo}
-                            onDeleteComment={handleDeleteComment}
-                            replyingTo={replyingTo}
-                            setReplyingTo={setReplyingTo}
-                            currentUserId={user?.id || user?.sub}
-                          />
-                        )}
-                      </AnimatePresence>
-                    </React.Fragment>
-                  ))}
+                        className={`text-sm font-semibold hover:underline transition-colors ${isHcHigh ? 'text-yellow-400' : 'text-[#0EA5E9] hover:text-[#0284C7]'}`}
+                      >
+                        Tou(te)s les ami(e)s
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-x-3 gap-y-4">
+                      {userStats.followersDetail && userStats.followersDetail.length > 0 ? (
+                        userStats.followersDetail.slice(0, 9).map((friend: any, i: number) => {
+                          const avatarUrl = friend?.avatar || `https://i.pravatar.cc/150?u=${friend?.id || i}`;
+                          const name = friend?.name || `Ami ${i + 1}`;
+                          const mutual = friend?.mutualFriends || 0;
+                          
+                          return (
+                            <motion.div 
+                              key={friend.id || i} 
+                              whileHover={{ scale: 1.02 }}
+                              onClick={() => onViewProfile && onViewProfile(friend.id)}
+                              className="flex flex-col group cursor-pointer"
+                            >
+                              <div className="w-full aspect-square rounded-xl overflow-hidden mb-2 bg-gray-100 dark:bg-gray-800 shadow-inner">
+                                <img src={avatarUrl} alt={name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                              </div>
+                              <p className={`text-xs font-bold truncate ${textColor} group-hover:text-[#0EA5E9] transition-colors`}>{name}</p>
+                              <p className={`text-[10px] truncate mt-0.5 ${subText}`}>{mutual > 0 ? `${mutual} ami(e)s en commun` : 'Abonné'}</p>
+                            </motion.div>
+                          );
+                        })
+                      ) : (
+                        <div className="col-span-3 py-8 text-center text-xs opacity-60">
+                           <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                           <p className={subText}>Aucun(e) abonné(e) pour le moment.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              )}
+
+                {/* Right Column: Timeline & Posts */}
+                <div className="space-y-6">
+                  {/* PostComposer */}
+                  <PostComposer userAvatar={user?.avatar} userName={user?.name || 'Utilisateur'} onSubmit={handleCreatePost} isLoading={posting} />
+
+                  {/* Story Timeline */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`rounded-3xl shadow-xl overflow-hidden p-6 ${isHcHigh ? 'border-2 border-yellow-400 bg-black' : isDark ? 'bg-[#1e293b] border border-[#334155]' : 'bg-white border border-gray-100'}`}
+                  >
+                    <StoryTimeline userId={user?.id || ''} />
+                  </motion.div>
+
+                  {/* Posts Section */}
+                  {posts.length === 0 ? (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`text-center py-16 rounded-3xl border shadow-xl ${cardBg}`}>
+                      <Users className={`w-16 h-16 mx-auto mb-4 ${isHcHigh ? 'text-yellow-400' : 'text-[#D1D5DB]'}`} />
+                      <h3 className={`text-lg font-semibold ${subText}`}>{t('community.noPosts')}</h3>
+                    </motion.div>
+                  ) : (
+                    <div className="space-y-4">
+                      {posts.map((post) => (
+                        <React.Fragment key={post.id}>
+                          <PostCard
+                            post={{
+                              id: post.id, userId: post.userId,
+                              userName: post.user?.name || 'Utilisateur',
+                              userAvatar: post.user?.avatar ?? undefined,
+                              content: post.message, media: post.media ?? undefined,
+                              createdAt: post.createdAt,
+                              likes: post._count?.likes || 0,
+                              comments: post._count?.comments || 0,
+                              shares: 0,
+                              isLiked: post.isLiked || false,
+                              isByCurrentUser: post.userId === user?.sub || post.userId === user?.id,
+                              reaction: post.reaction,
+                            }}
+                            onLike={handleToggleLike}
+                            onComment={loadComments}
+                            onDelete={handleDeletePost}
+                            onArchive={(id) => handleArchivePost(id, false)}
+                            onProfileClick={onViewProfile}
+                          />
+                          <AnimatePresence>
+                            {selectedPost === post.id && (
+                              <CommentsSection
+                                postId={post.id}
+                                comments={comments}
+                                loading={commentLoading}
+                                onAddComment={handleAddComment}
+                                newComment={newComment}
+                                setNewComment={setNewComment}
+                                userAvatar={user?.avatar}
+                                userName={user?.name || 'Utilisateur'}
+                                t={t}
+                                isDark={isDark}
+                                isHcHigh={isHcHigh}
+                                cardBg={cardBg}
+                                textColor={textColor}
+                                subText={subText}
+                                onLikeComment={handleLikeComment}
+                                onReplyComment={setReplyingTo}
+                                onDeleteComment={handleDeleteComment}
+                                replyingTo={replyingTo}
+                                setReplyingTo={setReplyingTo}
+                                currentUserId={user?.id || user?.sub}
+                              />
+                            )}
+                          </AnimatePresence>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </motion.div>
           )}
 
@@ -1157,7 +1219,11 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
           {/* ────── SUGGESTIONS TAB ────── */}
           {activeTab === 'suggestions' && (
             <motion.div key="suggestions" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}>
-              <SuggestionsTab />
+              <SuggestionsTab 
+                initialFilter={suggestionsFilter} 
+                followers={userStats.followersDetail} 
+                onFollowChange={() => loadUserStats()}
+              />
             </motion.div>
           )}
 

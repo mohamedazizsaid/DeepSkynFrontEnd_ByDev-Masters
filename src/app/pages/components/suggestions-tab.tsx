@@ -15,6 +15,13 @@ interface SuggestedUser {
   _count?: { followers: number };
 }
 
+export interface SuggestionCardProps {
+  user: SuggestedUser;
+  onFollow: (id: string) => void;
+  isFollowing: boolean;
+  viewMode: 'grid' | 'list';
+}
+
 function SuggestionCard({ user, onFollow, isFollowing, viewMode }: SuggestionCardProps) {
   const { theme, contrastMode, t } = useAccessibilityStore();
   const isDark = theme === 'dark';
@@ -63,13 +70,20 @@ function SuggestionCard({ user, onFollow, isFollowing, viewMode }: SuggestionCar
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => onFollow(user.id)}
-          className={`px-6 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+          className={`px-6 py-2.5 rounded-2xl text-xs font-bold transition-all group/followBtn ${
             isFollowing
-              ? (isHcHigh ? 'bg-black border-2 border-yellow-400 text-yellow-400' : 'bg-gray-100 dark:bg-[#334155] text-gray-400 dark:text-gray-300')
+              ? (isHcHigh ? 'bg-black border-2 border-yellow-400 text-yellow-400' : 'bg-gray-100 hover:bg-red-50 dark:bg-[#334155] dark:hover:bg-red-500/10 text-gray-500 hover:text-red-500 border border-transparent hover:border-red-200')
               : (isHcHigh ? 'bg-yellow-400 text-black' : 'bg-[#0EA5E9] text-white hover:bg-[#0284C7]')
           }`}
         >
-          {isFollowing ? t('common.following') : t('common.follow')}
+          {isFollowing ? (
+            <>
+              <span className="group-hover/followBtn:hidden">{t('common.following')}</span>
+              <span className="hidden group-hover/followBtn:inline">Désabonner</span>
+            </>
+          ) : (
+            t('common.follow')
+          )}
         </motion.button>
       </motion.div>
     );
@@ -123,21 +137,28 @@ function SuggestionCard({ user, onFollow, isFollowing, viewMode }: SuggestionCar
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => onFollow(user.id)}
-          className={`w-full py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all duration-300 shadow-xl shadow-[#0EA5E9]/10 mt-auto ${
+          className={`w-full py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center transition-all duration-300 shadow-xl shadow-[#0EA5E9]/10 mt-auto group/followBtn ${
             isFollowing
-              ? (isHcHigh ? 'bg-black border-2 border-yellow-400 text-yellow-400' : 'bg-gray-100 dark:bg-[#334155] text-gray-400 dark:text-gray-300')
+              ? (isHcHigh ? 'bg-black border-2 border-yellow-400 text-yellow-400' : 'bg-gray-100 hover:bg-red-50 dark:bg-[#334155] dark:hover:bg-red-500/10 text-gray-500 hover:text-red-500 dark:text-gray-300 hover:border-red-200 border border-transparent')
               : (isHcHigh ? 'bg-yellow-400 text-black' : 'bg-gradient-to-r from-[#0EA5E9] to-[#0184C7] text-white hover:shadow-cyan-500/30')
           }`}
         >
           {isFollowing ? (
             <>
-              <Check className="w-4 h-4" />
-              {t('common.following')}
+              <span className="flex items-center gap-2 group-hover/followBtn:hidden">
+                <Check className="w-4 h-4" />
+                {t('common.following')}
+              </span>
+              <span className="hidden items-center group-hover/followBtn:flex">
+                Désabonner
+              </span>
             </>
           ) : (
             <>
-              <UserPlus className="w-4 h-4" />
-              {t('common.follow')}
+              <span className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4" />
+                {t('common.follow')}
+              </span>
             </>
           )}
         </motion.button>
@@ -146,9 +167,16 @@ function SuggestionCard({ user, onFollow, isFollowing, viewMode }: SuggestionCar
   );
 }
 
-export function SuggestionsTab() {
+export interface SuggestionsTabProps {
+  initialFilter?: 'all' | 'followers';
+  followers?: any[];
+  onFollowChange?: () => void;
+}
+
+export function SuggestionsTab({ initialFilter = 'all', followers = [], onFollowChange }: SuggestionsTabProps) {
   const [users, setUsers] = useState<SuggestedUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<SuggestedUser[]>([]);
+  const [filterType, setFilterType] = useState<'all' | 'followers'>(initialFilter);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -166,22 +194,30 @@ export function SuggestionsTab() {
   useEffect(() => { fetchSuggestions(); }, []);
 
   useEffect(() => {
-    const filtered = users.filter(u => {
-      const nameMatch = u.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const followerCount = u._count?.followers || 0;
+    // Si followers est sélectionné, on utilise followers
+    setFilterType(initialFilter);
+  }, [initialFilter]);
+
+  useEffect(() => {
+    const baseUsers = filterType === 'followers' ? followers : users;
+    
+    const filtered = baseUsers.map(u => ({ ...u, skinType: u.skinType || u.skinProfile?.skinType })).filter(u => {
+      const nameMatch = u?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      const followerCount = u?._count?.followers || 0;
       const subMatch = followerCount >= minSubs && followerCount <= maxSubs;
       return nameMatch && subMatch;
     });
     setFilteredUsers(filtered);
-  }, [users, searchQuery, minSubs, maxSubs]);
+  }, [users, followers, filterType, searchQuery, minSubs, maxSubs]);
 
-  const fetchSuggestions = async () => {
+  const fetchSuggestions = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const data = await usersService.getSuggestions();
-      const mapped = data.map(u => ({ ...u, skinType: u.skinProfile?.skinType || null }));
+      const mapped = data.map(u => ({ ...u, skinType: u.skinType || u.skinProfile?.skinType || null }));
       setUsers(mapped);
-    } catch { toast.error(t('common.error')); } finally { setLoading(false); }
+    } catch { toast.error(t('common.error')); } 
+    finally { if (!silent) setLoading(false); }
   };
 
   const handleFollow = async (id: string) => {
@@ -189,6 +225,12 @@ export function SuggestionsTab() {
       const res = await usersService.toggleFollow(id);
       setFollowingMap(prev => ({ ...prev, [id]: res.followed }));
       toast.success(res.followed ? t('common.success') : t('common.success'));
+      
+      if (res.followed && filterType === 'all') {
+         fetchSuggestions(true);
+      }
+      
+      if (onFollowChange) onFollowChange();
     } catch { toast.error(t('common.error')); }
   };
 
@@ -231,6 +273,23 @@ export function SuggestionsTab() {
                 <List className="w-5 h-5" />
               </button>
             </div>
+            
+            {/* Filter Toggle Tous/Abonnés */}
+            <div className={`flex p-1 rounded-xl ${isHcHigh ? 'border-2 border-yellow-400 bg-black' : 'bg-gray-100 dark:bg-[#1e293b]'}`}>
+              <button 
+                onClick={() => setFilterType('all')}
+                className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${filterType === 'all' ? (isHcHigh ? 'bg-yellow-400 text-black' : 'bg-white dark:bg-[#334155] text-[#0EA5E9] shadow-sm') : 'text-gray-400'}`}
+              >
+                Suggestions
+              </button>
+              <button 
+                onClick={() => setFilterType('followers')}
+                className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${filterType === 'followers' ? (isHcHigh ? 'bg-yellow-400 text-black' : 'bg-white dark:bg-[#334155] text-[#0EA5E9] shadow-sm') : 'text-gray-400'}`}
+              >
+                Mes abonné(e)s
+              </button>
+            </div>
+
             <button 
               onClick={() => setShowFilters(!showFilters)}
               className={`p-3 rounded-xl transition-all ${showFilters ? (isHcHigh ? 'bg-yellow-400 text-black' : 'bg-[#0EA5E9] text-white') : (isHcHigh ? 'border-2 border-yellow-400 text-yellow-400' : 'bg-gray-100 dark:bg-[#1e293b] text-gray-400')}`}
@@ -310,7 +369,7 @@ export function SuggestionsTab() {
               <SuggestionCard
                 user={user}
                 onFollow={handleFollow}
-                isFollowing={followingMap[user.id] || false}
+                isFollowing={followingMap[user.id] ?? (filterType === 'followers')}
                 viewMode={viewMode}
               />
             </motion.div>

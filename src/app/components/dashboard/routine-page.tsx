@@ -385,9 +385,9 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 <Sparkles className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold mb-1 tracking-tight bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent">
+                <h1 className={`text-3xl font-bold mb-1 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {t('routine.title')}{' '}
-                  <span className={isHcHigh ? 'text-cyan-400' : 'inherit'}>
+                  <span className={isHcHigh ? 'text-cyan-400' : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent'}>
                     {t('routine.skincare')}
                   </span>
                 </h1>
@@ -782,12 +782,16 @@ function RoutineReminderCard({
               <Sun className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-900">{t('routine.morning')}</p>
+              <p className="text-xs font-semibold text-gray-900 mb-1">{t('routine.morning')}</p>
               <input 
                 type="time" 
                 value={reminders.morningTime}
                 onChange={(e) => handleUpdate({ ...reminders, morningTime: e.target.value })}
-                className={`text-[11px] bg-transparent border-none p-0 focus:ring-0 cursor-pointer transition-opacity ${!reminders.morningEnabled ? 'text-gray-400 opacity-60' : 'text-gray-900 font-medium'}`}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0EA5E9]/30 outline-none ${
+                    reminders.morningEnabled 
+                      ? 'bg-white border-[#0EA5E9]/30 text-[#0EA5E9] shadow-sm hover:border-[#0EA5E9]/50' 
+                      : 'bg-transparent border-transparent text-gray-400 opacity-50 pointer-events-none'
+                }`}
               />
             </div>
           </div>
@@ -806,12 +810,16 @@ function RoutineReminderCard({
               <Moon className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-900">{t('routine.evening')}</p>
+              <p className="text-xs font-semibold text-gray-900 mb-1">{t('routine.evening')}</p>
               <input 
                 type="time" 
                 value={reminders.eveningTime}
                 onChange={(e) => handleUpdate({ ...reminders, eveningTime: e.target.value })}
-                className={`text-[11px] bg-transparent border-none p-0 focus:ring-0 cursor-pointer transition-opacity ${!reminders.eveningEnabled ? 'text-gray-400 opacity-60' : 'text-gray-900 font-medium'}`}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/30 outline-none ${
+                    reminders.eveningEnabled 
+                      ? 'bg-white border-[#8B5CF6]/30 text-[#8B5CF6] shadow-sm hover:border-[#8B5CF6]/50' 
+                      : 'bg-transparent border-transparent text-gray-400 opacity-50 pointer-events-none'
+                }`}
               />
             </div>
           </div>
