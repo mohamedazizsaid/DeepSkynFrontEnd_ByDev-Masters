@@ -16,6 +16,7 @@ import { NotificationPanel } from './notification-panel';
 import { GuidedTour } from './guided-tour';
 import { useNotificationStore } from '../../stores/notification.store';
 import { useAuthStore } from '../../stores/auth.store';
+import { useSearchParams } from 'react-router-dom';
 
 interface DashboardLayoutProps {
   onLogout: () => void;
@@ -28,8 +29,20 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
   const [viewedUserId, setViewedUserId] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const { connect, disconnect, fetchUnreadCount } = useNotificationStore();
   const { user, roles } = useAuthStore();
+
+  useEffect(() => {
+    const page = searchParams.get('page');
+    if (!page) return;
+
+    setCurrentPage(page as DashboardPageType);
+
+    const next = new URLSearchParams(searchParams);
+    next.delete('page');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (user?.sub) {

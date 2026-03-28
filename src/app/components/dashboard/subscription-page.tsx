@@ -1,21 +1,70 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowLeft, Check, Crown, Sparkles, Shield, Loader2 } from 'lucide-react';
 import { Button } from '../button';
 import { Card } from '../card';
 import { subscriptionService } from '../../../lib/services/subscription.service';
 import type { Subscription, SubscriptionPlanInfo } from '../../../lib/types';
+import toast from 'react-hot-toast';
 
 interface SubscriptionPageProps {
   onBack: () => void;
 }
 
+function normalizePlan(plan: unknown): Subscription['plan'] {
+  if (typeof plan !== 'string') return 'free';
+  const p = plan.trim();
+  if (!p) return 'free';
+
+  // Accept both backend enum styles and frontend styles
+  if (p === 'FREE' || p.toLowerCase() === 'free') return 'free';
+  if (p === 'PREMIUM' || p.toLowerCase() === 'premium') return 'premium';
+  if (
+    p === 'PREMIUM_YEARLY' ||
+    p.toLowerCase() === 'premium_yearly' ||
+    p.toLowerCase() === 'premium-yearly'
+  ) {
+    return 'premium_yearly';
+  }
+
+  return 'free';
+}
+
 export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [currentSub, setCurrentSub] = useState<Subscription | null>(null);
   const [plans, setPlans] = useState<SubscriptionPlanInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const handledCheckoutResultRef = useRef(false);
+
+  const refreshSubscription = async () => {
+    const sub = await subscriptionService.getMySubscription();
+    setCurrentSub(sub);
+    window.dispatchEvent(
+      new CustomEvent('subscription-updated', {
+        detail: { ...sub, plan: normalizePlan((sub as any)?.plan) },
+      }),
+    );
+    return sub;
+  };
+
+  const refreshUntilPlanMatches = async (expectedPlan?: string) => {
+    // Webhook may take a moment; retry a few times
+    const expected = expectedPlan ? normalizePlan(expectedPlan) : undefined;
+    for (let attempt = 0; attempt < 8; attempt++) {
+      try {
+        const sub = await refreshSubscription();
+        const actual = normalizePlan((sub as any)?.plan);
+        if (!expected || actual === expected) return;
+      } catch {
+        // ignore and retry
+      }
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -29,14 +78,48 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
       } catch { /* use defaults */ } finally { setLoading(false); }
     };
     load();
-  }, []);
 
-  const handleUpgrade = async (plan: string) => {
-    setUpgrading(true);
-    try {
-      const result = await subscriptionService.upgrade(plan);
-      setCurrentSub(result);
-    } catch { /* handle */ } finally { setUpgrading(false); }
+    // Check if returning from Stripe checkout
+    const success = searchParams.get('success');
+    const cancelled = searchParams.get('cancelled');
+    if ((success === 'true' || cancelled === 'true') && !handledCheckoutResultRef.current) {
+      handledCheckoutResultRef.current = true;
+
+      if (success === 'true') {
+        toast.success('Payment successful! Your plan has been upgraded.');
+        const expected = localStorage.getItem('pending_subscription_plan') || undefined;
+        localStorage.removeItem('pending_subscription_plan');
+        void refreshUntilPlanMatches(expected);
+      }
+
+      if (cancelled === 'true') {
+        toast.error('Payment cancelled.');
+        localStorage.removeItem('pending_subscription_plan');
+      }
+
+      // Remove flags so refresh/navigation won't re-trigger toasts
+      const next = new URLSearchParams(searchParams);
+      next.delete('success');
+      next.delete('cancelled');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const handleUpgrade = async (planId: string) => {
+    const planToUpgrade = plans.find(p => p.plan === planId);
+    if (planToUpgrade && planToUpgrade.plan !== 'free') {
+      setUpgrading(true);
+      try {
+        localStorage.setItem('pending_subscription_plan', planId);
+        const { url } = await subscriptionService.createStripeCheckout(planId);
+        if (!url) throw new Error('Missing Stripe checkout URL');
+        window.location.assign(url);
+      } catch (error) {
+        toast.error('Failed to start payment. Please try again.');
+        localStorage.removeItem('pending_subscription_plan');
+        setUpgrading(false);
+      }
+    }
   };
 
   const handleCancel = async () => {
@@ -47,52 +130,39 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
     } catch { /* handle */ } finally { setCancelling(false); }
   };
 
+
   const isPremium = currentSub?.plan === 'premium' || currentSub?.plan === 'premium_yearly';
-  const displayPlans = [
-    {
-      name: 'Free',
-      price: 0,
-      period: 'forever',
-      description: 'Perfect for getting started',
-      features: [
-        'Basic skin analysis',
-        'Personalized routine',
-        'Monthly reports',
-        '5 AI coach messages/day',
-        'Basic progress tracking'
-      ],
-      limitations: [
-        'Limited photo uploads',
-        'Standard insights',
-        'No priority support'
-      ],
-      cta: 'Current Plan',
-      current: true,
-      highlighted: false
-    },
-    {
-      name: 'Premium',
-      price: 19,
-      period: 'month',
-      description: 'For serious skincare enthusiasts',
-      features: [
-        'Advanced AI analysis',
-        'Unlimited AI coach access',
-        'Unlimited photo uploads',
-        'Detailed skin mapping',
-        'Priority support',
-        'Advanced analytics',
-        'Export reports (PDF)',
-        'Product recommendations',
-        'Real-time insights',
-        'Custom notifications'
-      ],
-      cta: 'Upgrade Now',
-      current: false,
-      highlighted: true,
-      discount: 'Save 20% with annual plan'
-    }
-  ];
+
+  const currentPlan = normalizePlan((currentSub as any)?.plan);
+
+  const subscriptionLocked = (() => {
+    if (!currentSub) return false;
+    const plan = normalizePlan((currentSub as any)?.plan);
+    if (plan === 'free') return false;
+    if ((currentSub as any)?.status !== 'active') return false;
+    const endDate = (currentSub as any)?.endDate;
+    if (!endDate) return true;
+    const end = new Date(endDate);
+    return !Number.isNaN(end.getTime()) && new Date() <= end;
+  })();
+  
+  // Transformar planos do backend para formato exibição
+  const displayPlans = plans.map((plan) => ({
+    name: plan.name,
+    plan: plan.plan,
+    price: plan.price,
+    period: plan.duration === -1 ? 'forever' : plan.duration === 365 ? 'year' : 'month',
+    currency: plan.currency,
+    features: plan.features,
+    description: plan.plan === 'free' 
+      ? 'Perfect for getting started' 
+      : plan.plan === 'premium' 
+      ? 'For serious skincare enthusiasts'
+      : 'Best value for annual commitment',
+    cta: normalizePlan((plan as any).plan) === currentPlan ? 'Current Plan' : 'Upgrade Now',
+    current: normalizePlan((plan as any).plan) === currentPlan,
+    highlighted: plan.plan === 'premium',
+  }));
 
   const faq = [
     {
@@ -113,6 +183,7 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
     }
   ];
 
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header */}
@@ -124,8 +195,15 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading ? (
+        <div className="flex justify-center items-center h-96">
+          <Loader2 className="w-8 h-8 animate-spin text-[#0EA5E9]" />
+        </div>
+      ) : (
+        <>
       {/* Pricing Cards */}
-      <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
+      <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto mb-16">
         {displayPlans.map((plan, index) => (
           <motion.div
             key={index}
@@ -146,18 +224,21 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
                 <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
                 <div className="mb-4">
                   <span className="text-5xl font-bold">
-                    {plan.price === 0 ? 'Free' : `$${plan.price}`}
+                    {plan.price === 0 ? 'Free' : plan.price}
                   </span>
                   {plan.price > 0 && (
-                    <span className="text-[#6B7280]">/{plan.period}</span>
+                    <>
+                      <span className="text-[#6B7280]"> {plan.currency}</span>
+                      <div className="text-sm text-[#6B7280]">/{plan.period}</div>
+                    </>
                   )}
                 </div>
-                <p className="text-[#6B7280]">{plan.description}</p>
+                {/* <p className="text-[#6B7280]">{plan.description}</p>
                 {plan.discount && (
                   <div className="mt-2 text-sm text-[#10B981] font-medium">
                     {plan.discount}
                   </div>
-                )}
+                )} */}
               </div>
 
               <div className="space-y-3 mb-8">
@@ -169,25 +250,26 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
                     <span className="text-sm text-[#374151]">{feature}</span>
                   </div>
                 ))}
-                
-                {plan.limitations && plan.limitations.map((limitation, i) => (
-                  <div key={i} className="flex items-start gap-3 opacity-50">
-                    <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <div className="w-3 h-0.5 bg-[#9CA3AF]" />
-                    </div>
-                    <span className="text-sm text-[#6B7280]">{limitation}</span>
-                  </div>
-                ))}
               </div>
 
               <Button
                 className="w-full"
                 variant={plan.current ? 'outline' : 'primary'}
-                disabled={plan.current || upgrading}
-                onClick={() => !plan.current && handleUpgrade(plan.name.toUpperCase())}
+                disabled={
+                  plan.current ||
+                  upgrading ||
+                  plan.plan === 'free' ||
+                  (subscriptionLocked && !plan.current)
+                }
+                onClick={() =>
+                  (!plan.current &&
+                    plan.plan !== 'free' &&
+                    !(subscriptionLocked && !plan.current)) &&
+                  handleUpgrade(plan.plan)
+                }
               >
                 {upgrading && !plan.current ? <Loader2 className="w-5 h-5 animate-spin" /> : plan.current && <Check className="w-5 h-5" />}
-                {plan.current ? (isPremium ? 'Current Plan' : 'Current Plan') : plan.cta}
+                {plan.current ? 'Current Plan' : plan.cta}
               </Button>
             </Card>
           </motion.div>
@@ -253,6 +335,8 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
           </div>
         </Card>
       </motion.div>
+        </>
+      )}
     </div>
   );
 }

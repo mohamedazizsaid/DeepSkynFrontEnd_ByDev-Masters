@@ -43,6 +43,7 @@ import { useNotificationStore } from '../../../stores/notification.store';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
 import { Button } from '../button';
 import WeatherNavbar from '../../../components/weather/weather-navbar';
+import { subscriptionService } from '../../../lib/services/subscription.service';
 
 interface UserNavbarProps {
     currentPage: string;
@@ -50,6 +51,23 @@ interface UserNavbarProps {
     onLogout?: () => void;
     onToggleNotifications?: () => void;
     user?: { name: string; avatar?: string } | null;
+}
+
+function normalizePlan(plan: unknown): 'free' | 'premium' | 'premium_yearly' {
+    if (typeof plan !== 'string') return 'free';
+    const p = plan.trim();
+    if (!p) return 'free';
+
+    if (p === 'FREE' || p.toLowerCase() === 'free') return 'free';
+    if (p === 'PREMIUM' || p.toLowerCase() === 'premium') return 'premium';
+    if (
+        p === 'PREMIUM_YEARLY' ||
+        p.toLowerCase() === 'premium_yearly' ||
+        p.toLowerCase() === 'premium-yearly'
+    ) {
+        return 'premium_yearly';
+    }
+    return 'free';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -98,6 +116,8 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
     const [showAccessibility, setShowAccessibility] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
+    const [currentPlan, setCurrentPlan] = useState<string>('free');
+
     const {
         theme,
         contrastMode,
@@ -137,6 +157,51 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
         clearSpokenText,
         t,
     } = useAccessibilityStore();
+
+    useEffect(() => {
+        let mounted = true;
+
+        const loadCurrentPlan = async () => {
+            try {
+                const sub = await subscriptionService.getMySubscription();
+                if (mounted) setCurrentPlan(normalizePlan((sub as any)?.plan));
+            } catch {
+                if (mounted) setCurrentPlan('free');
+            }
+        };
+
+        loadCurrentPlan();
+
+        // Refetch plan when returning from Stripe checkout
+        const handleFocus = () => {
+            loadCurrentPlan();
+        };
+
+        const handleSubscriptionUpdated = (e: Event) => {
+            const detail = (e as CustomEvent).detail as { plan?: string } | undefined;
+            if (detail?.plan) {
+                setCurrentPlan(normalizePlan(detail.plan));
+                return;
+            }
+            loadCurrentPlan();
+        };
+
+        window.addEventListener('focus', handleFocus);
+        window.addEventListener('subscription-updated', handleSubscriptionUpdated);
+
+        return () => {
+            mounted = false;
+            window.removeEventListener('focus', handleFocus);
+            window.removeEventListener('subscription-updated', handleSubscriptionUpdated);
+        };
+    }, []);
+
+    const currentPlanLabel =
+        currentPlan === 'premium_yearly'
+            ? 'Premium Annuel'
+            : currentPlan === 'premium'
+                ? 'Premium Mensuel'
+                : 'Free';
 
     // Close dropdown on outside click
     useEffect(() => {
@@ -352,7 +417,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                                 <div className="flex items-center gap-1.5 mt-0.5">
                                                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gradient-to-r from-[#0EA5E9]/10 to-[#06B6D4]/10 text-[#0EA5E9] dark:text-[#38BDF8]">
                                                                         <Sparkles className="w-2.5 h-2.5" />
-                                                                        Premium
+                                                                        {currentPlanLabel}
                                                                     </span>
                                                                 </div>
                                                             </div>

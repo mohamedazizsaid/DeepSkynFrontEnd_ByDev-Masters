@@ -22,4 +22,5 @@ export interface SubscriptionPlanInfo {
   price: number;
   currency: string;
   features: string[];
+  duration?: number;
 }

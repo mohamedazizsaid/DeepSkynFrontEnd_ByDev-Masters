@@ -9,6 +9,8 @@ import { SignUpPage } from './pages/signup-page';
 import { ForgotPasswordPage } from './pages/forgot-password-page';
 import { ResetPasswordPage } from './pages/reset-password-page';
 import { GoogleCallbackPage } from './pages/google-callback-page';
+import { PaymentSuccessPage } from './pages/payment-success-page';
+import { PaymentCancelPage } from './pages/payment-cancel-page';
 import { OnboardingFlow } from './components/onboarding-flow';
 import { DashboardLayout } from './components/dashboard-layout';
 import { AnimatedBackground } from './components/animated-background';
@@ -110,6 +112,18 @@ function AppContent() {
         <Route path="/dashboard/*" element={
           <ProtectedRoute>
             <DashboardLayout onLogout={handleLogout} />
+          </ProtectedRoute>
+        } />
+
+        {/* Stripe return URLs */}
+        <Route path="/payment/success" element={
+          <ProtectedRoute>
+            <PaymentSuccessPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/payment/cancel" element={
+          <ProtectedRoute>
+            <PaymentCancelPage />
           </ProtectedRoute>
         } />
 
