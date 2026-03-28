@@ -243,7 +243,7 @@ interface Face3DViewerProps {
     order: number;
   }>;
   highlightedZone: string | null;
-  onZoneClick: (zoneId: string, categories: string[]) => void;
+  onZoneClick: (zoneId: string, zoneLabel: string, zoneDescription: string, categories: string[]) => void;
   /**
    * Path to the .glb file. Defaults to '/models/face.glb'.
    * You can also pass a blob URL or any accessible URL.
@@ -425,17 +425,30 @@ export function Face3DViewer({ steps, highlightedZone, onZoneClick, glbUrl = '/m
                 matchedProducts={zoneProducts[zone.id] || []}
                 isActive={highlightedZone === zone.id}
                 onClick={() => {
-                  onZoneClick(zone.id, zone.categories);
+                  onZoneClick(zone.id, zone.label, zone.description, zone.categories);
                   const productsCount = (zoneProducts[zone.id] || []).length;
-                  toast((t) => (
-                    <div className="flex flex-col gap-1">
-                      <strong className="text-sm font-semibold text-gray-800">{zone.label}</strong>
-                      <span className="text-xs text-gray-500">
-                        {zone.description}
-                        {productsCount > 0 && ` (${productsCount} produit${productsCount > 1 ? 's' : ''} associé${productsCount > 1 ? 's' : ''})`}
-                      </span>
-                    </div>
-                  ), { duration: 3000 });
+                  toast.dismiss('zone-context-toast');
+                  toast.custom(
+                    <div className="w-[300px] rounded-xl border border-sky-200 bg-white/95 backdrop-blur-sm shadow-lg p-3">
+                      <div className="flex items-start gap-2">
+                        <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-[#0EA5E9]" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 leading-tight">{zone.label}</p>
+                          <p className="text-xs text-gray-600 mt-1 leading-relaxed">{zone.description}</p>
+                          <p className="text-[11px] text-[#0369a1] mt-2 font-medium">
+                            {productsCount > 0
+                              ? `${productsCount} produit${productsCount > 1 ? 's' : ''} de votre routine ${productsCount > 1 ? 'sont' : 'est'} lié${productsCount > 1 ? 's' : ''} à cette zone`
+                              : 'Aucun produit de la routine actuelle n\'est lié à cette zone'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>,
+                    {
+                      id: 'zone-context-toast',
+                      duration: 3600,
+                      position: 'top-right',
+                    }
+                  );
                 }}
               />
             ))}

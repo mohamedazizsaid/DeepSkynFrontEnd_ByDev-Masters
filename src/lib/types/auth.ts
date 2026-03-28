@@ -3,6 +3,7 @@ export interface LoginRequest {
   username: string;
   password: string;
   twoFactorCode?: string;
+  captchaToken?: string;
 }
 
 export interface LoginResponse {
@@ -39,6 +40,19 @@ export interface RegisterRequest {
   name: string;
   firstName?: string;
   lastName?: string;
+  captchaToken?: string;
+}
+
+export interface SignupCodeRequest extends RegisterRequest {}
+
+export interface SignupCodeVerifyRequest {
+  email: string;
+  code: string;
+}
+
+export interface SignupCodeResponse {
+  message: string;
+  expiresInSeconds: number;
 }
 
 export interface UserProfile {

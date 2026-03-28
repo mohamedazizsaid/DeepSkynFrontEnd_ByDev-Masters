@@ -68,7 +68,7 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
         setAdviceLoading(true);
         try {
           const adv = await analysisService.getAdvice();
-          setAdvice(adv);
+          setAdvice(typeof adv === 'string' ? adv : null);
         } catch { /* non-blocking */ }
         finally { setAdviceLoading(false); }
       }
@@ -139,9 +139,10 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
   if (loading) {
     return (
       <div className="p-8 max-w-7xl mx-auto">
-        <div className="space-y-6 mt-12">
+        <div className="space-y-6 mt-8">
+          <div className="h-32 rounded-3xl border border-[#DBEAFE] bg-gradient-to-r from-[#F0F9FF] via-white to-[#ECFEFF] animate-pulse" />
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-48 bg-[#F3F4F6] rounded-2xl animate-pulse" />
+            <div key={i} className="h-48 rounded-3xl border border-[#E2E8F0] bg-gradient-to-br from-white to-[#F8FAFC] animate-pulse" />
           ))}
         </div>
       </div>
@@ -152,50 +153,52 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
   if (!hasAnalysis) {
     return (
       <div className="p-8 max-w-7xl mx-auto">
-        <div className="flex flex-col items-center justify-center py-20 text-center mt-12">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center mb-6">
-            <Microscope className="w-10 h-10 text-white" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">No Analysis Yet</h2>
-          <p className="text-[#6B7280] mb-8 max-w-md">
-            Upload photos of your skin or use the live camera scan to get your first AI-powered skin analysis.
-          </p>
-          <div className="flex gap-3">
-            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
-            <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-              {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-              {uploading ? 'Uploading...' : 'Upload Photos'}
-            </Button>
-            <Button onClick={() => setScanOpen(true)} className="bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4]">
-              <Camera className="w-5 h-5" />
-              Live Scan
-            </Button>
-          </div>
-          {analysis?.status === 'processing' && (
-            <div className="mt-8 flex items-center gap-2 text-[#0EA5E9]">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="font-medium">Analysis in progress...</span>
+        <Card className="mt-12 border-[#DBEAFE] bg-gradient-to-br from-white via-[#F8FBFF] to-[#F0F9FF] shadow-xl shadow-[#0EA5E9]/10">
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center mb-6 shadow-lg shadow-[#0EA5E9]/30">
+              <Microscope className="w-11 h-11 text-white" />
             </div>
-          )}
-          {analysis?.status === 'failed' && (
-            <div className="mt-8 flex items-center gap-2 text-[#EF4444]">
-              <AlertTriangle className="w-5 h-5" />
-              <span className="font-medium">Analysis failed.</span>
-              <button
-                onClick={async () => {
-                  try {
-                    await analysisService.retry(analysis.id);
-                    toast.success('Retrying analysis...');
-                    setTimeout(() => loadData(), 5000);
-                  } catch { toast.error('Retry failed.'); }
-                }}
-                className="underline ml-1"
-              >
-                Retry
-              </button>
+            <h2 className="text-3xl font-bold mb-2 text-[#0F172A]">No Analysis Yet</h2>
+            <p className="text-[#64748B] mb-8 max-w-md leading-relaxed">
+              Upload photos of your skin or use the live camera scan to get your first AI-powered skin analysis.
+            </p>
+            <div className="flex gap-3">
+              <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                {uploading ? 'Uploading...' : 'Upload Photos'}
+              </Button>
+              <Button onClick={() => setScanOpen(true)} className="bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4]">
+                <Camera className="w-5 h-5" />
+                Live Scan
+              </Button>
             </div>
-          )}
-        </div>
+            {analysis?.status === 'processing' && (
+              <div className="mt-8 flex items-center gap-2 text-[#0EA5E9]">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="font-medium">Analysis in progress...</span>
+              </div>
+            )}
+            {analysis?.status === 'failed' && (
+              <div className="mt-8 flex items-center gap-2 text-[#EF4444]">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="font-medium">Analysis failed.</span>
+                <button
+                  onClick={async () => {
+                    try {
+                      await analysisService.retry(analysis.id);
+                      toast.success('Retrying analysis...');
+                      setTimeout(() => loadData(), 5000);
+                    } catch { toast.error('Retry failed.'); }
+                  }}
+                  className="underline ml-1"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+          </div>
+        </Card>
         <CameraScanModal open={scanOpen} onClose={() => setScanOpen(false)} onAnalysisSaved={loadData} />
       </div>
     );
@@ -203,19 +206,24 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
 
   // ─── Main analysis view ─── with icon
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-8 max-w-7xl mx-auto relative">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-20 right-0 h-60 w-60 rounded-full bg-[#0EA5E9]/10 blur-3xl" />
+        <div className="absolute bottom-0 left-0 h-72 w-72 rounded-full bg-[#06B6D4]/10 blur-3xl" />
+      </div>
+
       {/* Header */}
-      <div className="mb-12">
+      <div className="mb-10">
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center flex-shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#0EA5E9]/25">
             <Microscope className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold mb-2">Detailed Skin Analysis</h1>
-            <p className="text-[#6B7280]">Analyzed on {formatAnalysisDate(analysis.createdAt)}</p>
+            <h1 className="text-3xl font-bold mb-1 text-[#0F172A]">Detailed Skin Analysis</h1>
+            <p className="text-[#64748B]">Analyzed on {formatAnalysisDate(analysis.createdAt)}</p>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
           <Button variant="outline" onClick={() => setScanOpen(true)}>
             <Camera className="w-5 h-5" />
@@ -230,9 +238,9 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
 
       {/* Overall Score */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-        <Card>
+        <Card className="border-[#BFDBFE] bg-gradient-to-br from-white to-[#F0F9FF] shadow-xl shadow-[#0EA5E9]/10">
           <div className="text-center py-8">
-            <h2 className="text-xl font-bold mb-4">Overall Skin Health Score</h2>
+            <h2 className="text-xl font-bold mb-4 text-[#0F172A]">Overall Skin Health Score</h2>
             <div className="text-7xl font-bold bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent mb-4">
               {overallScore}
             </div>
@@ -246,6 +254,14 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
                 {scoreChange > 0 ? '+' : ''}{scoreChange} points from last analysis
               </div>
             )}
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-white border border-[#DBEAFE] text-xs font-medium text-[#0369A1]">
+                {stats?.totalAnalyses || 0} analyses
+              </span>
+              <span className="px-3 py-1 rounded-full bg-white border border-[#DBEAFE] text-xs font-medium text-[#0369A1]">
+                {(stats?.averageHealthScore ?? overallScore)}/100 average score
+              </span>
+            </div>
             {skinAge !== null && (
               <p className="text-sm text-[#6B7280] mt-3">
                 Estimated Skin Age: <span className="font-bold text-[#374151]">{skinAge}</span>
@@ -261,7 +277,7 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
       <div className="grid lg:grid-cols-2 gap-8 mb-8">
         {/* Radar Chart */}
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-          <Card className="h-full">
+          <Card className="h-full border-[#E2E8F0] shadow-md">
             <h3 className="text-lg font-bold mb-6">Skin Profile Overview</h3>
             {radarData.length > 0 ? (
               <div className="h-80">
@@ -284,7 +300,7 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
 
         {/* Face Map / Uploaded Image */}
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-          <Card className="h-full">
+          <Card className="h-full border-[#E2E8F0] shadow-md">
             <h3 className="text-lg font-bold mb-6">
               {analysis.images.length > 0 ? 'Analyzed Image' : 'Face Mapping'}
             </h3>
@@ -327,7 +343,7 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
       {/* Detailed Breakdown */}
       {detailedScores.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-8">
-          <Card>
+          <Card className="border-[#E2E8F0] shadow-md">
             <h3 className="text-lg font-bold mb-6">Detailed Breakdown</h3>
             <div className="space-y-6">
               {detailedScores.map((item: DetailedScoreItem, index: number) => (
@@ -380,7 +396,7 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
       {/* Recommendations */}
       {analysis.recommendations && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="mb-8">
-          <Card>
+          <Card className="border-[#E2E8F0] shadow-md">
             <h3 className="text-lg font-bold mb-6">Personalized Recommendations</h3>
             <div className="grid md:grid-cols-3 gap-6">
               {/* Products */}
@@ -454,7 +470,7 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
 
       {/* AI Insights */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
-        <Card>
+        <Card className="border-[#BFDBFE] bg-gradient-to-br from-white to-[#F8FBFF] shadow-lg shadow-[#0EA5E9]/10">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center">
               <Sparkles className="w-6 h-6 text-white" />
@@ -464,16 +480,20 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
               <p className="text-xs text-[#6B7280]">Powered by Gemini AI</p>
             </div>
           </div>
-          <div className="prose prose-sm max-w-none text-[#374151]">
+          <div className="prose prose-sm max-w-none text-[#334155]">
             {adviceLoading ? (
               <div className="flex items-center gap-2 text-[#6B7280]">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>Generating personalized advice...</span>
               </div>
             ) : advice ? (
-              <p className="whitespace-pre-line">{advice}</p>
+              <div className="rounded-2xl border border-[#DBEAFE] bg-white p-4">
+                <p className="whitespace-pre-line">{advice}</p>
+              </div>
             ) : results?.summary ? (
-              <p className="whitespace-pre-line">{results.summary}</p>
+              <div className="rounded-2xl border border-[#DBEAFE] bg-white p-4">
+                <p className="whitespace-pre-line">{results.summary}</p>
+              </div>
             ) : (
               <p className="text-[#6B7280]">No AI insights available for this analysis.</p>
             )}

@@ -2,6 +2,7 @@ export { ProSignAvatar } from './pro-sign-avatar';
 export { HandSignAvatar } from './hand-sign-avatar';
 export { AnimatedHand } from './animated-hand';
 export { SignAvatarRenderer } from './sign-avatar-renderer';
+export { SignAvatar3D } from './sign-avatar-3d';
 export {
   LSF_GESTURE_DATABASE,
   findGesture,

@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { Mail, Lock, User, CheckCircle, ArrowRight } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Mail, Lock, User, CheckCircle, ArrowRight, ShieldCheck, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/button';
 import { Input } from '../components/input';
@@ -14,7 +13,7 @@ import { useAccessibilityStore } from '../../stores/accessibility.store';
 export function SignUpPage() {
   const { t } = useAccessibilityStore();
   const navigate = useNavigate();
-  const { register, isLoading } = useAuthStore();
+  const { requestSignupCode, verifySignupCode } = useAuthStore();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -23,6 +22,32 @@ export function SignUpPage() {
     confirmPassword: '',
   });
   const [captchaValue, setCaptchaValue] = useState<string | null>(null);
+  const [signupStep, setSignupStep] = useState<'details' | 'verify'>('details');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [codeExpiresIn, setCodeExpiresIn] = useState<number>(0);
+  const [resendCountdown, setResendCountdown] = useState<number>(0);
+  const [isRequestingCode, setIsRequestingCode] = useState(false);
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [isResendingCode, setIsResendingCode] = useState(false);
+
+  const formattedCountdown = useMemo(() => {
+    const minutes = Math.floor(Math.max(codeExpiresIn, 0) / 60);
+    const seconds = Math.max(codeExpiresIn, 0) % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }, [codeExpiresIn]);
+
+  useEffect(() => {
+    if (codeExpiresIn <= 0 && resendCountdown <= 0) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setCodeExpiresIn((prev) => (prev > 0 ? prev - 1 : 0));
+      setResendCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [codeExpiresIn, resendCountdown]);
 
   const handleGoogleLogin = () => {
     window.location.href = authService.getGoogleAuthUrl();
@@ -32,7 +57,7 @@ export function SignUpPage() {
     window.location.href = authService.getFacebookAuthUrl();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!captchaValue) {
@@ -46,17 +71,67 @@ export function SignUpPage() {
     }
 
     try {
-      await register({
+      setIsRequestingCode(true);
+      const response = await requestSignupCode({
         email: formData.email,
         password: formData.password,
         name: formData.name,
         captchaToken: captchaValue || undefined,
       });
-      toast.success(t('auth.signupSuccess'));
-      // Redirect to onboarding flow (which now starts with Profile Setup)
-      navigate('/onboarding');
+
+      setCodeExpiresIn(response.expiresInSeconds || 600);
+      setResendCountdown(60);
+      setSignupStep('verify');
+      toast.success(t('auth.signupCodeSent'));
     } catch (error: any) {
       toast.error(error?.response?.data?.message || t('auth.registerError'));
+    } finally {
+      setIsRequestingCode(false);
+    }
+  };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!verificationCode || verificationCode.trim().length !== 6) {
+      toast.error(t('auth.signupCodeInvalid'));
+      return;
+    }
+
+    try {
+      setIsVerifyingCode(true);
+      await verifySignupCode(formData.email, verificationCode.trim());
+      toast.success(t('auth.signupSuccess'));
+      navigate('/onboarding');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || t('auth.signupCodeVerifyError'));
+    } finally {
+      setIsVerifyingCode(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendCountdown > 0) {
+      return;
+    }
+
+    try {
+      setIsResendingCode(true);
+      const response = await requestSignupCode({
+        email: formData.email,
+        password: formData.password,
+        name: formData.name,
+        captchaToken: captchaValue || undefined,
+      });
+
+      setVerificationCode('');
+      setCodeExpiresIn(response.expiresInSeconds || 600);
+      setResendCountdown(60);
+      toast.success(t('auth.signupCodeResent'));
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || t('auth.signupCodeResendError'));
+    } finally {
+      setIsResendingCode(false);
     }
   };
 
@@ -66,7 +141,31 @@ export function SignUpPage() {
       subtitle={t('auth.signupSubtitle')}
       imageSrc="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=2670&auto=format&fit=crop"
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={signupStep === 'details' ? handleRequestCode : handleVerifyCode} className="space-y-5">
+        <div className="rounded-2xl border border-[#E5E7EB] bg-gradient-to-br from-white via-[#F8FAFC] to-[#EEF6FF] p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-[#64748B] font-semibold">{t('auth.signupSecurityStep')}</p>
+              <p className="text-sm text-[#0F172A] font-semibold mt-1">
+                {signupStep === 'details' ? t('auth.signupStepDetails') : t('auth.signupStepVerify')}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-[#0EA5E9]">
+              <ShieldCheck className="w-5 h-5" />
+              <span className="text-xs font-bold">{signupStep === 'details' ? '1/2' : '2/2'}</span>
+            </div>
+          </div>
+
+          <div className="mt-4 h-2 w-full rounded-full bg-[#E2E8F0] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] transition-all duration-300"
+              style={{ width: signupStep === 'details' ? '50%' : '100%' }}
+            />
+          </div>
+        </div>
+
+        {signupStep === 'details' ? (
+          <>
         <Input
           type="text"
           label={t('auth.fullName')}
@@ -122,10 +221,66 @@ export function SignUpPage() {
           />
         </div>
 
-        <Button type="submit" className="w-full h-12 text-base shadow-lg shadow-[#0EA5E9]/20" loading={isLoading} disabled={!captchaValue}>
-          {t('auth.createAccount')}
+        <Button type="submit" className="w-full h-12 text-base shadow-lg shadow-[#0EA5E9]/20" loading={isRequestingCode} disabled={!captchaValue || isRequestingCode}>
+          {t('auth.signupSendCode')}
           <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
+          </>
+        ) : (
+          <>
+            <div className="rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] p-4 text-sm text-[#075985]">
+              <p className="font-semibold">{t('auth.signupCodeHint')}</p>
+              <p className="mt-1 text-xs text-[#0C4A6E]">
+                {t('auth.signupCodeHintEmail')} <span className="font-semibold">{formData.email}</span>
+              </p>
+            </div>
+
+            <Input
+              type="text"
+              label={t('auth.signupCodeLabel')}
+              placeholder="123456"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              icon={<ShieldCheck className="w-5 h-5" />}
+              required
+            />
+
+            <div className="rounded-xl border border-[#E2E8F0] bg-white p-3 flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-[#64748B]">{t('auth.signupCodeExpires')}</p>
+                <p className="text-sm font-semibold text-[#0F172A]">{formattedCountdown}</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleResendCode}
+                disabled={isResendingCode || resendCountdown > 0}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-[#0EA5E9] disabled:text-[#94A3B8] disabled:cursor-not-allowed"
+              >
+                <RotateCcw className="w-4 h-4" />
+                {resendCountdown > 0
+                  ? `${t('auth.signupCodeResendIn')} ${resendCountdown}s`
+                  : t('auth.signupCodeResend')}
+              </button>
+            </div>
+
+            <Button type="submit" className="w-full h-12 text-base shadow-lg shadow-[#0EA5E9]/20" loading={isVerifyingCode} disabled={isVerifyingCode}>
+              {t('auth.signupVerifyCode')}
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => setSignupStep('details')}
+              className="w-full text-sm text-[#64748B] hover:text-[#0F172A] transition-colors"
+            >
+              {t('auth.back')}
+            </button>
+          </>
+        )}
 
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
@@ -140,6 +295,7 @@ export function SignUpPage() {
           <button
             type="button"
             onClick={handleGoogleLogin}
+            disabled={signupStep === 'verify'}
             className="flex items-center justify-center gap-3 px-6 py-3 border border-[#E5E7EB] rounded-xl hover:bg-[#F9FAFB] hover:border-[#D1D5DB] transition-all bg-white text-[#374151] font-medium group"
           >
             <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="Google" />
@@ -149,6 +305,7 @@ export function SignUpPage() {
           <button
             type="button"
             onClick={handleFacebookLogin}
+            disabled={signupStep === 'verify'}
             className="flex items-center justify-center gap-3 px-6 py-3 border border-[#E5E7EB] rounded-xl hover:bg-[#F9FAFB] hover:border-[#D1D5DB] transition-all bg-white text-[#374151] font-medium group"
           >
             <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="Facebook" />
