@@ -21,12 +21,13 @@ export function ShareRoutineButton({
       onClick={onShare}
       disabled={isLoading}
       loading={isLoading}
-      variant="primary"
-      size="md"
+      variant="ghost"
+      size="sm"
+      className="!p-2.5 gap-0 rounded-2xl border border-cyan-200 bg-cyan-50/70 text-cyan-700 hover:bg-cyan-100 hover:text-cyan-800 hover:border-cyan-300 shadow-sm"
       title="Partager cette routine sur votre fil"
+      aria-label="Partager cette routine"
     >
       <Share2 size={18} />
-      <span>Partager</span>
     </Button>
   );
 }

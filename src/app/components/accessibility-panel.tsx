@@ -339,7 +339,7 @@ export function AccessibilityPanel() {
             style={{ fontSize: '16px' }} // Force fixed base font size to prevent zoom scaling
             className="
         fixed bottom-[24px] right-[24px] z-[9999]
-        w-[360px] max-h-[85vh] overflow-y-auto
+        w-[360px] max-h-[85vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden
         rounded-2xl
         bg-[var(--background)]/95 backdrop-blur-2xl
         border border-[var(--border)]

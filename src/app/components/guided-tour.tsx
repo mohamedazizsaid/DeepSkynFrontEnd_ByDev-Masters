@@ -137,11 +137,13 @@ const TOUR_STORAGE_KEY = 'deepskyn_tour_completed';
 interface GuidedTourProps {
   /** Force the tour to display (for replay) */
   forceShow?: boolean;
+  /** Temporarily disable auto start logic */
+  suppressAutoStart?: boolean;
   /** Callback when tour is completed or skipped */
   onComplete?: () => void;
 }
 
-export function GuidedTour({ forceShow = false, onComplete }: GuidedTourProps) {
+export function GuidedTour({ forceShow = false, suppressAutoStart = false, onComplete }: GuidedTourProps) {
   const { t, language, theme } = useAccessibilityStore();
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -158,12 +160,12 @@ export function GuidedTour({ forceShow = false, onComplete }: GuidedTourProps) {
       return;
     }
     const completed = localStorage.getItem(TOUR_STORAGE_KEY);
-    if (!completed) {
+    if (!completed && !suppressAutoStart) {
       // Small delay so dashboard has time to mount and render
       const timer = setTimeout(() => setIsActive(true), 1200);
       return () => clearTimeout(timer);
     }
-  }, [forceShow]);
+  }, [forceShow, suppressAutoStart]);
 
   // Highlight the current step's element
   const highlightElement = useCallback((stepIndex: number) => {

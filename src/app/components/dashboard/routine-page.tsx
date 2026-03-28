@@ -43,6 +43,13 @@ interface StepItem {
   order: number;
 }
 
+interface ZoneContext {
+  id: string;
+  label: string;
+  description: string;
+  matchedStepName: string | null;
+}
+
 function mapRoutineSteps(steps: RoutineStep[], t: any): StepItem[] {
   return steps.map((s, i) => ({
     id: s.id || `step-${i}-${Date.now()}`,
@@ -65,6 +72,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
   const [currentAdvice, setCurrentAdvice] = useState<AIAdviceResponse | null>(null);
   const [highlightedStep, setHighlightedStep] = useState<string | null>(null);
   const [highlightedZone, setHighlightedZone] = useState<string | null>(null);
+  const [zoneContext, setZoneContext] = useState<ZoneContext | null>(null);
   const [show3D, setShow3D] = useState(true);
 
   // Product recommendation state
@@ -80,6 +88,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
   const [pmRoutine, setPmRoutine] = useState<Routine | null>(null);
 
   const { theme, contrastMode, t } = useAccessibilityStore();
+  const { success, error } = useNotification();
   const isHcHigh = contrastMode === 'high';
   const isHcMedium = contrastMode === 'medium';
   const isDark = theme === 'dark';
@@ -96,6 +105,12 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
 
   const currentSteps = activeTab === 'am' ? amSteps : pmSteps;
   const setCurrentSteps = activeTab === 'am' ? setAmSteps : setPmSteps;
+  const totalDuration = currentSteps.reduce((sum, step) => sum + (Number(step.duration) || 0), 0);
+  const completedCount = currentSteps.filter((s) => s.completed).length;
+  const completionRate = currentSteps.length > 0 ? Math.round((completedCount / currentSteps.length) * 100) : 0;
+  const nextStep = [...currentSteps]
+    .filter((s) => !s.completed)
+    .sort((a, b) => a.order - b.order)[0];
 
   // ─── Load routines and auto-select tab based on time ───
   useEffect(() => {
@@ -321,11 +336,83 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
     }
   };
 
+  // ─── Handle complete step ───
+  const handleCompleteStep = async (stepId: string) => {
+    const activeRoutineId = activeTab === 'am' ? amRoutine?.id : pmRoutine?.id;
+    const targetStep = currentSteps.find((s) => s.id === stepId);
+    if (!targetStep) return;
+
+    const nextExpectedStep = [...currentSteps]
+      .filter((s) => !s.completed)
+      .sort((a, b) => a.order - b.order)[0];
+    const isOutOfOrder = !!nextExpectedStep && nextExpectedStep.id !== targetStep.id;
+
+    // Instant UI feedback
+    setCurrentSteps((prev) =>
+      prev.map((step) => (step.id === stepId ? { ...step, completed: true } : step))
+    );
+
+    if (!activeRoutineId) {
+      if (isOutOfOrder && nextExpectedStep) {
+        requestAdvice(
+          'reorder',
+          `L'utilisateur a termine "${targetStep.name}" avant "${nextExpectedStep.name}". Donne un conseil pour garder la routine dans le bon ordre.`
+        );
+      }
+      success('Etape marquee comme terminee.');
+      return;
+    }
+
+    try {
+      const stepOrder = Number(targetStep.order) || currentSteps.findIndex((s) => s.id === stepId) + 1;
+      const updatedRoutine = await routineService.completeStep(activeRoutineId, stepOrder);
+
+      if (updatedRoutine?.steps) {
+        const updatedSteps = mapRoutineSteps(updatedRoutine.steps, t);
+        if (activeTab === 'am') {
+          setAmRoutine(updatedRoutine);
+          setAmSteps(updatedSteps);
+        } else {
+          setPmRoutine(updatedRoutine);
+          setPmSteps(updatedSteps);
+        }
+      }
+
+      if (isOutOfOrder && nextExpectedStep) {
+        requestAdvice(
+          'reorder',
+          `L'utilisateur a termine "${targetStep.name}" avant "${nextExpectedStep.name}". Donne un conseil pour garder la routine dans le bon ordre.`
+        );
+      }
+
+      success('Etape terminee avec succes.');
+    } catch {
+      // Rollback UI on API failure
+      setCurrentSteps((prev) =>
+        prev.map((step) => (step.id === stepId ? { ...step, completed: false } : step))
+      );
+      error('Impossible de marquer cette etape pour le moment.');
+    }
+  };
+
   // ─── Handle 3D zone click ───
-  const handleZoneClick = (zoneId: string, categories: string[]) => {
+  const handleZoneClick = (
+    zoneId: string,
+    zoneLabel: string,
+    zoneDescription: string,
+    categories: string[]
+  ) => {
     setHighlightedZone(zoneId);
     // Find matching step
     const match = currentSteps.find((s) => categories.includes(s.category));
+
+    setZoneContext({
+      id: zoneId,
+      label: zoneLabel,
+      description: zoneDescription,
+      matchedStepName: match?.name || null,
+    });
+
     if (match) {
       setHighlightedStep(match.id);
       setTimeout(() => {
@@ -443,7 +530,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 }`}
               >
                 {show3D ? <Box className="w-4 h-4" /> : <List className="w-4 h-4" />}
-                {show3D ? '3D' : t('common.list')}
+                {show3D ? '' : t('common.list')}
               </motion.button>
             </div>
           </div>
@@ -471,7 +558,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
             onClick={() => setActiveTab('pm')}
             className={`flex-1 px-6 py-4 rounded-2xl font-semibold text-sm transition-all duration-300 ${
               activeTab === 'pm'
-                ? isHcHigh ? 'bg-black text-[#8B5CF6] border-2 border-yellow-400' : 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-lg shadow-[#6366F1]/20'
+                ? isHcHigh ? 'bg-black text-cyan-300 border-2 border-yellow-400' : 'bg-gradient-to-r from-[#0284C7] to-[#06B6D4] text-white shadow-lg shadow-[#0284C7]/20'
                 : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300 shadow-sm'
             }`}
             whileHover={{ scale: 1.02 }}
@@ -540,6 +627,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                         step={step}
                         index={index}
                         isHighlighted={highlightedStep === step.id}
+                        onComplete={() => handleCompleteStep(step.id)}
                         onRemove={() => handleRemoveStep(step.id)}
                         onRecommend={() => handleRecommendProduct(step)}
                       />
@@ -576,6 +664,36 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 <TipsCard />
               </div>
             )}
+
+            {show3D && (
+              <div className="mt-6 rounded-2xl border border-cyan-100 bg-gradient-to-br from-white via-cyan-50/40 to-sky-50/70 p-5 shadow-sm">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <h3 className="text-sm font-bold text-gray-900">Contexte intelligent de la routine</h3>
+                  <span className="rounded-full border border-cyan-200 bg-white/80 px-2.5 py-1 text-[10px] font-semibold text-cyan-700">
+                    {activeTab === 'am' ? t('routine.morningRoutine') : t('routine.eveningRoutine')}
+                  </span>
+                </div>
+
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div className="rounded-xl border border-cyan-100 bg-white/80 px-3 py-3">
+                    <p className="text-[11px] text-gray-500 mb-1">Etapes actives</p>
+                    <p className="text-xl font-bold text-gray-900 leading-none">{currentSteps.length}</p>
+                  </div>
+                  <div className="rounded-xl border border-cyan-100 bg-white/80 px-3 py-3">
+                    <p className="text-[11px] text-gray-500 mb-1">Duree estimee</p>
+                    <p className="text-xl font-bold text-gray-900 leading-none">{totalDuration}s</p>
+                  </div>
+                  <div className="rounded-xl border border-cyan-100 bg-white/80 px-3 py-3">
+                    <p className="text-[11px] text-gray-500 mb-1">Progression</p>
+                    <p className="text-xl font-bold text-gray-900 leading-none">{completionRate}%</p>
+                  </div>
+                </div>
+
+                <p className="mt-4 text-xs text-cyan-800/90 leading-relaxed">
+                  Clique sur les tags 3D pour voir les zones de soin associees et aligner l'ordre d'application avec chaque region du visage.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* ─── 3D Face Viewer OR Info Panel ─── */}
@@ -598,6 +716,35 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 />
               </Suspense>
             ) : null}
+
+            {show3D && (
+              <div className="relative overflow-hidden rounded-2xl border border-sky-100 bg-gradient-to-br from-white via-sky-50/50 to-cyan-50/70 p-4 shadow-sm min-h-[116px]">
+                <div className="pointer-events-none absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top_right,_rgba(14,165,233,0.15),_transparent_45%)]" />
+                {zoneContext ? (
+                  <div className="relative space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex h-2.5 w-2.5 rounded-full bg-[#0EA5E9] shadow-[0_0_0_4px_rgba(14,165,233,0.12)]" />
+                      <p className="text-sm font-bold text-gray-900 tracking-tight">{zoneContext.label}</p>
+                      <span className="ml-auto rounded-full border border-sky-200 bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-sky-700">
+                        Zone active
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 leading-relaxed">{zoneContext.description}</p>
+                    <p className="rounded-xl border border-sky-100 bg-white/80 px-3 py-2 text-xs font-medium text-[#0369a1]">
+                      {zoneContext.matchedStepName
+                        ? `Etape associee: ${zoneContext.matchedStepName}`
+                        : 'Aucune etape de votre routine actuelle n\'est associee a cette zone.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="relative h-full flex items-center rounded-xl border border-dashed border-sky-200 bg-white/70 px-3 py-3">
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      Touchez un tag sur le visage 3D pour afficher le contexte de la zone ici.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Info Cards */}
             <div className={show3D ? 'grid sm:grid-cols-2 gap-4' : 'space-y-4'}>
@@ -626,6 +773,78 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                    else setActiveTab('pm');
                  }}
                />
+              {!show3D && (
+                <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/40 to-cyan-50/60 p-5 shadow-sm min-h-[190px]">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-bold text-gray-900">Contexte & priorite</h3>
+                    <span className="rounded-full border border-emerald-200 bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                      Smart flow
+                    </span>
+                  </div>
+
+                  {nextStep ? (
+                    <div className="space-y-3">
+                      <div className="rounded-xl border border-emerald-100 bg-white/85 px-3 py-3">
+                        <p className="text-[11px] text-gray-500 mb-1">Prochaine etape conseillee</p>
+                        <p className="text-sm font-semibold text-gray-900 leading-snug">#{nextStep.order} • {nextStep.name}</p>
+                      </div>
+
+                      <div className="rounded-xl border border-cyan-100 bg-cyan-50/60 px-3 py-2">
+                        <p className="text-[11px] text-cyan-800 leading-relaxed">
+                          Astuce IA: complete les etapes dans l'ordre pour garder une meilleure coherence d'application et recevoir des conseils plus pertinents.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-full flex items-center rounded-xl border border-dashed border-emerald-200 bg-white/70 px-3 py-3">
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        Routine completee. Excellent rythme, tu peux regenerer une nouvelle routine IA si besoin.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="mt-4 h-1.5 w-full rounded-full bg-emerald-100 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-500 transition-all duration-500"
+                      style={{ width: `${completionRate}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              {show3D && (
+                <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/40 to-sky-50/70 p-5 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-bold text-gray-900">Insights de session</h3>
+                    <span className="rounded-full bg-indigo-100 text-indigo-700 px-2 py-0.5 text-[10px] font-semibold">
+                      Live
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs text-gray-600">
+                    <div className="flex items-center justify-between rounded-lg border border-indigo-100 bg-white/80 px-3 py-2">
+                      <span>Etapes terminees</span>
+                      <span className="font-semibold text-gray-900">{completedCount}/{currentSteps.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-indigo-100 bg-white/80 px-3 py-2">
+                      <span>Mode actif</span>
+                      <span className="font-semibold text-gray-900">{show3D ? 'Visualisation 3D' : 'Liste simple'}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-indigo-100 bg-white/80 px-3 py-2">
+                      <span>Rappel principal</span>
+                      <span className="font-semibold text-gray-900">
+                        {activeTab === 'am' ? reminders.morningTime : reminders.eveningTime}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 h-1.5 w-full rounded-full bg-indigo-100 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-indigo-500 transition-all duration-500"
+                      style={{ width: `${completionRate}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

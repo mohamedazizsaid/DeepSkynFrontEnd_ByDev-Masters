@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { authService } from '../lib/services/auth.service';
-import type { UserProfile, RegisterRequest } from '../lib/types';
+import type {
+  UserProfile,
+  RegisterRequest,
+  SignupCodeRequest,
+  SignupCodeResponse,
+} from '../lib/types';
 
 interface AuthState {
   user: UserProfile | null;
@@ -13,6 +18,8 @@ interface AuthState {
   // Actions
   login: (username: string, password: string, twoFactorCode?: string, captchaToken?: string) => Promise<{ requiresTwoFactor: boolean; success: boolean }>;
   register: (data: RegisterRequest & { captchaToken?: string }) => Promise<void>;
+  requestSignupCode: (data: SignupCodeRequest) => Promise<SignupCodeResponse>;
+  verifySignupCode: (email: string, code: string) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   faceLogin: (email: string) => Promise<{ success: boolean }>;
   logout: () => Promise<void>;
@@ -68,6 +75,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await get().loadUser();
     } catch (error) {
       set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  requestSignupCode: async (data) => {
+    try {
+      const response = await authService.requestSignupCode(data);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  verifySignupCode: async (email, code) => {
+    try {
+      await authService.verifySignupCode({ email, code });
+      set({ isAuthenticated: true });
+      await get().loadUser();
+    } catch (error) {
       throw error;
     }
   },

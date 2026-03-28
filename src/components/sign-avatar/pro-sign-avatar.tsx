@@ -7,10 +7,10 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Play, Pause, RotateCcw, SkipForward, Volume2, Settings, Maximize2 } from 'lucide-react';
-import { SignAvatarRenderer, type AvatarFrame, type AvatarKeypoint } from './sign-avatar-renderer';
+import { type AvatarFrame, type AvatarKeypoint } from './sign-avatar-renderer';
+import { SignAvatar3D } from './sign-avatar-3d';
 import {
   translateTextToGestures,
-  type LSFGesture,
 } from './lsf-gesture-database';
 import type { Frame } from '../../lib/services/sign-translation.service';
 
@@ -118,6 +118,57 @@ function hasMeaningfulBackendMotion(frames: AvatarFrame[]): boolean {
   return averageMotion > 0.0008;
 }
 
+function blendKeypoints(from: AvatarKeypoint[], to: AvatarKeypoint[], t: number): AvatarKeypoint[] {
+  const len = Math.min(from.length, to.length);
+  const result: AvatarKeypoint[] = [];
+  for (let i = 0; i < len; i += 1) {
+    result.push({
+      id: to[i].id,
+      x: from[i].x + (to[i].x - from[i].x) * t,
+      y: from[i].y + (to[i].y - from[i].y) * t,
+      z: from[i].z + (to[i].z - from[i].z) * t,
+    });
+  }
+  for (let i = len; i < to.length; i += 1) {
+    result.push({ ...to[i] });
+  }
+  return result;
+}
+
+function blendFrames(from: AvatarFrame, to: AvatarFrame, t: number): AvatarFrame {
+  return {
+    hand_right_keypoints: blendKeypoints(from.hand_right_keypoints, to.hand_right_keypoints, t),
+    hand_left_keypoints: blendKeypoints(from.hand_left_keypoints, to.hand_left_keypoints, t),
+    pose_keypoints: blendKeypoints(from.pose_keypoints, to.pose_keypoints, t),
+  };
+}
+
+function withCoarticulation(sequence: { frames: AvatarFrame[]; duration: number; label: string }[]): { frames: AvatarFrame[]; duration: number; label: string }[] {
+  if (sequence.length < 2) return sequence;
+
+  return sequence.map((gesture, idx) => {
+    if (idx === 0) return gesture;
+
+    const prev = sequence[idx - 1];
+    const prevLast = prev.frames[prev.frames.length - 1];
+    const currFirst = gesture.frames[0];
+    if (!prevLast || !currFirst) return gesture;
+
+    const transitionFrames: AvatarFrame[] = [];
+    const bridgeSteps = 4;
+    for (let step = 1; step <= bridgeSteps; step += 1) {
+      const t = step / (bridgeSteps + 1);
+      const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      transitionFrames.push(blendFrames(prevLast, currFirst, eased));
+    }
+
+    return {
+      ...gesture,
+      frames: [...transitionFrames, ...gesture.frames],
+    };
+  });
+}
+
 export function ProSignAvatar({
   text,
   frames,
@@ -131,8 +182,6 @@ export function ProSignAvatar({
   compact = false,
   isDark = true,
 }: ProSignAvatarProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rendererRef = useRef<SignAvatarRenderer | null>(null);
   const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [isPlaying, setIsPlaying] = useState(autoPlay);
@@ -142,6 +191,7 @@ export function ProSignAvatar({
   const [avatarStyle, setAvatarStyle] = useState(style);
   const [speed, setSpeed] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [activeFrame, setActiveFrame] = useState<AvatarFrame | null>(null);
 
   // Determine gesture sequence
   const gestureSequence = useMemo<{ frames: AvatarFrame[]; duration: number; label: string }[]>(() => {
@@ -163,49 +213,30 @@ export function ProSignAvatar({
 
     // Priority 2: Local LSF gesture database
     const lsfGestures = translateTextToGestures(text);
-    return lsfGestures.map(g => ({
+    const baseSequence = lsfGestures.map(g => ({
       frames: g.frames,
       duration: g.frameDuration,
       label: g.word,
     }));
+    return withCoarticulation(baseSequence);
   }, [text, frames, metadata]);
 
   const totalGestures = gestureSequence.length;
 
-  // Initialize renderer
   useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const containerWidth = canvasRef.current.parentElement?.clientWidth || 600;
-    const containerHeight = canvasRef.current.parentElement?.clientHeight || 480;
-
-    const renderer = new SignAvatarRenderer(canvasRef.current, {
-      width: Math.min(containerWidth, 800),
-      height: Math.min(containerHeight, 800),
-      style: avatarStyle,
-      bgGradient: isDark
-        ? ['#0f0c29', '#302b63', '#24243e']
-        : ['#667eea', '#764ba2', '#6B8DD6'],
-    });
-
-    rendererRef.current = renderer;
-    renderer.startLoop();
-
-    return () => {
-      renderer.dispose();
-      rendererRef.current = null;
-    };
-  }, [avatarStyle, isDark]);
+    setCurrentGestureIndex(0);
+    setCurrentFrameInGesture(0);
+    setActiveFrame(gestureSequence[0]?.frames[0] ?? null);
+  }, [gestureSequence]);
 
   // Play gesture animation
   const playGesture = useCallback((gestureIdx: number, frameIdx: number = 0) => {
-    if (!rendererRef.current) return;
     if (gestureIdx >= gestureSequence.length) {
       // All gestures complete
       setIsPlaying(false);
       setCurrentGestureIndex(0);
       setCurrentFrameInGesture(0);
-      rendererRef.current.resetPose();
+      setActiveFrame(null);
       onComplete?.();
       return;
     }
@@ -215,17 +246,16 @@ export function ProSignAvatar({
       // Move to next gesture with a small pause
       setCurrentGestureIndex(gestureIdx + 1);
       setCurrentFrameInGesture(0);
+      const hasNextGesture = gestureIdx + 1 < gestureSequence.length;
       animTimerRef.current = setTimeout(() => {
         playGesture(gestureIdx + 1, 0);
-      }, 300 / speed); // pause between gestures
+      }, (hasNextGesture ? 75 : 200) / speed);
       return;
     }
 
     setCurrentGestureIndex(gestureIdx);
     setCurrentFrameInGesture(frameIdx);
-
-    // Set the target frame
-    rendererRef.current.setTargetFrame(gesture.frames[frameIdx]);
+  setActiveFrame(gesture.frames[frameIdx]);
 
     // Schedule next frame
     animTimerRef.current = setTimeout(() => {
@@ -268,7 +298,7 @@ export function ProSignAvatar({
     if (animTimerRef.current) clearTimeout(animTimerRef.current);
     setCurrentGestureIndex(0);
     setCurrentFrameInGesture(0);
-    rendererRef.current?.resetPose();
+    setActiveFrame(gestureSequence[0]?.frames[0] ?? null);
     setIsPlaying(true);
   };
 
@@ -279,8 +309,8 @@ export function ProSignAvatar({
     setCurrentFrameInGesture(0);
     if (isPlaying) {
       playGesture(nextIdx, 0);
-    } else if (rendererRef.current && gestureSequence[nextIdx]) {
-      rendererRef.current.setTargetFrame(gestureSequence[nextIdx].frames[0]);
+    } else if (gestureSequence[nextIdx]) {
+      setActiveFrame(gestureSequence[nextIdx].frames[0]);
     }
   };
 
@@ -310,15 +340,19 @@ export function ProSignAvatar({
       className={`relative overflow-hidden ${isFullscreen ? 'fixed inset-0 z-[9999] bg-black' : ''}`}
       style={isFullscreen ? {} : { width, height }}
     >
-      {/* Canvas */}
+      {/* Full 3D Avatar */}
       <div className="relative w-full h-full">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full object-contain"
-          style={{
-            borderRadius: isFullscreen ? 0 : '1rem',
-          }}
-        />
+        <div
+          className="w-full h-full"
+          style={{ borderRadius: isFullscreen ? 0 : '1rem', overflow: 'hidden' }}
+        >
+          <SignAvatar3D
+            frame={activeFrame}
+            styleMode={avatarStyle}
+            isDark={isDark}
+            utterance={currentLabel || text}
+          />
+        </div>
 
         {/* Current word overlay */}
         <AnimatePresence mode="wait">

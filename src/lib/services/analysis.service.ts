@@ -68,8 +68,9 @@ export const analysisService = {
 
   /** Get AI-generated personalized skincare advice */
   async getAdvice(): Promise<string> {
-    const res = await apiClient.get<string>('/analyses/advice');
-    return res.data;
+    const res = await apiClient.get<string | { advice?: string }>('/analyses/advice');
+    if (typeof res.data === 'string') return res.data;
+    return res.data?.advice || 'Unable to generate advice at this time. Please try again later.';
   },
 
   /** Compare two analyses and get the diff */

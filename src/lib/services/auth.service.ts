@@ -7,6 +7,9 @@ import type {
   ForgotPasswordRequest,
   ResetPasswordRequest,
   RegisterRequest,
+  SignupCodeRequest,
+  SignupCodeResponse,
+  SignupCodeVerifyRequest,
   UserProfile,
   TwoFactorGenerateResponse,
   TwoFactorStatusResponse,
@@ -25,6 +28,20 @@ export const authService = {
 
   async register(data: RegisterRequest): Promise<LoginResponse> {
     const res = await apiClient.post<LoginResponse>('/auth/register', data);
+    if (res.data.tokens) {
+      localStorage.setItem('access_token', res.data.tokens.access_token);
+      localStorage.setItem('refresh_token', res.data.tokens.refresh_token);
+    }
+    return res.data;
+  },
+
+  async requestSignupCode(data: SignupCodeRequest): Promise<SignupCodeResponse> {
+    const res = await apiClient.post<SignupCodeResponse>('/auth/register/request-code', data);
+    return res.data;
+  },
+
+  async verifySignupCode(data: SignupCodeVerifyRequest): Promise<LoginResponse> {
+    const res = await apiClient.post<LoginResponse>('/auth/register/verify-code', data);
     if (res.data.tokens) {
       localStorage.setItem('access_token', res.data.tokens.access_token);
       localStorage.setItem('refresh_token', res.data.tokens.refresh_token);

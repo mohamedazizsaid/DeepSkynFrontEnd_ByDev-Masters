@@ -78,21 +78,31 @@ export function AIAdviceModal({ isOpen, onClose, advice, isLoading }: AIAdviceMo
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md mx-auto"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl mx-auto"
             style={{ zIndex: 101 }}
           >
             <div
-              className="relative rounded-3xl border border-gray-100 p-6 shadow-2xl overflow-hidden bg-white"
+              className="relative rounded-3xl border border-gray-100 p-7 shadow-2xl overflow-hidden bg-white"
               style={{
                 backdropFilter: 'blur(40px)',
               }}
             >
+              {/* Top gradient accent bar */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#0EA5E9] via-[#8B5CF6] to-[#EC4899]" />
+
               {/* Decorative glow */}
               <div
                 className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-20"
                 style={{
                   background: `radial-gradient(circle, ${config.color}, transparent)`,
                   filter: 'blur(60px)',
+                }}
+              />
+              <div
+                className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full opacity-10"
+                style={{
+                  background: 'radial-gradient(circle, #0EA5E9, transparent)',
+                  filter: 'blur(50px)',
                 }}
               />
 
@@ -130,9 +140,9 @@ export function AIAdviceModal({ isOpen, onClose, advice, isLoading }: AIAdviceMo
                 /* Advice content */
                 <div>
                   {/* Header */}
-                  <div className="flex items-center gap-3 mb-5">
+                  <div className="flex items-center gap-3 mb-5 mt-1">
                     <div
-                      className="p-2.5 rounded-xl"
+                      className="p-2.5 rounded-2xl"
                       style={{
                         backgroundColor: config.bgColor,
                         border: `1px solid ${config.borderColor}`,
@@ -142,8 +152,8 @@ export function AIAdviceModal({ isOpen, onClose, advice, isLoading }: AIAdviceMo
                       {config.icon}
                     </div>
                     <div>
-                      <h3 className="text-gray-900 font-bold text-base">Avis de l'IA</h3>
-                      <p className="text-xs" style={{ color: config.color }}>
+                      <h3 className="text-gray-900 font-bold text-lg leading-tight">Avis intelligent de l'IA</h3>
+                      <p className="text-xs font-semibold" style={{ color: config.color }}>
                         {config.label}
                       </p>
                     </div>
@@ -152,22 +162,29 @@ export function AIAdviceModal({ isOpen, onClose, advice, isLoading }: AIAdviceMo
 
                   {/* Advice text */}
                   <div
-                    className="rounded-2xl p-4 mb-6 bg-gray-50 border border-gray-100"
+                    className="rounded-2xl p-5 mb-6"
+                    style={{
+                      background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)',
+                      border: '1px solid #e2e8f0',
+                    }}
                   >
                     <p className="text-gray-700 text-sm leading-relaxed">{advice.advice}</p>
                   </div>
 
                   {/* AI disclaimer */}
-                  <p className="text-gray-400 text-[10px] text-center mb-4">
-                    💡 Avis généré par IA — consultez un dermatologue pour des conseils médicaux
-                  </p>
+                  <div className="flex items-start gap-2 mb-5 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                    <span className="text-base leading-none">💡</span>
+                    <p className="text-gray-400 text-[10px] leading-relaxed">
+                      Avis généré par IA pour la cohérence de votre routine. Consultez un dermatologue pour des conseils médicaux personnalisés.
+                    </p>
+                  </div>
 
                   {/* CTA */}
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={onClose}
-                    className="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white shadow-lg shadow-[#0EA5E9]/20 hover:shadow-xl hover:shadow-[#0EA5E9]/30 transition-all"
+                    className="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white shadow-lg shadow-[#0EA5E9]/20 hover:shadow-xl hover:shadow-[#0EA5E9]/30 transition-all"
                   >
                     Compris ✨
                   </motion.button>
