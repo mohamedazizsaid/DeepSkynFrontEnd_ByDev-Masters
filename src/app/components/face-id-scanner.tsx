@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import * as faceapi from 'face-api.js';
 import { motion, AnimatePresence } from 'motion/react';
 import { Camera, ShieldCheck, ShieldAlert, Loader2, X } from 'lucide-react';
-import { Button } from './button';
+import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 
 interface FaceIDScannerProps {
@@ -80,7 +80,7 @@ export function FaceIDScanner({ userEmail, userAvatarUrl, onSuccess, onClose }: 
                 if (detection) {
                     setReferenceDescriptor(detection.descriptor);
                 } else {
-                    toast.error("Format d'image non supporté ou visage trop petit.");
+                    toast.error("Avatar non disponible. Veuillez réessayer.");
                 }
             } catch (error) {
                 console.error("Error loading reference image:", error);
@@ -133,11 +133,12 @@ export function FaceIDScanner({ userEmail, userAvatarUrl, onSuccess, onClose }: 
     };
 
     const handleScan = async () => {
-        if (!videoRef.current || !isModelsLoaded || !referenceDescriptor) {
-            if (!referenceDescriptor && !isReferenceLoading) {
-                toast.error("Le visage de référence n'est pas encore chargé");
-            }
+        if (!videoRef.current || !isModelsLoaded) {
             return;
+        }
+
+        if (!referenceDescriptor && !isReferenceLoading) {
+            toast('Avatar non disponible. Analyse en mode camera.', { icon: '⚠️' });
         }
 
         setIsScanning(true);
@@ -145,7 +146,9 @@ export function FaceIDScanner({ userEmail, userAvatarUrl, onSuccess, onClose }: 
         setMatchScore(0);
 
         try {
-            const faceMatcher = new faceapi.FaceMatcher(referenceDescriptor, 0.6);
+            const faceMatcher = referenceDescriptor
+                ? new faceapi.FaceMatcher(referenceDescriptor, 0.6)
+                : null;
 
             // 2. Continuous detection from video
             let matchFound = false;
@@ -159,11 +162,13 @@ export function FaceIDScanner({ userEmail, userAvatarUrl, onSuccess, onClose }: 
                 const detections = await faceapi.detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
 
                 if (detections) {
-                    const match = faceMatcher.findBestMatch(detections.descriptor);
-                    const score = 1 - match.distance;
+                    const score = faceMatcher
+                        ? 1 - faceMatcher.findBestMatch(detections.descriptor).distance
+                        : detections.detection.score;
                     setMatchScore(score);
 
-                    if (score > 0.55) { // Threshold for "looking like the user"
+                    const isValidMatch = faceMatcher ? score > 0.55 : score > 0.45;
+                    if (isValidMatch) {
                         currentProgress += Math.random() * 15 + 10; // Increment progress
                         if (currentProgress >= 100) {
                             currentProgress = 100;
@@ -206,46 +211,137 @@ export function FaceIDScanner({ userEmail, userAvatarUrl, onSuccess, onClose }: 
         return () => stopVideo();
     }, []);
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden shadow-2xl max-w-lg w-full relative border border-white/20"
-            >
-                <button
-                    onClick={() => { stopVideo(); onClose(); }}
-                    className="absolute top-6 right-6 z-10 p-2 rounded-full bg-black/10 hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20 transition-colors"
-                >
-                    <X className="w-5 h-5" />
-                </button>
+    if (typeof document === 'undefined') {
+        return null;
+    }
 
-                <div className="p-8 pb-4">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                            <Camera className="w-6 h-6 text-blue-500" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold">FaceID Login</h2>
-                            <p className="text-sm text-slate-500">{userEmail}</p>
-                        </div>
-                    </div>
+    return createPortal(
+        <AnimatePresence>
+          {/* Full-page blur overlay */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            onClick={() => { stopVideo(); onClose(); }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(255, 255, 255, 0.3)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              zIndex: 199,
+              willChange: 'backdrop-filter, opacity',
+            } as React.CSSProperties}
+          />
+
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, y: 60, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 30, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+            className="fixed inset-0 z-[201] flex items-center justify-center p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative w-full max-w-lg rounded-3xl border border-gray-100 shadow-2xl overflow-hidden bg-white">
+              {/* Top gradient accent bar */}
+              <div className="h-1.5 w-full bg-gradient-to-r from-[#0EA5E9] via-[#8B5CF6] to-[#EC4899]" />
+
+              {/* Decorative glow circles */}
+              <div
+                className="absolute -top-24 -right-24 w-48 h-48 rounded-full opacity-10 pointer-events-none"
+                style={{
+                  background: 'radial-gradient(circle, #8B5CF6, transparent)',
+                  filter: 'blur(60px)',
+                }}
+              />
+              <div
+                className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full opacity-5 pointer-events-none"
+                style={{
+                  background: 'radial-gradient(circle, #0EA5E9, transparent)',
+                  filter: 'blur(50px)',
+                }}
+              />
+
+              {/* Close button */}
+              <button
+                onClick={() => { stopVideo(); onClose(); }}
+                className="absolute top-5 right-5 p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="p-8">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-6">
+                  <div
+                    className="p-2.5 rounded-2xl flex-shrink-0"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(14,165,233,0.1), rgba(139,92,246,0.1))',
+                      border: '1px solid rgba(14,165,233,0.2)',
+                    }}
+                  >
+                    <Camera className="w-6 h-6 text-[#0EA5E9]" />
+                  </div>
+                  <div>
+                    <h3 className="text-gray-900 font-bold text-xl leading-tight">FaceID Login</h3>
+                    <p className="text-gray-500 text-xs mt-0.5">{userEmail}</p>
+                  </div>
                 </div>
 
-                <div className="relative aspect-square mx-8 mb-8 overflow-hidden rounded-[2rem] bg-slate-100 dark:bg-slate-800 border-4 border-slate-200 dark:border-slate-700">
+                {/* Scan Area */}
+                <motion.div
+                  initial={{ scale: 0.98, opacity: 0 }} 
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="relative aspect-square mx-auto mb-6 overflow-hidden rounded-2xl bg-slate-900 border border-gray-200 shadow-lg"
+                >
                     {scanStatus === 'loading' ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-                            <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
-                            <p className="text-sm font-medium animate-pulse">Chargement de l'IA...</p>
-                        </div>
-                    ) : scanStatus === 'idle' ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-                            <div className="w-24 h-24 rounded-full bg-blue-500/10 flex items-center justify-center">
-                                <ShieldCheck className="w-12 h-12 text-blue-500" />
+                        <motion.div
+                          className="absolute inset-0 flex flex-col items-center justify-center gap-4"
+                        >
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                            className="relative w-16 h-16"
+                          >
+                            <div
+                              className="absolute inset-0 rounded-full"
+                              style={{
+                                border: '3px solid transparent',
+                                borderTopColor: '#0EA5E9',
+                                borderRightColor: '#8B5CF6',
+                              }}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <motion.div
+                                animate={{ scale: [1, 1.15, 1] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                              >
+                                <Camera className="w-7 h-7 text-[#0EA5E9]" />
+                              </motion.div>
                             </div>
-                            <p className="text-center px-8 text-slate-500">Prêt pour le scan facial</p>
-                            <Button onClick={startVideo}>Démarrer la caméra</Button>
-                        </div>
+                          </motion.div>
+                          <p className="text-sm font-medium text-white text-center">Chargement de l'IA...</p>
+                        </motion.div>
+                    ) : scanStatus === 'idle' ? (
+                        <motion.div
+                          className="absolute inset-0 flex flex-col items-center justify-center gap-4"
+                        >
+                          <div className="w-20 h-20 rounded-full bg-[#0EA5E9]/10 flex items-center justify-center">
+                            <ShieldCheck className="w-10 h-10 text-[#0EA5E9]" />
+                          </div>
+                          <p className="text-center px-6 text-gray-400 text-sm">Prêt pour le scan facial</p>
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={startVideo}
+                            className="px-6 py-2 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white shadow-lg shadow-[#0EA5E9]/20"
+                          >
+                            Démarrer la caméra
+                          </motion.button>
+                        </motion.div>
                     ) : (
                         <>
                             <video
@@ -377,29 +473,40 @@ export function FaceIDScanner({ userEmail, userAvatarUrl, onSuccess, onClose }: 
                             </div>
                         </>
                     )}
-                </div>
+                </motion.div>
 
-                <div className="px-8 pb-8 text-center">
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-center"
+                >
                     {scanStatus === 'scanning' && (
-                        <div className="space-y-4">
-                            <p className="text-slate-500 text-sm">
+                        <div className="space-y-3">
+                            <p className="text-gray-600 text-sm">
                                 Positionnez votre visage au centre du cercle
                             </p>
-                            {!isScanning ? (
-                                <Button
-                                    className="w-full h-12"
-                                    onClick={handleScan}
-                                    disabled={!referenceDescriptor || isReferenceLoading}
+                                                        {!isScanning ? (
+                                <motion.button
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  onClick={handleScan}
+                                                                    disabled={isReferenceLoading}
+                                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm text-white shadow-lg transition-all ${
+                                                                        isReferenceLoading
+                                      ? 'bg-gray-400 cursor-not-allowed'
+                                      : 'bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] shadow-[#0EA5E9]/20 hover:shadow-xl'
+                                  }`}
                                 >
-                                    {isReferenceLoading ? (
-                                        <div className="flex items-center gap-2">
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            Chargement...
-                                        </div>
-                                    ) : "Commencer l'analyse"}
-                                </Button>
+                                  {isReferenceLoading ? (
+                                    <>
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                      Chargement...
+                                    </>
+                                  ) : "Commencer l'analyse"}
+                                </motion.button>
                             ) : (
-                                <div className="flex items-center justify-center gap-2 text-blue-500 font-medium py-3">
+                                <div className="flex items-center justify-center gap-2 text-[#0EA5E9] font-medium py-3">
                                     <Loader2 className="w-5 h-5 animate-spin" />
                                     Analyse en cours...
                                 </div>
@@ -407,15 +514,29 @@ export function FaceIDScanner({ userEmail, userAvatarUrl, onSuccess, onClose }: 
                         </div>
                     )}
                     {scanStatus === 'success' && (
-                        <p className="text-green-500 font-bold text-lg">Visage reconnu !</p>
+                        <motion.p
+                          initial={{ scale: 0.9 }}
+                          animate={{ scale: 1 }}
+                          className="text-green-500 font-bold text-lg"
+                        >
+                          Visage reconnu !
+                        </motion.p>
                     )}
                     {scanStatus === 'error' && (
-                        <Button className="w-full" variant="outline" onClick={() => { setScanStatus('idle'); setScanProgress(0); setMatchScore(0); }}>
-                            Réessayer
-                        </Button>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => { setScanStatus('idle'); setScanProgress(0); setMatchScore(0); }}
+                          className="w-full py-3 rounded-xl font-bold text-sm text-gray-700 border border-gray-200 hover:bg-gray-50 transition-all"
+                        >
+                          Réessayer
+                        </motion.button>
                     )}
-                </div>
-            </motion.div>
-        </div>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+                </AnimatePresence>,
+                document.body
     );
 }

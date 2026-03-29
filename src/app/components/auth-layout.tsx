@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from './button';
 
@@ -13,34 +13,75 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children, title, subtitle, imageSrc }: AuthLayoutProps) {
     const navigate = useNavigate();
+    const [imageError, setImageError] = useState(false);
+
+    const defaultImage = "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=2574&auto=format&fit=crop&crop=entropy&cs=tinysrgb";
+
+    const floatingBadges = [
+        {
+            text: 'Analyse complete',
+            className: 'top-10 left-8',
+            delay: 0,
+            duration: 9,
+        },
+        {
+            text: 'Routine personnalisee',
+            className: 'top-24 right-8',
+            delay: 0.1,
+            duration: 10.2,
+        },
+        {
+            text: 'Resultats en 60 sec',
+            className: 'top-1/2 left-10',
+            delay: 0.2,
+            duration: 11,
+        },
+    ];
+
+    const decorDots = [
+        { className: 'left-[6%] top-[20%] h-24 w-24 bg-[#3BBDF4]/12' },
+        { className: 'left-[38%] top-[12%] h-40 w-40 bg-[#F472B6]/12' },
+        { className: 'right-[14%] top-[28%] h-28 w-28 bg-[#3BBDF4]/15' },
+        { className: 'right-[8%] bottom-[14%] h-44 w-44 bg-[#FADADD]/35' },
+    ];
 
     return (
-        <div className="min-h-screen relative" style={{ zIndex: 1 }}>
+        <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-[#F0F6FF] via-[#E8F3FF] to-[#F0F6FF] dark:from-[#0f172a] dark:via-[#1a2844] dark:to-[#16213e]" style={{ zIndex: 1, fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif" }}>
+            <div className="pointer-events-none absolute inset-0">
+                {decorDots.map((dot, index) => (
+                    <motion.div
+                        key={dot.className}
+                        className={`absolute rounded-full blur-2xl ${dot.className}`}
+                        animate={{ y: [0, -14, 0], x: [0, index % 2 === 0 ? 7 : -7, 0] }}
+                        transition={{ duration: 8 + index, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                ))}
+            </div>
+
             {/* Navbar */}
-            <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-[#E5E7EB]">
+            <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/40 dark:border-white/10 bg-white/75 dark:bg-[#1a2844]/75 backdrop-blur-xl">
                 <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
                     <button
                         onClick={() => navigate('/')}
                         className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                     >
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center shadow-lg shadow-[#0EA5E9]/20">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center shadow-lg shadow-[#3BBDF4]/30">
                             <Sparkles className="w-6 h-6 text-white" />
                         </div>
-                        <span className="text-2xl font-bold bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent">
+                        <span className="text-2xl font-bold bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent tracking-tight">
                             DeepSkyn
                         </span>
                     </button>
 
                     <div className="flex items-center gap-4">
-                        {/* Contextual buttons could go here, for now keeping it simple */}
-                        <Button variant="ghost" className="hidden sm:flex" onClick={() => navigate('/')}>
+                        <Button variant="ghost" className="hidden sm:flex text-gray-900 dark:text-gray-100" onClick={() => navigate('/')}>
                             Retour à l'accueil
                         </Button>
                     </div>
                 </div>
             </nav>
 
-            <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-[calc(100vh-80px)] flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-20">
+            <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-[calc(100vh-80px)] flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-20 relative z-10">
 
                 {/* Left Side - Form */}
                 <motion.div
@@ -49,10 +90,10 @@ export function AuthLayout({ children, title, subtitle, imageSrc }: AuthLayoutPr
                     transition={{ duration: 0.5 }}
                     className="w-full max-w-md flex-shrink-0"
                 >
-                    <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 sm:p-10">
+                    <div className="bg-white/92 dark:bg-[#1a2844]/92 rounded-3xl shadow-[0_30px_70px_-35px_rgba(59,189,244,0.45)] dark:shadow-[0_30px_70px_-35px_rgba(14,165,233,0.15)] border border-white/60 dark:border-white/10 p-8 sm:p-10 backdrop-blur-xl">
                         <div className="mb-8 text-center sm:text-left">
-                            <h1 className="text-3xl font-extrabold text-[#111827] mb-3 tracking-tight">{title}</h1>
-                            <p className="text-[#6B7280]">{subtitle}</p>
+                            <h1 className="text-3xl font-extrabold text-[#1A1A2E] dark:text-white mb-3 tracking-tight leading-[1.2]">{title}</h1>
+                            <p className="text-[#475569] dark:text-gray-400 leading-relaxed">{subtitle}</p>
                         </div>
                         {children}
                     </div>
@@ -65,37 +106,56 @@ export function AuthLayout({ children, title, subtitle, imageSrc }: AuthLayoutPr
                     transition={{ duration: 0.5, delay: 0.2 }}
                     className="w-full max-w-lg lg:max-w-xl hidden lg:block"
                 >
-                    <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl h-[600px] border-[8px] border-white">
-                        <img
-                            className="absolute inset-0 h-full w-full object-cover"
-                            src={imageSrc || "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=2574&auto=format&fit=crop"}
-                            alt="DeepSkyn Experience"
-                        />
-                        {/* Gradient Overlays */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#111827]/80 via-transparent to-transparent" />
+                    <div className="relative rounded-[2.5rem] overflow-hidden shadow-[0_35px_80px_-35px_rgba(26,26,46,0.55)] dark:shadow-[0_35px_80px_-35px_rgba(0,0,0,0.8)] h-[600px] border-[8px] border-white/85 dark:border-gray-700/85 bg-gradient-to-br from-[#F0F6FF] to-[#E8F3FF] dark:from-[#1a2844] dark:to-[#16213e]">
+                        {!imageError ? (
+                            <img
+                                className="absolute inset-0 h-full w-full object-cover"
+                                src={imageSrc || defaultImage}
+                                alt="DeepSkyn Experience"
+                                onError={() => setImageError(true)}
+                            />
+                        ) : (
+                            <div className="absolute inset-0 h-full w-full bg-gradient-to-br from-[#F0F6FF] via-[#E8F3FF] to-[#F0F6FF] dark:from-[#1a2844] dark:via-[#1a3a52] dark:to-[#162335] flex items-center justify-center">
+                                <div className="text-center text-[#64748B] dark:text-gray-400">
+                                    <Sparkles className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                    <p className="text-sm font-medium">Image en cours de chargement...</p>
+                                </div>
+                            </div>
+                        )}
 
-                        {/* Context Content */}
-                        <div className="absolute bottom-0 left-0 right-0 p-10 text-white">
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#1A1A2E]/10 via-transparent to-[#1A1A2E]/72" />
+
+                        {floatingBadges.map((badge) => (
                             <motion.div
-                                initial={{ y: 20, opacity: 0 }}
+                                key={badge.text}
+                                className={`absolute ${badge.className} rounded-full border border-white/45 bg-white/30 px-4 py-2 text-xs font-semibold text-white backdrop-blur-lg shadow-lg`}
+                                initial={{ opacity: 0, y: 8, x: 0 }}
+                                animate={{ opacity: 1, y: [-8, 8, -8], x: [-3, 3, -3] }}
+                                transition={{
+                                    opacity: { delay: 0.4 + badge.delay, duration: 0.55 },
+                                    y: { delay: 0.4 + badge.delay + 0.55, duration: badge.duration, repeat: Infinity, ease: 'easeInOut' },
+                                    x: { delay: 0.4 + badge.delay + 0.55, duration: badge.duration, repeat: Infinity, ease: 'easeInOut' }
+                                }}
+                            >
+                                {badge.text}
+                            </motion.div>
+                        ))}
+
+                        <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
+                            <motion.div
+                                initial={{ y: 22, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
                                 transition={{ delay: 0.6 }}
+                                className="rounded-3xl border border-white/35 bg-white/18 p-6 backdrop-blur-xl shadow-[0_20px_45px_-30px_rgba(0,0,0,0.8)]"
                             >
-                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full mb-4 border border-white/10">
-                                    <Sparkles className="w-4 h-4 text-[#0EA5E9]" />
-                                    <span className="text-sm font-medium">Technologie IA Avancée</span>
+                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#3BBDF4]/20 rounded-full mb-4 border border-white/25">
+                                    <Sparkles className="w-4 h-4 text-[#7DD3FC]" />
+                                    <span className="text-xs font-semibold tracking-wide uppercase">Diagnostic IA premium</span>
                                 </div>
-                                <h3 className="text-2xl font-bold mb-3 leading-snug">
-                                    "Une analyse de peau précise pour des résultats visibles."
+                                <h3 className="text-xl font-bold leading-snug">
+                                    "DeepSkyn a transforme ma routine: plus simple, plus precise, et vraiment adaptee a ma peau."
                                 </h3>
-                                <div className="flex items-center gap-3 mt-4">
-                                    <div className="flex -space-x-3">
-                                        {[1, 2, 3].map((i) => (
-                                            <img key={i} src={`https://i.pravatar.cc/100?img=${i + 20}`} className="w-8 h-8 rounded-full border-2 border-slate-900" alt="User" />
-                                        ))}
-                                    </div>
-                                    <span className="text-sm font-medium text-white/80">+10k utilisateurs satisfaits</span>
-                                </div>
+                                <p className="mt-3 text-sm text-white/80">Sarah L., cliente depuis 8 mois</p>
                             </motion.div>
                         </div>
                     </div>

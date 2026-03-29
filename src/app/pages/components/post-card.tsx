@@ -1,6 +1,6 @@
-import React, { useState, Suspense } from 'react';
+import React, { useEffect, useRef, useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ThumbsUp, MessageSquare, Share2, MoreHorizontal, Trash2, Globe2, Newspaper, Archive, Loader, Hand } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, MoreHorizontal, Trash2, Globe2, Archive, Loader, Hand, CheckCircle2, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
 import { VideoAccessibilityPlayer } from '../../../components/video/video-accessibility-player';
@@ -63,6 +63,9 @@ export function PostCard({
   const [isLiked, setIsLiked] = useState(post.isLiked);
   const [likeCount, setLikeCount] = useState(post.likes);
   const [showMenu, setShowMenu] = useState(false);
+  const [showShareFlow, setShowShareFlow] = useState(false);
+  const [shareState, setShareState] = useState<'idle' | 'preparing' | 'opening' | 'success' | 'error'>('idle');
+  const shareTimerRef = useRef<number | null>(null);
 
   // Sign Translation LSF
   const [showLSFModal, setShowLSFModal] = useState(false);
@@ -79,17 +82,70 @@ export function PostCard({
   const subText = isHcHigh ? 'text-yellow-400' : isDark ? 'text-gray-400' : 'text-[#6B7280]';
   const btnHover = isHcHigh ? 'hover:bg-yellow-400/20 text-yellow-500' : isDark ? 'hover:bg-[#334155] text-gray-400' : 'hover:bg-gray-100 text-[#6B7280]';
 
+  useEffect(() => {
+    return () => {
+      if (shareTimerRef.current) {
+        window.clearTimeout(shareTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleComment = () => {
     if (onComment) {
       onComment(post.id);
     }
   };
 
-  const handleShare = () => {
+  const buildShareUrl = () => {
+    const safeContent = (post.content || '').trim();
+    const shareTarget = `${window.location.origin}${window.location.pathname}?postId=${encodeURIComponent(post.id)}`;
+    const quote = safeContent ? safeContent.slice(0, 160) : `${post.userName} a partage un post sur DeepSkyn`;
+
+    return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareTarget)}&quote=${encodeURIComponent(quote)}`;
+  };
+
+  const handleShare = async () => {
     if (onShare) {
       onShare(post.id);
     }
-    toast.success(t('community.copyLinkSuccess') || 'Lien du post copié !');
+
+    if (shareTimerRef.current) {
+      window.clearTimeout(shareTimerRef.current);
+    }
+
+    setShowShareFlow(true);
+    setShareState('preparing');
+
+    const facebookShareUrl = buildShareUrl();
+
+    shareTimerRef.current = window.setTimeout(async () => {
+      setShareState('opening');
+
+      const popup = window.open(facebookShareUrl, '_blank', 'noopener,noreferrer,width=640,height=720');
+
+      if (!popup) {
+        setShareState('error');
+        toast.error('Impossible d ouvrir Facebook. Popup bloquee.');
+
+        try {
+          const fallbackUrl = `${window.location.origin}${window.location.pathname}?postId=${encodeURIComponent(post.id)}`;
+          await navigator.clipboard.writeText(fallbackUrl);
+          toast.success(t('community.copyLinkSuccess') || 'Lien du post copie !');
+        } catch {
+          // Clipboard can fail on insecure contexts, keep UX feedback in share flow.
+        }
+
+        return;
+      }
+
+      setShareState('success');
+      toast.success('Partage Facebook lance avec succes !');
+
+      shareTimerRef.current = window.setTimeout(() => {
+        setShowShareFlow(false);
+        setShareState('idle');
+      }, 2200);
+    }, 350);
   };
 
   const handleLSFTranslate = async () => {
@@ -461,6 +517,76 @@ export function PostCard({
           </motion.button>
         )}
       </div>
+
+      <AnimatePresence>
+        {showShareFlow && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className={`mx-4 mb-3 rounded-xl border p-3 ${isHcHigh ? 'border-yellow-400 bg-black' : isDark ? 'border-[#334155] bg-[#0f172a]' : 'border-[#E5E7EB] bg-[#F8FAFC]'}`}
+          >
+            <div className="flex items-center gap-3">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0.7 }}
+                animate={{
+                  scale: shareState === 'preparing' || shareState === 'opening' ? [0.95, 1.08, 0.95] : 1,
+                  opacity: 1,
+                }}
+                transition={{ repeat: shareState === 'preparing' || shareState === 'opening' ? Infinity : 0, duration: 1.2 }}
+                className={`w-10 h-10 rounded-full flex items-center justify-center ${isHcHigh ? 'bg-yellow-400 text-black' : isDark ? 'bg-[#1e293b] text-[#60A5FA]' : 'bg-[#DBEAFE] text-[#1D4ED8]'}`}
+              >
+                {shareState === 'success' ? (
+                  <CheckCircle2 className="w-5 h-5" />
+                ) : shareState === 'error' ? (
+                  <AlertTriangle className="w-5 h-5" />
+                ) : (
+                  <Share2 className="w-5 h-5" />
+                )}
+              </motion.div>
+
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-bold ${textColor}`}>
+                  {shareState === 'preparing' && 'Preparation du partage Facebook...'}
+                  {shareState === 'opening' && 'Ouverture de Facebook...'}
+                  {shareState === 'success' && 'Post pret a etre partage sur Facebook'}
+                  {shareState === 'error' && 'Partage direct bloque. Lien copie si possible.'}
+                </p>
+                <div className="mt-2 h-1.5 rounded-full overflow-hidden bg-black/10 dark:bg-white/10">
+                  <motion.div
+                    className={`h-full ${shareState === 'error' ? 'bg-red-500' : 'bg-[#1877F2]'}`}
+                    initial={{ width: '15%' }}
+                    animate={{
+                      width:
+                        shareState === 'preparing'
+                          ? '35%'
+                          : shareState === 'opening'
+                            ? '70%'
+                            : shareState === 'success'
+                              ? '100%'
+                              : '45%',
+                    }}
+                    transition={{ duration: 0.35 }}
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  if (shareTimerRef.current) {
+                    window.clearTimeout(shareTimerRef.current);
+                  }
+                  setShowShareFlow(false);
+                  setShareState('idle');
+                }}
+                className={`text-xs font-semibold px-2 py-1 rounded-md transition-colors ${isHcHigh ? 'text-yellow-400 hover:bg-yellow-400/20' : isDark ? 'text-gray-300 hover:bg-[#1e293b]' : 'text-[#475569] hover:bg-white'}`}
+              >
+                Fermer
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Sign Translation Modal */}
       <SignTranslationModal

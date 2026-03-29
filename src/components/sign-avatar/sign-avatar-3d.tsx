@@ -333,10 +333,15 @@ function Hand({
   useFrame((state) => {
     if (!groupRef.current || isSkeleton) return;
     const t = state.clock.elapsedTime;
-    const drift = Math.sin(t * 1.3 + (isRightHand ? 0 : 0.9)) * 0.0022;
-    const pulse = Math.sin(t * 5.2 + palmCenter.x * 2.3) * 0.003;
+    const sideOffset = isRightHand ? 0 : 0.9;
+    const drift = Math.sin(t * 1.25 + sideOffset) * 0.003;
+    const pulse = Math.sin(t * 5.3 + palmCenter.x * 2.6) * 0.0036;
+    const yawSway = Math.sin(t * 1.6 + sideOffset * 0.8) * 0.0026;
+    const verticalMicro = Math.sin(t * 2.15 + sideOffset) * 0.0018;
     groupRef.current.rotation.x = drift;
+    groupRef.current.rotation.y = yawSway;
     groupRef.current.rotation.z = pulse;
+    groupRef.current.position.y = verticalMicro;
   });
 
   const palmU = new THREE.Vector3().subVectors(pts[5], pts[17]).normalize();
@@ -650,6 +655,7 @@ function AvatarRig({
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const mouthRef = useRef<THREE.Mesh>(null);
+  const chestRef = useRef<THREE.Mesh>(null);
 
   const palette = useMemo(() => {
     if (styleMode === 'skeleton') {
@@ -695,14 +701,27 @@ function AvatarRig({
   useFrame((state, delta) => {
     if (!groupRef.current) return;
     const t = state.clock.elapsedTime;
-    // Keep a fixed global framing so the motion stays faithful to incoming 2D keypoints.
+    // Keep framing stable while adding subtle organic life (sway + breathing).
     const targetX = 0;
     const targetY = -0.08;
     const targetZ = 0;
-    groupRef.current.position.x = THREE.MathUtils.damp(groupRef.current.position.x, targetX, 7, delta);
-    groupRef.current.position.y = THREE.MathUtils.damp(groupRef.current.position.y, targetY, 7, delta) + Math.sin(t * 1.8) * 0.008;
+    const bodySwayX = Math.sin(t * 0.9) * 0.012;
+    const bodySwayY = Math.sin(t * 1.8) * 0.006;
+    const bodyYaw = Math.sin(t * 0.75 + 0.2) * 0.05;
+    const bodyRoll = Math.sin(t * 0.95 + 0.7) * 0.025;
+    const breath = 1 + Math.sin(t * 1.6 + 0.4) * 0.032;
+
+    groupRef.current.position.x = THREE.MathUtils.damp(groupRef.current.position.x, targetX + bodySwayX, 7, delta);
+    groupRef.current.position.y = THREE.MathUtils.damp(groupRef.current.position.y, targetY, 7, delta) + bodySwayY;
     groupRef.current.position.z = THREE.MathUtils.damp(groupRef.current.position.z, targetZ, 7, delta);
-    groupRef.current.rotation.y = THREE.MathUtils.damp(groupRef.current.rotation.y, 0, 9, delta);
+    groupRef.current.rotation.y = THREE.MathUtils.damp(groupRef.current.rotation.y, bodyYaw, 9, delta);
+    groupRef.current.rotation.z = THREE.MathUtils.damp(groupRef.current.rotation.z, bodyRoll, 9, delta);
+
+    if (chestRef.current) {
+      chestRef.current.scale.x = THREE.MathUtils.damp(chestRef.current.scale.x, breath * 1.02, 6, delta);
+      chestRef.current.scale.y = THREE.MathUtils.damp(chestRef.current.scale.y, 1 + (breath - 1) * 0.65, 6, delta);
+      chestRef.current.scale.z = THREE.MathUtils.damp(chestRef.current.scale.z, breath, 6, delta);
+    }
 
     if (mouthRef.current) {
       const speaking = utterance && utterance.trim().length > 0;
@@ -726,6 +745,10 @@ function AvatarRig({
         <>
           <Segment start={lShoulder} end={rShoulder} radius={0.055} color={palette.cloth} />
           <Segment start={lHip} end={rHip} radius={0.06} color={palette.cloth} />
+          <mesh ref={chestRef} position={[torsoCenter.x, torsoCenter.y + 0.06, torsoCenter.z + 0.02]} castShadow receiveShadow>
+            <sphereGeometry args={[0.125, 26, 20]} />
+            <meshStandardMaterial color={palette.cloth} roughness={0.55} metalness={0.01} />
+          </mesh>
         </>
       )}
 
