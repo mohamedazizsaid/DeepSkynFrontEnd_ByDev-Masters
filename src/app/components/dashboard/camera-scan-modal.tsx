@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Camera, X, Loader2, RotateCcw, Save, Sparkles, AlertCircle } from 'lucide-react';
+import { Camera, X, Loader2, RotateCcw, Save, Sparkles, AlertCircle, Lock, Crown } from 'lucide-react';
 import { Button } from '../button';
 import { Card } from '../card';
 import { analysisService } from '../../../lib/services/analysis.service';
@@ -13,11 +13,21 @@ interface CameraScanModalProps {
   onClose: () => void;
   /** Called after a scan is saved as a full analysis */
   onAnalysisSaved?: () => void;
+  canSaveAnalysis?: boolean;
+  analysisBlockedMessage?: string;
+  onUpgrade?: () => void;
 }
 
 type ScanPhase = 'camera' | 'scanning' | 'results';
 
-export function CameraScanModal({ open, onClose, onAnalysisSaved }: CameraScanModalProps) {
+export function CameraScanModal({
+  open,
+  onClose,
+  onAnalysisSaved,
+  canSaveAnalysis = true,
+  analysisBlockedMessage,
+  onUpgrade,
+}: CameraScanModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -97,6 +107,10 @@ export function CameraScanModal({ open, onClose, onAnalysisSaved }: CameraScanMo
   // ─── Save scan as full analysis ───
   const saveAnalysis = async () => {
     if (!canvasRef.current) return;
+    if (!canSaveAnalysis) {
+      toast.error(analysisBlockedMessage || 'Analysis limit reached for your plan.');
+      return;
+    }
     setSaving(true);
     try {
       const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.9);
@@ -304,12 +318,27 @@ export function CameraScanModal({ open, onClose, onAnalysisSaved }: CameraScanMo
                   <Button
                     className="flex-1 bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4]"
                     onClick={saveAnalysis}
-                    disabled={saving}
+                    disabled={saving || !canSaveAnalysis}
                   >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {saving ? 'Saving...' : 'Save Analysis'}
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : canSaveAnalysis ? <Save className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                    {saving ? 'Saving...' : canSaveAnalysis ? 'Save Analysis' : 'Limit reached'}
                   </Button>
                 </div>
+
+                {!canSaveAnalysis && (
+                  <div className="rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C] flex items-center justify-between gap-3">
+                    <span>{analysisBlockedMessage || 'Analysis limit reached for your plan.'}</span>
+                    {onUpgrade && (
+                      <button
+                        onClick={onUpgrade}
+                        className="inline-flex items-center gap-1 rounded-lg border border-current px-2.5 py-1.5 text-xs font-semibold hover:bg-white/40"
+                      >
+                        <Crown className="w-3.5 h-3.5" />
+                        Upgrade
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

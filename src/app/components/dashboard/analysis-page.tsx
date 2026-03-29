@@ -8,8 +8,10 @@ import {
 } from 'lucide-react';
 import { Button } from '../button';
 import { Card } from '../card';
+import { QuotaAlertBanner } from './quota-alert-banner';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 import { analysisService } from '../../../lib/services/analysis.service';
+import { subscriptionService } from '../../../lib/services/subscription.service';
 import {
   extractDetailedScores,
   buildRadarData,
@@ -25,6 +27,7 @@ import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 interface AnalysisPageProps {
   onBack: () => void;
+  onUpgrade?: () => void;
 }
 
 // Icon map for metric keys
@@ -39,7 +42,7 @@ const METRIC_ICONS: Record<string, React.ReactNode> = {
   elasticity:   <Zap className="w-6 h-6" />,
 };
 
-export function AnalysisPage({ onBack }: AnalysisPageProps) {
+export function AnalysisPage({ onBack, onUpgrade }: AnalysisPageProps) {
   // ─── State ───
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [stats, setStats] = useState<AnalysisStats | null>(null);
@@ -48,20 +51,59 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
   const [uploading, setUploading] = useState(false);
   const [adviceLoading, setAdviceLoading] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  const [analysisLimit, setAnalysisLimit] = useState<number | null>(3);
+  const [analysisUsed, setAnalysisUsed] = useState(0);
+  const [analysisResetAt, setAnalysisResetAt] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { theme, contrastMode } = useAccessibilityStore();
+
+  const formatResetDate = (value?: string | null): string => {
+    if (!value) return 'soon';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString([], {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const analysisRemaining = analysisLimit === null ? null : Math.max(0, analysisLimit - analysisUsed);
+  const nearAnalysisLimit = !isPremium && analysisRemaining !== null && analysisRemaining > 0 && analysisRemaining <= 1;
+  const analysisLimitReached = !isPremium && analysisRemaining !== null && analysisRemaining <= 0;
+
+  const refreshUsage = async () => {
+    try {
+      const usage = await subscriptionService.getUsageSummary();
+      setIsPremium(usage.isPremium);
+      setAnalysisLimit(usage.quotas.analyses.limit);
+      setAnalysisUsed(usage.quotas.analyses.used || 0);
+      setAnalysisResetAt(usage.quotas.analyses.resetsAt);
+    } catch {
+      // keep previous usage if request fails
+    }
+  };
 
   // ─── Load latest analysis + stats + advice ───
   const loadData = async () => {
     setLoading(true);
     try {
-      const [latestRes, statsRes] = await Promise.allSettled([
+      const [latestRes, statsRes, usageRes] = await Promise.allSettled([
         analysisService.getLatest(),
         analysisService.getStats(),
+        subscriptionService.getUsageSummary(),
       ]);
       if (latestRes.status === 'fulfilled') setAnalysis(latestRes.value);
       if (statsRes.status === 'fulfilled') setStats(statsRes.value);
+      if (usageRes.status === 'fulfilled') {
+        setIsPremium(usageRes.value.isPremium);
+        setAnalysisLimit(usageRes.value.quotas.analyses.limit);
+        setAnalysisUsed(usageRes.value.quotas.analyses.used || 0);
+        setAnalysisResetAt(usageRes.value.quotas.analyses.resetsAt);
+      }
 
       // Load advice separately (can be slower — Gemini call)
       if (latestRes.status === 'fulfilled') {
@@ -85,6 +127,10 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files?.length) return;
+    if (analysisLimitReached) {
+      toast.error(`Monthly analysis limit reached. Try again after ${formatResetDate(analysisResetAt)}.`);
+      return;
+    }
     if (files.length > 5) {
       toast.error('Maximum 5 images allowed.');
       return;
@@ -94,10 +140,12 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
       const result = await analysisService.uploadAndAnalyze(Array.from(files));
       setAnalysis(result);
       toast.success('Analysis started! Results will appear shortly.');
+      await refreshUsage();
       // Reload to get processed results (analysis is async on backend)
       setTimeout(() => loadData(), 5000);
     } catch {
       toast.error('Upload failed. Please try again.');
+      await refreshUsage();
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -153,6 +201,24 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
   if (!hasAnalysis) {
     return (
       <div className="p-8 max-w-7xl mx-auto">
+        {!isPremium && analysisRemaining !== null && (
+          <div className="mb-6">
+            <QuotaAlertBanner
+              variant={analysisLimitReached ? 'blocked' : nearAnalysisLimit ? 'warning' : 'info'}
+              title={analysisLimitReached ? 'Analysis limit reached' : nearAnalysisLimit ? 'Almost at monthly limit' : 'Monthly analysis quota'}
+              message={analysisLimitReached
+                ? `Reset date: ${formatResetDate(analysisResetAt)}.`
+                : nearAnalysisLimit
+                  ? `Only ${analysisRemaining} analysis left this month.`
+                  : `Analyses used this month: ${analysisUsed}/${analysisLimit}.`}
+              used={analysisUsed}
+              limit={analysisLimit}
+              onUpgrade={onUpgrade}
+              upgradeLabel="Upgrade"
+            />
+          </div>
+        )}
+
         <Card className="mt-12 border-[#DBEAFE] bg-gradient-to-br from-white via-[#F8FBFF] to-[#F0F9FF] shadow-xl shadow-[#0EA5E9]/10">
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center mb-6 shadow-lg shadow-[#0EA5E9]/30">
@@ -164,9 +230,9 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
             </p>
             <div className="flex gap-3">
               <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
-              <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading || analysisLimitReached}>
                 {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                {uploading ? 'Uploading...' : 'Upload Photos'}
+                {uploading ? 'Uploading...' : analysisLimitReached ? 'Limit reached' : 'Upload Photos'}
               </Button>
               <Button onClick={() => setScanOpen(true)} className="bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4]">
                 <Camera className="w-5 h-5" />
@@ -199,7 +265,14 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
             )}
           </div>
         </Card>
-        <CameraScanModal open={scanOpen} onClose={() => setScanOpen(false)} onAnalysisSaved={loadData} />
+        <CameraScanModal
+          open={scanOpen}
+          onClose={() => setScanOpen(false)}
+          onAnalysisSaved={loadData}
+          canSaveAnalysis={!analysisLimitReached}
+          analysisBlockedMessage={`Monthly analysis limit reached. Reset: ${formatResetDate(analysisResetAt)}.`}
+          onUpgrade={onUpgrade}
+        />
       </div>
     );
   }
@@ -229,12 +302,30 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
             <Camera className="w-5 h-5" />
             Live Scan
           </Button>
-          <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading || analysisLimitReached}>
             {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-            {uploading ? 'Analyzing...' : 'New Analysis'}
+            {uploading ? 'Analyzing...' : analysisLimitReached ? 'Limit reached' : 'New Analysis'}
           </Button>
         </div>
       </div>
+
+      {!isPremium && analysisRemaining !== null && (
+        <div className="mb-8">
+          <QuotaAlertBanner
+            variant={analysisLimitReached ? 'blocked' : nearAnalysisLimit ? 'warning' : 'info'}
+            title={analysisLimitReached ? 'Analysis limit reached' : nearAnalysisLimit ? 'Almost at monthly limit' : 'Monthly analysis quota'}
+            message={analysisLimitReached
+              ? `Reset date: ${formatResetDate(analysisResetAt)}.`
+              : nearAnalysisLimit
+                ? `Only ${analysisRemaining} analysis left this month.`
+                : `Analyses used this month: ${analysisUsed}/${analysisLimit}.`}
+            used={analysisUsed}
+            limit={analysisLimit}
+            onUpgrade={onUpgrade}
+            upgradeLabel="Upgrade"
+          />
+        </div>
+      )}
 
       {/* Overall Score */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
@@ -502,7 +593,14 @@ export function AnalysisPage({ onBack }: AnalysisPageProps) {
       </motion.div>
 
       {/* Camera Scan Modal */}
-      <CameraScanModal open={scanOpen} onClose={() => setScanOpen(false)} onAnalysisSaved={loadData} />
+      <CameraScanModal
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        onAnalysisSaved={loadData}
+        canSaveAnalysis={!analysisLimitReached}
+        analysisBlockedMessage={`Monthly analysis limit reached. Reset: ${formatResetDate(analysisResetAt)}.`}
+        onUpgrade={onUpgrade}
+      />
     </div>
   );
 }

@@ -1,5 +1,9 @@
 import apiClient from '../api-client';
-import type { Subscription, SubscriptionPlanInfo } from '../types';
+import type {
+  Subscription,
+  SubscriptionPlanInfo,
+  SubscriptionUsageSummary,
+} from '../types';
 
 function unwrapSubscription(data: unknown): Subscription {
   if (data && typeof data === 'object' && 'subscription' in data) {
@@ -17,6 +21,11 @@ export const subscriptionService = {
   async isPremium(): Promise<boolean> {
     const res = await apiClient.get<{ isPremium: boolean }>('/subscriptions/me/premium');
     return res.data.isPremium;
+  },
+
+  async getUsageSummary(): Promise<SubscriptionUsageSummary> {
+    const res = await apiClient.get<SubscriptionUsageSummary>('/subscriptions/me/usage');
+    return res.data;
   },
 
   async getPlans(): Promise<SubscriptionPlanInfo[]> {

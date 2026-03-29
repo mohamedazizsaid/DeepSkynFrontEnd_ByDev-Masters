@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { ArrowLeft, Check, Crown, Sparkles, Shield, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Check, Crown, Sparkles, Shield, Loader2, CalendarDays, PartyPopper } from 'lucide-react';
 import { Button } from '../button';
 import { Card } from '../card';
 import { subscriptionService } from '../../../lib/services/subscription.service';
-import type { Subscription, SubscriptionPlanInfo } from '../../../lib/types';
+import type { Notification, Subscription, SubscriptionPlanInfo } from '../../../lib/types';
+import { useAuthStore } from '../../../stores/auth.store';
+import { useNotificationStore } from '../../../stores/notification.store';
 import toast from 'react-hot-toast';
 
 interface SubscriptionPageProps {
@@ -38,7 +40,12 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [showPurchaseSuccessModal, setShowPurchaseSuccessModal] = useState(false);
+  const [purchaseSuccessSub, setPurchaseSuccessSub] = useState<Subscription | null>(null);
   const handledCheckoutResultRef = useRef(false);
+
+  const authUser = useAuthStore((s) => s.user);
+  const addNotification = useNotificationStore((s) => s.addNotification);
 
   const refreshSubscription = async () => {
     const sub = await subscriptionService.getMySubscription();
@@ -51,19 +58,66 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
     return sub;
   };
 
-  const refreshUntilPlanMatches = async (expectedPlan?: string) => {
+  const refreshUntilPlanMatches = async (expectedPlan?: string): Promise<Subscription | null> => {
     // Webhook may take a moment; retry a few times
     const expected = expectedPlan ? normalizePlan(expectedPlan) : undefined;
     for (let attempt = 0; attempt < 8; attempt++) {
       try {
         const sub = await refreshSubscription();
         const actual = normalizePlan((sub as any)?.plan);
-        if (!expected || actual === expected) return;
+        if (!expected || actual === expected) return sub;
       } catch {
         // ignore and retry
       }
       await new Promise((r) => setTimeout(r, 1500));
     }
+    return null;
+  };
+
+  const formatPlanName = (plan?: string) => {
+    if (!plan) return 'Premium';
+    const normalized = normalizePlan(plan);
+    if (normalized === 'premium_yearly') return 'Premium Yearly';
+    if (normalized === 'premium') return 'Premium Monthly';
+    return 'Free';
+  };
+
+  const formatDate = (date?: string | null) => {
+    if (!date) return 'Not defined';
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) return date;
+    return parsed.toLocaleDateString([], {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
+
+  const pushPurchaseSuccessNotification = (sub?: Subscription | null) => {
+    const nowIso = new Date().toISOString();
+    const id =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? (crypto.randomUUID as () => string)()
+        : `local-${Date.now()}`;
+
+    const planName = formatPlanName(sub?.plan);
+    const endDate = formatDate((sub as any)?.endDate);
+
+    const notification: Notification = {
+      id,
+      userId: (authUser as any)?.sub || (authUser as any)?.id || (authUser as any)?.email || 'me',
+      title: 'Achat confirmé',
+      message: sub
+        ? `Votre plan ${planName} est actif jusqu’au ${endDate}.`
+        : 'Votre paiement a été confirmé. Votre abonnement premium est actif.',
+      type: 'success',
+      isRead: false,
+      actionUrl: null,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+
+    addNotification(notification);
   };
 
   useEffect(() => {
@@ -86,10 +140,17 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
       handledCheckoutResultRef.current = true;
 
       if (success === 'true') {
-        toast.success('Payment successful! Your plan has been upgraded.');
+        toast.success('Payment successful!');
         const expected = localStorage.getItem('pending_subscription_plan') || undefined;
         localStorage.removeItem('pending_subscription_plan');
-        void refreshUntilPlanMatches(expected);
+        void (async () => {
+          const updatedSub = await refreshUntilPlanMatches(expected);
+          if (updatedSub) {
+            setPurchaseSuccessSub(updatedSub);
+          }
+          pushPurchaseSuccessNotification(updatedSub);
+          setShowPurchaseSuccessModal(true);
+        })();
       }
 
       if (cancelled === 'true') {
@@ -337,6 +398,67 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
       </motion.div>
         </>
       )}
+
+      <AnimatePresence>
+        {showPurchaseSuccessModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm p-4 flex items-center justify-center"
+            onClick={() => setShowPurchaseSuccessModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ duration: 0.28, ease: 'easeOut' }}
+              className="relative w-full max-w-lg rounded-3xl border border-[#BFDBFE] bg-gradient-to-br from-white via-[#F8FBFF] to-[#F0F9FF] p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-[#0EA5E9]/20 blur-2xl" />
+              <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-[#06B6D4]/20 blur-2xl" />
+
+              <div className="relative">
+                <div className="mx-auto mb-4 w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center shadow-lg">
+                  <PartyPopper className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-center text-[#0F172A]">Thank you for your purchase</h3>
+                <p className="text-center text-sm text-[#64748B] mt-2">
+                  Your subscription is now active. Enjoy all premium features.
+                </p>
+
+                <div className="mt-6 space-y-3">
+                  <div className="rounded-xl border border-[#DBEAFE] bg-white/90 px-4 py-3 flex items-center justify-between">
+                    <span className="text-sm text-[#64748B] inline-flex items-center gap-2">
+                      <Crown className="w-4 h-4 text-[#F59E0B]" /> Plan
+                    </span>
+                    <span className="text-sm font-semibold text-[#0F172A]">
+                      {formatPlanName(purchaseSuccessSub?.plan)}
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl border border-[#DBEAFE] bg-white/90 px-4 py-3 flex items-center justify-between">
+                    <span className="text-sm text-[#64748B] inline-flex items-center gap-2">
+                      <CalendarDays className="w-4 h-4 text-[#0EA5E9]" /> End date
+                    </span>
+                    <span className="text-sm font-semibold text-[#0F172A]">
+                      {formatDate(purchaseSuccessSub?.endDate)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex items-center justify-end gap-2">
+                  <Button onClick={() => setShowPurchaseSuccessModal(false)}>
+                    <Check className="w-4 h-4" />
+                    Continue
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

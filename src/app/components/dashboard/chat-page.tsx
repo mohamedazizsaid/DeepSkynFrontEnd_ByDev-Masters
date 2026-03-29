@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
     Send,
     Sparkles,
-    Lock,
     Crown,
     Loader,
     Trash2,
@@ -14,9 +13,11 @@ import {
 } from 'lucide-react';
 import { Button } from '../button';
 import { Card } from '../card';
+import { QuotaAlertBanner } from './quota-alert-banner';
 import { chatService } from '../../../lib/services/chat.service';
 import { subscriptionService } from '../../../lib/services/subscription.service';
 import type { ChatHistory } from '../../../lib/types';
+import toast from 'react-hot-toast';
 
 interface ChatPageProps {
     onBack: () => void;
@@ -37,6 +38,24 @@ interface PersistedChatMessage {
 }
 
 const premiumButtonClass = 'bg-gradient-to-r from-[#FACC15] to-[#F59E0B] text-white border border-[#FCD34D] hover:from-[#FBBF24] hover:to-[#D97706] shadow-md hover:shadow-lg';
+
+const extractIsoFromMessage = (message?: string): string | null => {
+    if (!message) return null;
+    const match = message.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z/);
+    return match?.[0] || null;
+};
+
+const formatResetDate = (value?: string | null): string => {
+    if (!value) return 'soon';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString([], {
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+};
 
 const formatRelative = (dateString?: string) => {
     if (!dateString) return 'Now';
@@ -105,9 +124,25 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     const [isTyping, setIsTyping] = useState(false);
     const [isPremium, setIsPremium] = useState(false);
     const [dailyMessageCount, setDailyMessageCount] = useState(0);
+    const [chatMessageLimit, setChatMessageLimit] = useState<number | null>(10);
+    const [chatResetAt, setChatResetAt] = useState<string | null>(null);
     const [historyItems, setHistoryItems] = useState<ChatHistory[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const refreshUsage = async () => {
+        try {
+            const usage = await subscriptionService.getUsageSummary();
+            setIsPremium(usage.isPremium);
+            setDailyMessageCount(usage.quotas.chatMessages.used || 0);
+            setChatMessageLimit(usage.quotas.chatMessages.limit);
+            setChatResetAt(usage.quotas.chatMessages.resetsAt);
+            return usage;
+        } catch {
+            // keep existing values if usage endpoint fails
+            return null;
+        }
+    };
 
     const loadHistoryFromDb = async (preferredChatId?: string | null) => {
         const history = await chatService.getHistory(50, 0);
@@ -116,7 +151,6 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
             setHistoryItems([]);
             setActiveChatId(null);
             setMessages([welcomeMessage]);
-            setDailyMessageCount(0);
             return;
         }
 
@@ -130,20 +164,21 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
         const selectedMessages = getConversationMessages(selected);
         setMessages(selectedMessages.length > 0 ? selectedMessages : [welcomeMessage]);
 
-        const today = new Date().toDateString();
-        const allMessages = ordered.flatMap(getConversationMessages);
-        const todayCount = allMessages.filter((m) => m.type === 'user' && m.timestamp.toDateString() === today).length;
-        setDailyMessageCount(todayCount);
     };
 
     useEffect(() => {
         const loadData = async () => {
             try {
                 const [premium, history] = await Promise.allSettled([
-                    subscriptionService.isPremium(),
+                    subscriptionService.getUsageSummary(),
                     chatService.getHistory(50, 0),
                 ]);
-                if (premium.status === 'fulfilled') setIsPremium(premium.value);
+                if (premium.status === 'fulfilled') {
+                    setIsPremium(premium.value.isPremium);
+                    setDailyMessageCount(premium.value.quotas.chatMessages.used || 0);
+                    setChatMessageLimit(premium.value.quotas.chatMessages.limit);
+                    setChatResetAt(premium.value.quotas.chatMessages.resetsAt);
+                }
 
                 if (history.status === 'fulfilled' && history.value.length > 0) {
                     const ordered = [...history.value].sort(
@@ -156,15 +191,10 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                     const loaded = getConversationMessages(active);
                     setMessages(loaded.length > 0 ? loaded : [welcomeMessage]);
 
-                    const today = new Date().toDateString();
-                    const allMessages = ordered.flatMap(getConversationMessages);
-                    const todayCount = allMessages.filter((m) => m.type === 'user' && m.timestamp.toDateString() === today).length;
-                    setDailyMessageCount(todayCount);
                 } else if (history.status === 'fulfilled') {
                     setHistoryItems([]);
                     setActiveChatId(null);
                     setMessages([welcomeMessage]);
-                    setDailyMessageCount(0);
                 }
             } catch { /* use defaults */ }
         };
@@ -186,11 +216,19 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
         'What should I avoid if my skin is sensitive?'
     ];
 
-    const freeLimit = 5;
-    const freeRemaining = Math.max(0, freeLimit - dailyMessageCount);
+    const freeLimit = chatMessageLimit;
+    const freeRemaining = freeLimit === null ? null : Math.max(0, freeLimit - dailyMessageCount);
+    const nearChatLimit = !isPremium && freeRemaining !== null && freeRemaining > 0 && freeRemaining <= 2;
+    const chatLimitReached = !isPremium && freeRemaining !== null && freeRemaining <= 0;
 
     const handleSend = async () => {
         if (!inputValue.trim()) return;
+
+        if (chatLimitReached) {
+            const resetText = formatResetDate(chatResetAt);
+            toast.error(`Daily chat limit reached. Try again after ${resetText}.`);
+            return;
+        }
 
         const userMessage: Message = {
             id: Date.now().toString(),
@@ -213,7 +251,11 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                 timestamp: new Date(response.createdAt || Date.now())
             };
             setMessages(prev => [...prev, aiMessage]);
-            setDailyMessageCount((prev) => prev + 1);
+            const usage = await refreshUsage();
+            const remaining = usage?.quotas.chatMessages.remaining;
+            if (usage && !usage.isPremium && typeof remaining === 'number' && remaining > 0 && remaining <= 1) {
+                toast.error(`Heads up: only ${remaining} free message left today.`);
+            }
 
             const chatId = response.id || activeChatId || `chat-${Date.now()}`;
             setActiveChatId(chatId);
@@ -242,6 +284,11 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
             await loadHistoryFromDb(chatId);
         } catch (error: any) {
             const backendMessage = error?.response?.data?.message;
+            const resetFromBackend = extractIsoFromMessage(
+                typeof backendMessage === 'string' ? backendMessage : undefined,
+            );
+            if (resetFromBackend) setChatResetAt(resetFromBackend);
+
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 type: 'ai',
@@ -251,6 +298,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
+            await refreshUsage();
         } finally {
             setIsTyping(false);
         }
@@ -380,15 +428,21 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
 
                         {/* Input Area */}
                         <div className="border-t border-[#E2E8F0] p-4 md:p-5 bg-white">
-                            {!isPremium && (
-                                <div className="mb-4 p-3 bg-[#FBBF24]/10 rounded-xl flex items-center gap-2 text-sm">
-                                    <Lock className="w-4 h-4 text-[#FBBF24]" />
-                                    <span className="text-[#F59E0B]">
-                                        You have {freeRemaining} free messages remaining today.
-                                        <button className="ml-1 underline font-medium" onClick={onUpgrade}>
-                                            Upgrade for unlimited
-                                        </button>
-                                    </span>
+                            {!isPremium && freeRemaining !== null && (
+                                <div className="mb-4">
+                                    <QuotaAlertBanner
+                                        variant={chatLimitReached ? 'blocked' : nearChatLimit ? 'warning' : 'info'}
+                                        title={chatLimitReached ? 'Chat limit reached' : nearChatLimit ? 'Almost at limit' : 'Free chat quota'}
+                                        message={chatLimitReached
+                                            ? `You reached your free chat limit. Next reset: ${formatResetDate(chatResetAt)}.`
+                                            : nearChatLimit
+                                                ? `Only ${freeRemaining} free message${freeRemaining > 1 ? 's' : ''} left today.`
+                                                : `You have ${freeRemaining} free messages remaining today.`}
+                                        used={dailyMessageCount}
+                                        limit={freeLimit}
+                                        onUpgrade={onUpgrade}
+                                        upgradeLabel="Upgrade"
+                                    />
                                 </div>
                             )}
 
@@ -399,11 +453,12 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                                     onChange={(e) => setInputValue(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                                     placeholder="Ask me anything about skincare..."
+                                    disabled={chatLimitReached}
                                     className="flex-1 px-4 py-3 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-xl 
                     focus:outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/20
                     transition-all duration-200"
                                 />
-                                <Button onClick={handleSend} disabled={!inputValue.trim() || isTyping}>
+                                <Button onClick={handleSend} disabled={!inputValue.trim() || isTyping || chatLimitReached}>
                                     <Send className="w-5 h-5" />
                                 </Button>
                             </div>

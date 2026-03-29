@@ -83,16 +83,17 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
 
   const renderPage = () => {
     const commonProps = { onBack: () => setCurrentPage('dashboard') };
+    const premiumProps = { onUpgrade: () => setCurrentPage('subscription') };
 
     switch (currentPage) {
       case 'dashboard':
         return <DashboardPage onNavigate={handleNavigate} />;
       case 'analysis':
-        return <AnalysisPage {...commonProps} />;
+        return <AnalysisPage {...commonProps} {...premiumProps} />;
       case 'evolution':
         return <EvolutionPage {...commonProps} />;
       case 'routine':
-        return <RoutinePage {...commonProps} />;
+        return <RoutinePage {...commonProps} {...premiumProps} />;
       case 'chat':
         return <ChatPage {...commonProps} onUpgrade={() => setCurrentPage('subscription')} />;
       case 'subscription':

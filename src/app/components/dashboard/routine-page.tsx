@@ -18,7 +18,9 @@ import { AIAdviceModal } from '../routines/AIAdviceModal';
 import { AIProductRecommendModal } from '../routines/AIProductRecommendModal';
 import { ShareRoutineButton } from '../routines/ShareRoutineButton';
 import { ShareRoutineModal } from '../routines/ShareRoutineModal';
+import { QuotaAlertBanner } from './quota-alert-banner';
 import { routineService } from '../../../lib/services/routine.service';
+import { subscriptionService } from '../../../lib/services/subscription.service';
 import { usersService } from '../../../lib/services/users.service';
 import type { Routine, RoutineStep, AIAdviceResponse, ProductRecommendation } from '../../../lib/types';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
@@ -31,6 +33,7 @@ const Face3DViewer = lazy(() =>
 
 interface RoutinePageProps {
   onBack: () => void;
+  onUpgrade?: () => void;
 }
 
 interface StepItem {
@@ -62,7 +65,7 @@ function mapRoutineSteps(steps: RoutineStep[], t: any): StepItem[] {
   }));
 }
 
-export function RoutinePage({ onBack }: RoutinePageProps) {
+export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
   const [activeTab, setActiveTab] = useState<'am' | 'pm'>('am');
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -86,6 +89,10 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
   const [currentRoutine, setCurrentRoutine] = useState<Routine | null>(null);
   const [amRoutine, setAmRoutine] = useState<Routine | null>(null);
   const [pmRoutine, setPmRoutine] = useState<Routine | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
+  const [aiRoutineLimit, setAiRoutineLimit] = useState<number | null>(3);
+  const [aiRoutineUsed, setAiRoutineUsed] = useState(0);
+  const [aiRoutineResetAt, setAiRoutineResetAt] = useState<string | null>(null);
 
   const { theme, contrastMode, t } = useAccessibilityStore();
   const { success, error } = useNotification();
@@ -112,8 +119,37 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
     .filter((s) => !s.completed)
     .sort((a, b) => a.order - b.order)[0];
 
+  const formatResetDate = (value?: string | null): string => {
+    if (!value) return 'soon';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString([], {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const aiRoutineRemaining = aiRoutineLimit === null ? null : Math.max(0, aiRoutineLimit - aiRoutineUsed);
+  const nearAiRoutineLimit = !isPremium && aiRoutineRemaining !== null && aiRoutineRemaining > 0 && aiRoutineRemaining <= 1;
+  const aiRoutineLimitReached = !isPremium && aiRoutineRemaining !== null && aiRoutineRemaining <= 0;
+
+  const refreshUsage = async () => {
+    try {
+      const usage = await subscriptionService.getUsageSummary();
+      setIsPremium(usage.isPremium);
+      setAiRoutineLimit(usage.quotas.aiRoutines.limit);
+      setAiRoutineUsed(usage.quotas.aiRoutines.used || 0);
+      setAiRoutineResetAt(usage.quotas.aiRoutines.resetsAt);
+    } catch {
+      // Keep previous values if usage endpoint fails
+    }
+  };
+
   // ─── Load routines and auto-select tab based on time ───
   useEffect(() => {
+    refreshUsage();
     loadRoutines();
     autoSelectTab();
     
@@ -229,6 +265,11 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
 
   // ─── Generate AI routine ───
   const generateAIRoutine = async () => {
+    if (aiRoutineLimitReached) {
+      error(`Limite des routines IA atteinte. Prochain reset: ${formatResetDate(aiRoutineResetAt)}.`);
+      return;
+    }
+
     setGenerating(true);
     try {
       const type = activeTab === 'am' ? 'AM' : 'PM';
@@ -244,6 +285,14 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
           setPmRoutine(routine);
         }
         setRoutineId(routine.id);
+      }
+      await refreshUsage();
+
+      if (!isPremium && aiRoutineRemaining !== null) {
+        const remainingAfter = Math.max(0, aiRoutineRemaining - 1);
+        if (remainingAfter === 1) {
+          error('Attention: il vous reste 1 routine IA ce mois-ci.');
+        }
       }
     } catch {
       // Use default steps if AI fails
@@ -267,6 +316,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
             ];
 
       setCurrentSteps(defaultSteps);
+      await refreshUsage();
     } finally {
       setGenerating(false);
     }
@@ -489,7 +539,7 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={generateAIRoutine}
-                disabled={generating}
+                disabled={generating || aiRoutineLimitReached}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border border-[#0EA5E9]/30 text-[#0EA5E9] hover:bg-[#0EA5E9]/10 transition-all disabled:opacity-40"
               >
                 {generating ? (
@@ -497,7 +547,11 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
                 ) : (
                   <Sparkles className="w-4 h-4" />
                 )}
-                {generating ? t('routine.generating') : t('routine.regenerateAI')}
+                {generating
+                  ? t('routine.generating')
+                  : aiRoutineLimitReached
+                    ? 'Limite atteinte'
+                    : t('routine.regenerateAI')}
               </motion.button>
 
               {activeTab === 'am' && amRoutine && (
@@ -570,6 +624,24 @@ export function RoutinePage({ onBack }: RoutinePageProps) {
             </div>
           </motion.button>
         </div>
+
+        {!isPremium && aiRoutineRemaining !== null && (
+          <div className="mb-6">
+            <QuotaAlertBanner
+              variant={aiRoutineLimitReached ? 'blocked' : nearAiRoutineLimit ? 'warning' : 'info'}
+              title={aiRoutineLimitReached ? 'Limite routines IA atteinte' : nearAiRoutineLimit ? 'Derniere routine disponible bientot' : 'Quota routines IA'}
+              message={aiRoutineLimitReached
+                ? `Prochaine disponibilite: ${formatResetDate(aiRoutineResetAt)}.`
+                : nearAiRoutineLimit
+                  ? `Attention: il vous reste ${aiRoutineRemaining} routine IA ce mois-ci.`
+                  : `Routines IA utilisees ce mois: ${aiRoutineUsed}/${aiRoutineLimit}.`}
+              used={aiRoutineUsed}
+              limit={aiRoutineLimit}
+              onUpgrade={onUpgrade}
+              upgradeLabel="Passer Premium"
+            />
+          </div>
+        )}
 
         {/* ═══ Main Content Grid ═══ */}
         <div className={`grid gap-6 ${show3D ? 'lg:grid-cols-2' : 'lg:grid-cols-3'}`}>

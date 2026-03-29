@@ -24,3 +24,20 @@ export interface SubscriptionPlanInfo {
   features: string[];
   duration?: number;
 }
+
+export interface SubscriptionQuotaItem {
+  used: number;
+  limit: number | null;
+  remaining: number | null;
+  resetsAt: string | null;
+}
+
+export interface SubscriptionUsageSummary {
+  isPremium: boolean;
+  subscription: Subscription;
+  quotas: {
+    analyses: SubscriptionQuotaItem;
+    aiRoutines: SubscriptionQuotaItem;
+    chatMessages: SubscriptionQuotaItem;
+  };
+}
