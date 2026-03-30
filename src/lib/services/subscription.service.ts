@@ -37,13 +37,16 @@ export const subscriptionService = {
       name: plan.name,
       price: plan.price,
       currency: plan.currency,
-      features: plan.features,
+      features: Array.isArray(plan.features) ? plan.features : [],
       duration: plan.duration,
     }));
   },
 
   async upgrade(plan: string): Promise<Subscription> {
-    const res = await apiClient.post<any>('/subscriptions/upgrade', { plan });
+    const res = await apiClient.post<any>('/subscriptions/upgrade', {
+      plan,
+      planCode: plan,
+    });
     return unwrapSubscription(res.data);
   },
 
@@ -65,7 +68,10 @@ export const subscriptionService = {
   async createStripeCheckout(plan: string): Promise<{ id: string; url: string | null }> {
     const res = await apiClient.post<{ url: string | null; id: string }>(
       '/subscriptions/stripe/checkout',
-      { plan },
+      {
+        plan,
+        planCode: plan,
+      },
     );
     return res.data;
   },

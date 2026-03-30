@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, Crown, Sparkles, Shield, Loader2, CalendarDays, PartyPopper } from 'lucide-react';
+import { Check, Crown, Sparkles, Shield, Loader2, CalendarDays, PartyPopper, X } from 'lucide-react';
 import { Button } from '../button';
 import { Card } from '../card';
 import { subscriptionService } from '../../../lib/services/subscription.service';
@@ -9,6 +9,7 @@ import type { Notification, Subscription, SubscriptionPlanInfo } from '../../../
 import { useAuthStore } from '../../../stores/auth.store';
 import { useNotificationStore } from '../../../stores/notification.store';
 import toast from 'react-hot-toast';
+import { AxiosError } from 'axios';
 
 interface SubscriptionPageProps {
   onBack: () => void;
@@ -176,7 +177,15 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
         if (!url) throw new Error('Missing Stripe checkout URL');
         window.location.assign(url);
       } catch (error) {
-        toast.error('Failed to start payment. Please try again.');
+        const backendMessage =
+          error instanceof AxiosError
+            ? (error.response?.data as any)?.message
+            : undefined;
+        toast.error(
+          Array.isArray(backendMessage)
+            ? backendMessage.join(', ')
+            : backendMessage || 'Failed to start payment. Please try again.',
+        );
         localStorage.removeItem('pending_subscription_plan');
         setUpgrading(false);
       }
@@ -401,62 +410,99 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
 
       <AnimatePresence>
         {showPurchaseSuccessModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm p-4 flex items-center justify-center"
-            onClick={() => setShowPurchaseSuccessModal(false)}
-          >
+          <>
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 12 }}
-              transition={{ duration: 0.28, ease: 'easeOut' }}
-              className="relative w-full max-w-lg rounded-3xl border border-[#BFDBFE] bg-gradient-to-br from-white via-[#F8FBFF] to-[#F0F9FF] p-6 shadow-2xl"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowPurchaseSuccessModal(false)}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                zIndex: 200,
+              }}
+            />
+
+            <motion.div
+              initial={{ opacity: 0, y: 60, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl mx-auto px-4"
+              style={{ zIndex: 201 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-[#0EA5E9]/20 blur-2xl" />
-              <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-[#06B6D4]/20 blur-2xl" />
+              <div className="relative rounded-3xl border border-gray-100 shadow-2xl overflow-hidden bg-white">
+                <div className="h-1.5 w-full bg-gradient-to-r from-[#0EA5E9] via-[#8B5CF6] to-[#EC4899]" />
 
-              <div className="relative">
-                <div className="mx-auto mb-4 w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center shadow-lg">
-                  <PartyPopper className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-center text-[#0F172A]">Thank you for your purchase</h3>
-                <p className="text-center text-sm text-[#64748B] mt-2">
-                  Your subscription is now active. Enjoy all premium features.
-                </p>
+                <div
+                  className="absolute -top-24 -right-24 w-48 h-48 rounded-full opacity-10 pointer-events-none"
+                  style={{
+                    background: 'radial-gradient(circle, #8B5CF6, transparent)',
+                    filter: 'blur(60px)',
+                  }}
+                />
+                <div
+                  className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full opacity-5 pointer-events-none"
+                  style={{
+                    background: 'radial-gradient(circle, #0EA5E9, transparent)',
+                    filter: 'blur(50px)',
+                  }}
+                />
 
-                <div className="mt-6 space-y-3">
-                  <div className="rounded-xl border border-[#DBEAFE] bg-white/90 px-4 py-3 flex items-center justify-between">
-                    <span className="text-sm text-[#64748B] inline-flex items-center gap-2">
-                      <Crown className="w-4 h-4 text-[#F59E0B]" /> Plan
-                    </span>
-                    <span className="text-sm font-semibold text-[#0F172A]">
-                      {formatPlanName(purchaseSuccessSub?.plan)}
-                    </span>
+                <button
+                  onClick={() => setShowPurchaseSuccessModal(false)}
+                  className="absolute top-5 right-5 p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors z-10"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                <div className="relative p-8">
+                  <div className="mx-auto mb-4 w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0EA5E9] to-[#8B5CF6] flex items-center justify-center shadow-lg">
+                    <PartyPopper className="w-8 h-8 text-white" />
                   </div>
 
-                  <div className="rounded-xl border border-[#DBEAFE] bg-white/90 px-4 py-3 flex items-center justify-between">
-                    <span className="text-sm text-[#64748B] inline-flex items-center gap-2">
-                      <CalendarDays className="w-4 h-4 text-[#0EA5E9]" /> End date
-                    </span>
-                    <span className="text-sm font-semibold text-[#0F172A]">
-                      {formatDate(purchaseSuccessSub?.endDate)}
-                    </span>
-                  </div>
-                </div>
+                  <h3 className="text-2xl font-bold text-center text-gray-900">Paiement confirme</h3>
+                  <p className="text-center text-sm text-gray-500 mt-2">
+                    Votre abonnement premium est actif. Profitez de toutes les fonctionnalites.
+                  </p>
 
-                <div className="mt-6 flex items-center justify-end gap-2">
-                  <Button onClick={() => setShowPurchaseSuccessModal(false)}>
-                    <Check className="w-4 h-4" />
-                    Continue
-                  </Button>
+                  <div className="mt-6 space-y-3">
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 flex items-center justify-between">
+                      <span className="text-sm text-gray-500 inline-flex items-center gap-2">
+                        <Crown className="w-4 h-4 text-[#F59E0B]" /> Plan
+                      </span>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {formatPlanName(purchaseSuccessSub?.plan)}
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 flex items-center justify-between">
+                      <span className="text-sm text-gray-500 inline-flex items-center gap-2">
+                        <CalendarDays className="w-4 h-4 text-[#0EA5E9]" /> Fin
+                      </span>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {formatDate(purchaseSuccessSub?.endDate)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-end">
+                    <Button onClick={() => setShowPurchaseSuccessModal(false)}>
+                      <Check className="w-4 h-4" />
+                      Continuer
+                    </Button>
+                  </div>
                 </div>
               </div>
             </motion.div>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>
