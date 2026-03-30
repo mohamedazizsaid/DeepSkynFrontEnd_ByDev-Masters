@@ -639,6 +639,8 @@ const fr = {
     newPasswordLabel: 'Nouveau mot de passe',
     chooseStrongPassword: 'Choisissez un mot de passe fort pour votre compte',
     min8Chars: 'Min 8 caractères',
+    fieldRequired: 'Ce champ est requis',
+    
   },
   // Landing
   landing: {
@@ -648,7 +650,7 @@ const fr = {
     heroTitle1: 'Votre Compagnon',
     heroTitleGradient: 'de Santé de Peau',
     heroTitle2: 'Personnel',
-    heroDesc: "Découvrez le vrai potentiel de votre peau avec une analyse par IA, des routines personnalisées et des conseils d'experts faits pour vous.",
+    heroDesc: "Analyse IA, routines sur mesure et conseils experts pour révéler le meilleur de votre peau.",
     heroStart: 'Commencez l’aventure',
     heroWatchDemo: 'Voir la démo',
     activeUsers: 'Utilisateurs Actifs',
@@ -693,6 +695,15 @@ const fr = {
       'Suivi illimité',
       'Support prioritaire'
     ],
+    enterprise: 'Entreprise',
+    enterprisePrice: 'Sur devis',
+    enterpriseFeatures: [
+      'Multi-comptes équipe',
+      'Tableau de bord avancé',
+      'API & intégrations dédiées',
+      'Accompagnement prioritaire'
+    ],
+    contactSales: 'Contacter les ventes',
     startTrial: "Démarrer l'essai",
     readyToTransform: 'Prêt à transformer votre peau ?',
     joinThousands: 'Rejoignez des milliers d\'utilisateurs',
@@ -701,7 +712,88 @@ const fr = {
     product: 'Produit',
     company: 'Entreprise',
     legal: 'Légal',
+    footerFeatures: 'Fonctionnalités',
+    footerPricing: 'Tarifs',
+    footerFaq: 'FAQ',
+    footerAbout: 'À propos',
+    footerBlog: 'Blog',
+    footerCareers: 'Carrières',
+    footerPrivacy: 'Confidentialité',
+    footerTerms: 'Conditions',
+    footerSecurity: 'Sécurité',
     allRightsReserved: 'Tous droits réservés.',
+  },
+  chatPage: {
+    common: {
+      now: 'Maintenant',
+      soon: 'bientôt'
+    },
+    fallbackConversationTitle: 'Conversation skincare',
+    welcomeMessage: "Bonjour ! Je suis votre coach dermatologie IA. Je peux vous aider avec vos routines skincare, les actifs et des conseils personnalisés selon votre profil.",
+    quickSuggestions: [
+      'Construis-moi une routine matin simple pour peau grasse',
+      'Puis-je combiner la vitamine C et la niacinamide ?',
+      'Comment atténuer les taches post-acné en douceur ?',
+      'Que dois-je éviter si ma peau est sensible ?'
+    ],
+    toasts: {
+      limitReached: 'Limite de chat quotidienne atteinte. Réessayez après {reset}.',
+      aiFallback: "Je n'ai pas pu générer de réponse. Veuillez réessayer.",
+      lastFreeMessage: 'Attention : plus que {count} message gratuit aujourd\'hui.',
+      genericError: 'Désolé, une erreur est survenue. Veuillez réessayer plus tard.'
+    },
+    header: {
+      title: 'Coach Dermatologie IA',
+      online: 'Assistant en ligne en temps réel',
+      personalized: 'Personnalisé avec votre profil',
+      sentToday: '{count} envoyés aujourd\'hui',
+      clearChat: 'Effacer le chat',
+      upgradeToPremium: 'Passer en Premium'
+    },
+    message: {
+      aiCoachLabel: 'Coach IA',
+      aiTyping: "L'IA est en train d'écrire..."
+    },
+    quota: {
+      titleBlocked: 'Limite de chat atteinte',
+      titleWarning: 'Presque à la limite',
+      titleInfo: 'Quota chat gratuit',
+      messageBlocked: 'Vous avez atteint votre limite gratuite. Prochaine réinitialisation : {reset}.',
+      messageWarningSingular: 'Il vous reste {count} message gratuit aujourd\'hui.',
+      messageWarningPlural: 'Il vous reste {count} messages gratuits aujourd\'hui.',
+      messageInfo: 'Il vous reste {count} messages gratuits aujourd\'hui.',
+      upgradeLabel: 'Premium'
+    },
+    inputPlaceholder: 'Posez-moi toutes vos questions skincare...',
+    history: {
+      title: 'Historique des discussions',
+      empty: 'Commencez une discussion pour construire votre historique.',
+      openConversation: 'Ouvrir la conversation'
+    },
+    suggestions: {
+      title: 'Suggestions rapides',
+      subtitle: 'Touchez une suggestion pour lancer une conversation plus vite'
+    },
+    context: {
+      title: 'Contexte IA',
+      live: 'Actif',
+      skinTypeLabel: 'Type de peau',
+      skinTypeValue: 'Type III',
+      ageLabel: 'Age',
+      ageValue: '28 ans',
+      mainConcernsLabel: 'Préoccupations principales',
+      mainConcernsValue: 'Acné, Taches',
+      currentScore: 'Score actuel',
+      hint: 'L\'IA utilise les données de votre profil pour fournir des conseils personnalisés.'
+    },
+    premium: {
+      title: 'Fonctionnalités Premium',
+      featureUnlimited: 'Messages illimités',
+      featurePriority: 'Réponses prioritaires',
+      featureInsights: 'Insights peau avancés',
+      featureProducts: 'Recommandations produits',
+      upgradeNow: 'Passer Premium maintenant'
+    }
   },
   // Onboarding
   onboarding: {
@@ -1567,6 +1659,7 @@ const en: TranslationKeys = {
     newPasswordLabel: 'New Password',
     chooseStrongPassword: 'Choose a strong password for your account',
     min8Chars: 'Min 8 characters',
+    fieldRequired: 'This field is required',
   },
   // Landing
   landing: {
@@ -1576,7 +1669,7 @@ const en: TranslationKeys = {
     heroTitle1: 'Your Personal',
     heroTitleGradient: 'Skin Health',
     heroTitle2: 'Companion',
-    heroDesc: "Discover your skin's true potential with AI-powered analysis, personalized routines, and expert guidance tailored just for you.",
+    heroDesc: 'AI analysis, personalized routines, and expert insights to bring out your best skin.',
     heroStart: 'Start Your Journey',
     heroWatchDemo: 'Watch Demo',
     activeUsers: 'Active Users',
@@ -1621,6 +1714,15 @@ const en: TranslationKeys = {
       'Unlimited tracking',
       'Priority support'
     ],
+    enterprise: 'Enterprise',
+    enterprisePrice: 'Custom',
+    enterpriseFeatures: [
+      'Multi-user team workspace',
+      'Advanced analytics dashboard',
+      'Dedicated API integrations',
+      'Priority onboarding support'
+    ],
+    contactSales: 'Contact Sales',
     startTrial: 'Start Premium Trial',
     readyToTransform: 'Ready to Transform Your Skin?',
     joinThousands: 'Join thousands of users achieving their best skin ever',
@@ -1629,7 +1731,88 @@ const en: TranslationKeys = {
     product: 'Product',
     company: 'Company',
     legal: 'Legal',
+    footerFeatures: 'Features',
+    footerPricing: 'Pricing',
+    footerFaq: 'FAQ',
+    footerAbout: 'About',
+    footerBlog: 'Blog',
+    footerCareers: 'Careers',
+    footerPrivacy: 'Privacy',
+    footerTerms: 'Terms',
+    footerSecurity: 'Security',
     allRightsReserved: 'All rights reserved.',
+  },
+  chatPage: {
+    common: {
+      now: 'Now',
+      soon: 'soon'
+    },
+    fallbackConversationTitle: 'Skincare conversation',
+    welcomeMessage: "Hello! I'm your AI dermatology coach. I can help with skincare routines, active ingredients, and personalized tips based on your profile.",
+    quickSuggestions: [
+      'Build me a simple AM routine for oily skin',
+      'Can I combine vitamin C and niacinamide?',
+      'How to fade post-acne dark spots safely?',
+      'What should I avoid if my skin is sensitive?'
+    ],
+    toasts: {
+      limitReached: 'Daily chat limit reached. Try again after {reset}.',
+      aiFallback: 'I could not generate a response. Please try again.',
+      lastFreeMessage: 'Heads up: only {count} free message left today.',
+      genericError: 'Sorry, something went wrong. Please try again later.'
+    },
+    header: {
+      title: 'AI Dermatology Coach',
+      online: 'Realtime assistant online',
+      personalized: 'Personalized with your profile',
+      sentToday: '{count} sent today',
+      clearChat: 'Clear chat',
+      upgradeToPremium: 'Upgrade to Premium'
+    },
+    message: {
+      aiCoachLabel: 'AI Coach',
+      aiTyping: 'AI is typing...'
+    },
+    quota: {
+      titleBlocked: 'Chat limit reached',
+      titleWarning: 'Almost at limit',
+      titleInfo: 'Free chat quota',
+      messageBlocked: 'You reached your free chat limit. Next reset: {reset}.',
+      messageWarningSingular: 'Only {count} free message left today.',
+      messageWarningPlural: 'Only {count} free messages left today.',
+      messageInfo: 'You have {count} free messages remaining today.',
+      upgradeLabel: 'Upgrade'
+    },
+    inputPlaceholder: 'Ask me anything about skincare...',
+    history: {
+      title: 'Chat History',
+      empty: 'Start a conversation to build your history.',
+      openConversation: 'Open conversation'
+    },
+    suggestions: {
+      title: 'Quick Suggestions',
+      subtitle: 'Tap a prompt to start a faster conversation'
+    },
+    context: {
+      title: 'AI Context',
+      live: 'Live',
+      skinTypeLabel: 'Skin Type',
+      skinTypeValue: 'Type III',
+      ageLabel: 'Age',
+      ageValue: '28 years',
+      mainConcernsLabel: 'Main Concerns',
+      mainConcernsValue: 'Acne, Dark Spots',
+      currentScore: 'Current Score',
+      hint: 'The AI uses your profile data to provide personalized skincare advice'
+    },
+    premium: {
+      title: 'Premium Features',
+      featureUnlimited: 'Unlimited messages',
+      featurePriority: 'Priority responses',
+      featureInsights: 'Advanced skin insights',
+      featureProducts: 'Product recommendations',
+      upgradeNow: 'Upgrade Now'
+    }
   },
   // Onboarding
   onboarding: {
@@ -2459,6 +2642,7 @@ const ar: TranslationKeys = {
     newPasswordLabel: 'كلمة المرور الجديدة',
     chooseStrongPassword: 'اختر كلمة مرور قوية لحسابك',
     min8Chars: '8 أحرف على الأقل',
+    fieldRequired: 'هذا الحقل مطلوب',
   },
   // Landing
   landing: {
@@ -2468,7 +2652,7 @@ const ar: TranslationKeys = {
     heroTitle1: 'رفيقك الشخصي',
     heroTitleGradient: 'لصحة البشرة',
     heroTitle2: '',
-    heroDesc: 'اكتشف الإمكانات الحقيقية لبشرتك مع التحليل بالذكاء الاصطناعي، والروتين المخصص، والتوجه الخبير لك.',
+    heroDesc: 'تحليل ذكي وروتين مخصص وإرشاد خبير لإظهار أفضل ما في بشرتك.',
     heroStart: 'ابدأ رحلتك',
     heroWatchDemo: 'مشاهدة العرض',
     activeUsers: 'مستخدمون نشطون',
@@ -2513,6 +2697,15 @@ const ar: TranslationKeys = {
       'تتبع غير محدود',
       'أولوية الدعم'
     ],
+    enterprise: 'المؤسسات',
+    enterprisePrice: 'سعر مخصص',
+    enterpriseFeatures: [
+      'مساحات عمل متعددة للأعضاء',
+      'لوحة تحليلات متقدمة',
+      'تكاملات API مخصصة',
+      'تهيئة ودعم بأولوية'
+    ],
+    contactSales: 'تواصل مع المبيعات',
     startTrial: 'ابدأ فترة التجربة',
     readyToTransform: 'جاهز لتحويل بشرتك؟',
     joinThousands: 'انضم إلى الآلاف من المستخدمين واحصل على أفضل بشرة',
@@ -2521,7 +2714,88 @@ const ar: TranslationKeys = {
     product: 'المنتج',
     company: 'الشركة',
     legal: 'قانوني',
+    footerFeatures: 'الميزات',
+    footerPricing: 'الأسعار',
+    footerFaq: 'الأسئلة الشائعة',
+    footerAbout: 'من نحن',
+    footerBlog: 'المدونة',
+    footerCareers: 'الوظائف',
+    footerPrivacy: 'الخصوصية',
+    footerTerms: 'الشروط',
+    footerSecurity: 'الأمان',
     allRightsReserved: 'جميع الحقوق محفوظة.',
+  },
+  chatPage: {
+    common: {
+      now: 'الآن',
+      soon: 'قريبا'
+    },
+    fallbackConversationTitle: 'محادثة العناية بالبشرة',
+    welcomeMessage: 'مرحبا! أنا مدربك الذكي للأمراض الجلدية. أستطيع مساعدتك في الروتين والعناصر الفعالة ونصائح مخصصة حسب ملفك.',
+    quickSuggestions: [
+      'ابن لي روتين صباحي بسيط للبشرة الدهنية',
+      'هل يمكنني الجمع بين فيتامين C والنياسيناميد؟',
+      'كيف أخفف آثار ما بعد حب الشباب بأمان؟',
+      'ما الذي يجب أن أتجنبه إذا كانت بشرتي حساسة؟'
+    ],
+    toasts: {
+      limitReached: 'تم الوصول إلى الحد اليومي للدردشة. حاول مرة أخرى بعد {reset}.',
+      aiFallback: 'لم أتمكن من إنشاء رد. الرجاء المحاولة مرة أخرى.',
+      lastFreeMessage: 'تنبيه: بقيت لك {count} رسالة مجانية اليوم.',
+      genericError: 'عذرا، حدث خطأ. حاول مرة أخرى لاحقا.'
+    },
+    header: {
+      title: 'مدرب الجلدية بالذكاء الاصطناعي',
+      online: 'المساعد متصل في الوقت الحقيقي',
+      personalized: 'مخصص حسب ملفك',
+      sentToday: 'تم إرسال {count} اليوم',
+      clearChat: 'مسح الدردشة',
+      upgradeToPremium: 'الترقية إلى Premium'
+    },
+    message: {
+      aiCoachLabel: 'المدرب الذكي',
+      aiTyping: 'الذكاء الاصطناعي يكتب...'
+    },
+    quota: {
+      titleBlocked: 'تم بلوغ حد الدردشة',
+      titleWarning: 'قربت من الحد',
+      titleInfo: 'حصة الدردشة المجانية',
+      messageBlocked: 'لقد وصلت إلى الحد المجاني. إعادة التعيين التالية: {reset}.',
+      messageWarningSingular: 'تبقى لك {count} رسالة مجانية اليوم.',
+      messageWarningPlural: 'تبقى لك {count} رسائل مجانية اليوم.',
+      messageInfo: 'لديك {count} رسالة مجانية متبقية اليوم.',
+      upgradeLabel: 'ترقية'
+    },
+    inputPlaceholder: 'اسألني أي شيء عن العناية بالبشرة...',
+    history: {
+      title: 'سجل المحادثات',
+      empty: 'ابدأ محادثة لبناء السجل.',
+      openConversation: 'فتح المحادثة'
+    },
+    suggestions: {
+      title: 'اقتراحات سريعة',
+      subtitle: 'اضغط على اقتراح لبدء محادثة أسرع'
+    },
+    context: {
+      title: 'سياق الذكاء الاصطناعي',
+      live: 'مباشر',
+      skinTypeLabel: 'نوع البشرة',
+      skinTypeValue: 'النوع الثالث',
+      ageLabel: 'العمر',
+      ageValue: '28 سنة',
+      mainConcernsLabel: 'المشاكل الرئيسية',
+      mainConcernsValue: 'حب الشباب، البقع الداكنة',
+      currentScore: 'النتيجة الحالية',
+      hint: 'يستخدم الذكاء الاصطناعي بيانات ملفك لتقديم نصائح مخصصة للعناية بالبشرة.'
+    },
+    premium: {
+      title: 'ميزات Premium',
+      featureUnlimited: 'رسائل غير محدودة',
+      featurePriority: 'ردود ذات أولوية',
+      featureInsights: 'تحليلات متقدمة للبشرة',
+      featureProducts: 'توصيات المنتجات',
+      upgradeNow: 'الترقية الآن'
+    }
   },
   // Onboarding
   onboarding: {
@@ -3351,6 +3625,7 @@ const es: TranslationKeys = {
     newPasswordLabel: 'Nueva contraseña',
     chooseStrongPassword: 'Elige una contraseña fuerte para tu cuenta',
     min8Chars: 'Mínimo 8 caracteres',
+    fieldRequired: 'Este campo es obligatorio',
   },
   // Landing
   landing: {
@@ -3360,7 +3635,7 @@ const es: TranslationKeys = {
     heroTitle1: 'Tu Compañero Personal de',
     heroTitleGradient: 'Salud de la Piel',
     heroTitle2: '',
-    heroDesc: "Descubre el verdadero potencial de tu piel con análisis impulsados por IA, rutinas personalizadas y orientación experta.",
+    heroDesc: 'Análisis con IA, rutinas personalizadas y guía experta para potenciar tu piel.',
     heroStart: 'Inicia tu Viaje',
     heroWatchDemo: 'Ver Demo',
     activeUsers: 'Usuarios Activos',
@@ -3405,6 +3680,15 @@ const es: TranslationKeys = {
       'Seguimiento ilimitado',
       'Soporte prioritario'
     ],
+    enterprise: 'Empresa',
+    enterprisePrice: 'Personalizado',
+    enterpriseFeatures: [
+      'Espacio de equipo multiusuario',
+      'Panel analítico avanzado',
+      'Integraciones API dedicadas',
+      'Onboarding y soporte prioritario'
+    ],
+    contactSales: 'Contactar ventas',
     startTrial: 'Iniciar Prueba Premium',
     readyToTransform: '¿Listo Para Transformar Tu Piel?',
     joinThousands: 'Únete a miles de usuarios hacia una piel mejor',
@@ -3413,7 +3697,88 @@ const es: TranslationKeys = {
     product: 'Producto',
     company: 'Empresa',
     legal: 'Legal',
+    footerFeatures: 'Características',
+    footerPricing: 'Precios',
+    footerFaq: 'FAQ',
+    footerAbout: 'Acerca de',
+    footerBlog: 'Blog',
+    footerCareers: 'Carreras',
+    footerPrivacy: 'Privacidad',
+    footerTerms: 'Términos',
+    footerSecurity: 'Seguridad',
     allRightsReserved: 'Todos los derechos reservados.',
+  },
+  chatPage: {
+    common: {
+      now: 'Ahora',
+      soon: 'pronto'
+    },
+    fallbackConversationTitle: 'Conversación skincare',
+    welcomeMessage: 'Hola! Soy tu coach dermatológico con IA. Puedo ayudarte con rutinas, activos y consejos personalizados según tu perfil.',
+    quickSuggestions: [
+      'Crea una rutina AM simple para piel grasa',
+      'Puedo combinar vitamina C y niacinamida?',
+      'Como atenuar manchas post-acne de forma segura?',
+      'Que debo evitar si mi piel es sensible?'
+    ],
+    toasts: {
+      limitReached: 'Limite diario de chat alcanzado. Intentalo de nuevo despues de {reset}.',
+      aiFallback: 'No pude generar una respuesta. Intentalo de nuevo.',
+      lastFreeMessage: 'Atencion: solo queda {count} mensaje gratis hoy.',
+      genericError: 'Lo siento, algo salio mal. Intentalo mas tarde.'
+    },
+    header: {
+      title: 'Coach Dermatologico IA',
+      online: 'Asistente en linea en tiempo real',
+      personalized: 'Personalizado con tu perfil',
+      sentToday: '{count} enviados hoy',
+      clearChat: 'Limpiar chat',
+      upgradeToPremium: 'Mejorar a Premium'
+    },
+    message: {
+      aiCoachLabel: 'Coach IA',
+      aiTyping: 'La IA esta escribiendo...'
+    },
+    quota: {
+      titleBlocked: 'Limite de chat alcanzado',
+      titleWarning: 'Casi en el limite',
+      titleInfo: 'Cuota de chat gratis',
+      messageBlocked: 'Alcanzaste tu limite gratuito. Proximo reinicio: {reset}.',
+      messageWarningSingular: 'Solo queda {count} mensaje gratis hoy.',
+      messageWarningPlural: 'Solo quedan {count} mensajes gratis hoy.',
+      messageInfo: 'Te quedan {count} mensajes gratis hoy.',
+      upgradeLabel: 'Mejorar'
+    },
+    inputPlaceholder: 'Preguntame lo que quieras sobre skincare...',
+    history: {
+      title: 'Historial de chat',
+      empty: 'Inicia una conversacion para construir tu historial.',
+      openConversation: 'Abrir conversacion'
+    },
+    suggestions: {
+      title: 'Sugerencias rapidas',
+      subtitle: 'Toca una sugerencia para iniciar una conversacion mas rapida'
+    },
+    context: {
+      title: 'Contexto IA',
+      live: 'En vivo',
+      skinTypeLabel: 'Tipo de piel',
+      skinTypeValue: 'Tipo III',
+      ageLabel: 'Edad',
+      ageValue: '28 anos',
+      mainConcernsLabel: 'Preocupaciones principales',
+      mainConcernsValue: 'Acne, Manchas',
+      currentScore: 'Puntuacion actual',
+      hint: 'La IA usa los datos de tu perfil para dar consejos personalizados de skincare.'
+    },
+    premium: {
+      title: 'Funciones Premium',
+      featureUnlimited: 'Mensajes ilimitados',
+      featurePriority: 'Respuestas prioritarias',
+      featureInsights: 'Insights avanzados de piel',
+      featureProducts: 'Recomendaciones de productos',
+      upgradeNow: 'Mejorar ahora'
+    }
   },
   // Onboarding
   onboarding: {

@@ -16,6 +16,7 @@ import { Card } from '../card';
 import { QuotaAlertBanner } from './quota-alert-banner';
 import { chatService } from '../../../lib/services/chat.service';
 import { subscriptionService } from '../../../lib/services/subscription.service';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 import type { ChatHistory } from '../../../lib/types';
 import toast from 'react-hot-toast';
 
@@ -45,11 +46,11 @@ const extractIsoFromMessage = (message?: string): string | null => {
     return match?.[0] || null;
 };
 
-const formatResetDate = (value?: string | null): string => {
-    if (!value) return 'soon';
+const formatResetDate = (value: string | null | undefined, fallbackLabel: string, locale?: string): string => {
+    if (!value) return fallbackLabel;
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleString([], {
+    return date.toLocaleString(locale ? [locale] : undefined, {
         day: '2-digit',
         month: 'short',
         hour: '2-digit',
@@ -57,16 +58,16 @@ const formatResetDate = (value?: string | null): string => {
     });
 };
 
-const formatRelative = (dateString?: string) => {
-    if (!dateString) return 'Now';
+const formatRelative = (dateString: string | undefined, nowLabel: string, locale?: string) => {
+    if (!dateString) return nowLabel;
     const date = new Date(dateString);
-    if (Number.isNaN(date.getTime())) return 'Now';
+    if (Number.isNaN(date.getTime())) return nowLabel;
     const diffMin = Math.floor((Date.now() - date.getTime()) / 60000);
-    if (diffMin < 1) return 'Now';
+    if (diffMin < 1) return nowLabel;
     if (diffMin < 60) return `${diffMin}m`;
     const diffHours = Math.floor(diffMin / 60);
     if (diffHours < 24) return `${diffHours}h`;
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(locale ? [locale] : undefined, { month: 'short', day: 'numeric' });
 };
 
 const getConversationMessages = (chat: ChatHistory): Message[] => {
@@ -102,18 +103,19 @@ const getConversationMessages = (chat: ChatHistory): Message[] => {
     return fallback;
 };
 
-const getConversationTitle = (chat: ChatHistory): string => {
+const getConversationTitle = (chat: ChatHistory, fallbackTitle: string): string => {
     const raw = Array.isArray(chat.messages) ? (chat.messages as PersistedChatMessage[]) : [];
     const firstUser = raw.find((m) => m.role === 'user' && m.content?.trim());
-    const title = firstUser?.content || chat.message || 'Skincare conversation';
+    const title = firstUser?.content || chat.message || fallbackTitle;
     return title.length > 64 ? `${title.slice(0, 64)}...` : title;
 };
 
 export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
+    const { t, language } = useAccessibilityStore();
     const welcomeMessage: Message = {
         id: 'welcome',
         type: 'ai',
-        content: "Hello! I'm your AI dermatology coach. I can help with skincare routines, active ingredients, and personalized tips based on your profile.",
+        content: t('chatPage.welcomeMessage'),
         timestamp: new Date()
     };
 
@@ -209,12 +211,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
         scrollToBottom();
     }, [messages]);
 
-    const quickSuggestions = [
-        'Build me a simple AM routine for oily skin',
-        'Can I combine vitamin C and niacinamide?',
-        'How to fade post-acne dark spots safely?',
-        'What should I avoid if my skin is sensitive?'
-    ];
+    const quickSuggestions = t('chatPage.quickSuggestions') as unknown as string[];
 
     const freeLimit = chatMessageLimit;
     const freeRemaining = freeLimit === null ? null : Math.max(0, freeLimit - dailyMessageCount);
@@ -225,8 +222,8 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
         if (!inputValue.trim()) return;
 
         if (chatLimitReached) {
-            const resetText = formatResetDate(chatResetAt);
-            toast.error(`Daily chat limit reached. Try again after ${resetText}.`);
+            const resetText = formatResetDate(chatResetAt, t('chatPage.common.soon'), language);
+            toast.error(t('chatPage.toasts.limitReached').replace('{reset}', resetText));
             return;
         }
 
@@ -247,14 +244,14 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
             const aiMessage: Message = {
                 id: response.id || (Date.now() + 1).toString(),
                 type: 'ai',
-                content: response.assistantResponse || 'I apologize, I could not generate a response. Please try again.',
+                content: response.assistantResponse || t('chatPage.toasts.aiFallback'),
                 timestamp: new Date(response.createdAt || Date.now())
             };
             setMessages(prev => [...prev, aiMessage]);
             const usage = await refreshUsage();
             const remaining = usage?.quotas.chatMessages.remaining;
             if (usage && !usage.isPremium && typeof remaining === 'number' && remaining > 0 && remaining <= 1) {
-                toast.error(`Heads up: only ${remaining} free message left today.`);
+                toast.error(t('chatPage.toasts.lastFreeMessage').replace('{count}', String(remaining)));
             }
 
             const chatId = response.id || activeChatId || `chat-${Date.now()}`;
@@ -294,7 +291,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                 type: 'ai',
                 content: typeof backendMessage === 'string'
                     ? backendMessage
-                    : 'Sorry, something went wrong. Please try again later.',
+                    : t('chatPage.toasts.genericError'),
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
@@ -335,12 +332,12 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                             <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-bold text-[#0F172A]">AI Dermatology Coach</h1>
+                            <h1 className="text-2xl md:text-3xl font-bold text-[#0F172A]">{t('chatPage.header.title')}</h1>
                             <div className="flex items-center gap-2 text-sm text-[#64748B]">
                                 <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></div>
-                                <span>Realtime assistant online</span>
+                                <span>{t('chatPage.header.online')}</span>
                                 <span className="hidden sm:inline">•</span>
-                                <span className="hidden sm:inline">Personalized with your profile</span>
+                                <span className="hidden sm:inline">{t('chatPage.header.personalized')}</span>
                             </div>
                         </div>
                     </div>
@@ -348,19 +345,19 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                     <div className="flex flex-wrap items-center gap-2">
                         <div className="inline-flex items-center gap-2 rounded-xl border border-[#E2E8F0] bg-white/90 px-3 py-2 text-xs text-[#475569]">
                             <MessageSquare className="w-4 h-4 text-[#0EA5E9]" />
-                            <span>{dailyMessageCount} sent today</span>
+                            <span>{t('chatPage.header.sentToday').replace('{count}', String(dailyMessageCount))}</span>
                         </div>
                         <button
                             onClick={handleClearChat}
                             className="inline-flex items-center gap-2 rounded-xl border border-[#E2E8F0] bg-white/90 px-3 py-2 text-xs text-[#475569] hover:bg-[#F8FAFC] transition-colors"
                         >
                             <Trash2 className="w-4 h-4 text-[#64748B]" />
-                            Clear chat
+                            {t('chatPage.header.clearChat')}
                         </button>
                         {!isPremium && onUpgrade && (
                             <Button onClick={onUpgrade} className={premiumButtonClass}>
                                 <Crown className="w-5 h-5 text-white" />
-                                Upgrade to Premium
+                                {t('chatPage.header.upgradeToPremium')}
                             </Button>
                         )}
                     </div>
@@ -393,7 +390,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                                                 {message.type === 'ai' && (
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <Sparkles className="w-4 h-4 text-[#0EA5E9]" />
-                                                        <span className="text-xs font-medium text-[#0EA5E9]">AI Coach</span>
+                                                        <span className="text-xs font-medium text-[#0EA5E9]">{t('chatPage.message.aiCoachLabel')}</span>
                                                     </div>
                                                 )}
                                                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
@@ -417,7 +414,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                                     <div className="bg-white border border-[#E2E8F0] rounded-2xl px-4 py-3 shadow-sm">
                                         <div className="flex items-center gap-2">
                                             <Loader className="w-4 h-4 text-[#0EA5E9] animate-spin" />
-                                            <span className="text-sm text-[#6B7280]">AI is typing...</span>
+                                            <span className="text-sm text-[#6B7280]">{t('chatPage.message.aiTyping')}</span>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -432,16 +429,18 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                                 <div className="mb-4">
                                     <QuotaAlertBanner
                                         variant={chatLimitReached ? 'blocked' : nearChatLimit ? 'warning' : 'info'}
-                                        title={chatLimitReached ? 'Chat limit reached' : nearChatLimit ? 'Almost at limit' : 'Free chat quota'}
+                                        title={chatLimitReached ? t('chatPage.quota.titleBlocked') : nearChatLimit ? t('chatPage.quota.titleWarning') : t('chatPage.quota.titleInfo')}
                                         message={chatLimitReached
-                                            ? `You reached your free chat limit. Next reset: ${formatResetDate(chatResetAt)}.`
+                                            ? t('chatPage.quota.messageBlocked').replace('{reset}', formatResetDate(chatResetAt, t('chatPage.common.soon'), language))
                                             : nearChatLimit
-                                                ? `Only ${freeRemaining} free message${freeRemaining > 1 ? 's' : ''} left today.`
-                                                : `You have ${freeRemaining} free messages remaining today.`}
+                                                ? (freeRemaining === 1
+                                                    ? t('chatPage.quota.messageWarningSingular').replace('{count}', String(freeRemaining))
+                                                    : t('chatPage.quota.messageWarningPlural').replace('{count}', String(freeRemaining)))
+                                                : t('chatPage.quota.messageInfo').replace('{count}', String(freeRemaining))}
                                         used={dailyMessageCount}
                                         limit={freeLimit}
                                         onUpgrade={onUpgrade}
-                                        upgradeLabel="Upgrade"
+                                        upgradeLabel={t('chatPage.quota.upgradeLabel')}
                                     />
                                 </div>
                             )}
@@ -452,7 +451,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                                     value={inputValue}
                                     onChange={(e) => setInputValue(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                    placeholder="Ask me anything about skincare..."
+                                    placeholder={t('chatPage.inputPlaceholder')}
                                     disabled={chatLimitReached}
                                     className="flex-1 px-4 py-3 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-xl 
                     focus:outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/20
@@ -473,7 +472,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-bold inline-flex items-center gap-2">
                                 <History className="w-5 h-5 text-[#0EA5E9]" />
-                                Chat History
+                                {t('chatPage.history.title')}
                             </h3>
                             <span className="text-xs px-2 py-1 rounded-full bg-[#E0F2FE] text-[#0369A1] font-medium">
                                 {historyItems.length}
@@ -482,7 +481,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
 
                         {historyItems.length === 0 ? (
                             <div className="rounded-xl border border-dashed border-[#BFDBFE] bg-[#F0F9FF] px-4 py-5 text-sm text-[#64748B]">
-                                Start a conversation to build your history.
+                                {t('chatPage.history.empty')}
                             </div>
                         ) : (
                             <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
@@ -502,14 +501,14 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                                             >
                                                 <div className="flex items-start justify-between gap-2">
                                                     <p className="text-sm font-semibold text-[#0F172A] line-clamp-2">
-                                                        {getConversationTitle(chat)}
+                                                        {getConversationTitle(chat, t('chatPage.fallbackConversationTitle'))}
                                                     </p>
                                                     <span className="text-[11px] text-[#64748B] shrink-0">
-                                                        {formatRelative(chat.updatedAt || chat.createdAt)}
+                                                        {formatRelative(chat.updatedAt || chat.createdAt, t('chatPage.common.now'), language)}
                                                     </span>
                                                 </div>
                                                 <div className="mt-2 inline-flex items-center gap-1 text-xs text-[#0284C7] font-medium">
-                                                    Open conversation
+                                                    {t('chatPage.history.openConversation')}
                                                     <ChevronRight className="w-3.5 h-3.5" />
                                                 </div>
                                             </motion.button>
@@ -523,8 +522,8 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                     {/* Quick Suggestions */}
                     <Card className="border-[#BFDBFE] bg-gradient-to-b from-white via-[#F8FBFF] to-[#F0F9FF] shadow-md shadow-[#0EA5E9]/10">
                         <div className="mb-4">
-                            <h3 className="text-lg font-bold text-[#0F172A]">Quick Suggestions</h3>
-                            <p className="text-xs text-[#64748B] mt-1">Tap a prompt to start a faster conversation</p>
+                            <h3 className="text-lg font-bold text-[#0F172A]">{t('chatPage.suggestions.title')}</h3>
+                            <p className="text-xs text-[#64748B] mt-1">{t('chatPage.suggestions.subtitle')}</p>
                         </div>
                         <div className="space-y-2">
                             {quickSuggestions.map((suggestion, index) => (
@@ -547,25 +546,25 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                     {/* Context Info */}
                     <Card className="border-[#BFDBFE] bg-gradient-to-b from-white to-[#F8FAFC] shadow-md shadow-[#0EA5E9]/10">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold text-[#0F172A]">AI Context</h3>
-                            <span className="text-[11px] px-2 py-1 rounded-full bg-[#E0F2FE] text-[#0369A1] font-semibold">Live</span>
+                            <h3 className="text-lg font-bold text-[#0F172A]">{t('chatPage.context.title')}</h3>
+                            <span className="text-[11px] px-2 py-1 rounded-full bg-[#E0F2FE] text-[#0369A1] font-semibold">{t('chatPage.context.live')}</span>
                         </div>
                         <div className="space-y-2 text-sm">
                             <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
-                                <span className="text-[#6B7280]">Skin Type</span>
-                                <span className="font-semibold text-[#0F172A]">Type III</span>
+                                <span className="text-[#6B7280]">{t('chatPage.context.skinTypeLabel')}</span>
+                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.skinTypeValue')}</span>
                             </div>
                             <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
-                                <span className="text-[#6B7280]">Age</span>
-                                <span className="font-semibold text-[#0F172A]">28 years</span>
+                                <span className="text-[#6B7280]">{t('chatPage.context.ageLabel')}</span>
+                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.ageValue')}</span>
                             </div>
                             <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
-                                <span className="text-[#6B7280]">Main Concerns</span>
-                                <span className="font-semibold text-[#0F172A]">Acne, Dark Spots</span>
+                                <span className="text-[#6B7280]">{t('chatPage.context.mainConcernsLabel')}</span>
+                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.mainConcernsValue')}</span>
                             </div>
                             <div className="rounded-lg border border-[#BAE6FD] bg-[#F0F9FF] px-3 py-2">
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-[#0369A1] font-medium">Current Score</span>
+                                    <span className="text-[#0369A1] font-medium">{t('chatPage.context.currentScore')}</span>
                                     <span className="font-bold text-[#0284C7]">87/100</span>
                                 </div>
                                 <div className="h-2 rounded-full bg-[#DBEAFE] overflow-hidden">
@@ -575,7 +574,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                         </div>
                         <div className="mt-4 p-3 bg-[#0EA5E9]/10 rounded-xl border border-[#BAE6FD]">
                             <p className="text-xs text-[#0369A1]">
-                                The AI uses your profile data to provide personalized skincare advice
+                                {t('chatPage.context.hint')}
                             </p>
                         </div>
                     </Card>
@@ -585,28 +584,28 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                         <Card className="border-2 border-[#FBBF24] bg-gradient-to-br from-[#FFFDF5] to-white">
                             <div className="text-center">
                                 <Crown className="w-12 h-12 mx-auto mb-3 text-[#FBBF24]" />
-                                <h3 className="text-lg font-bold mb-2">Premium Features</h3>
+                                <h3 className="text-lg font-bold mb-2">{t('chatPage.premium.title')}</h3>
                                 <ul className="text-sm text-[#6B7280] space-y-2 mb-4 text-left">
                                     <li className="flex items-center gap-2">
                                         <div className="w-1.5 h-1.5 rounded-full bg-[#FBBF24]" />
-                                        Unlimited messages
+                                        {t('chatPage.premium.featureUnlimited')}
                                     </li>
                                     <li className="flex items-center gap-2">
                                         <div className="w-1.5 h-1.5 rounded-full bg-[#FBBF24]" />
-                                        Priority responses
+                                        {t('chatPage.premium.featurePriority')}
                                     </li>
                                     <li className="flex items-center gap-2">
                                         <div className="w-1.5 h-1.5 rounded-full bg-[#FBBF24]" />
-                                        Advanced skin insights
+                                        {t('chatPage.premium.featureInsights')}
                                     </li>
                                     <li className="flex items-center gap-2">
                                         <div className="w-1.5 h-1.5 rounded-full bg-[#FBBF24]" />
-                                        Product recommendations
+                                        {t('chatPage.premium.featureProducts')}
                                     </li>
                                 </ul>
                                 <Button className={`w-full ${premiumButtonClass}`} onClick={onUpgrade}>
                                     <Crown className="w-4 h-4 text-white" />
-                                    Upgrade Now
+                                    {t('chatPage.premium.upgradeNow')}
                                 </Button>
                             </div>
                         </Card>

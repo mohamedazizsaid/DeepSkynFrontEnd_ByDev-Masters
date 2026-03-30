@@ -135,12 +135,72 @@ function blendKeypoints(from: AvatarKeypoint[], to: AvatarKeypoint[], t: number)
   return result;
 }
 
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+function blendHandKeypointsDetailed(from: AvatarKeypoint[], to: AvatarKeypoint[], t: number): AvatarKeypoint[] {
+  const detailedJointIndices = new Set([3, 4, 7, 8, 11, 12, 15, 16, 19, 20]);
+  const len = Math.min(from.length, to.length);
+  const result: AvatarKeypoint[] = [];
+
+  for (let i = 0; i < len; i += 1) {
+    const fingerFocusedT = detailedJointIndices.has(i)
+      ? clamp01(t * 1.2 + 0.03)
+      : t;
+    result.push({
+      id: to[i].id,
+      x: from[i].x + (to[i].x - from[i].x) * fingerFocusedT,
+      y: from[i].y + (to[i].y - from[i].y) * fingerFocusedT,
+      z: from[i].z + (to[i].z - from[i].z) * fingerFocusedT,
+    });
+  }
+
+  for (let i = len; i < to.length; i += 1) {
+    result.push({ ...to[i] });
+  }
+
+  return result;
+}
+
 function blendFrames(from: AvatarFrame, to: AvatarFrame, t: number): AvatarFrame {
   return {
     hand_right_keypoints: blendKeypoints(from.hand_right_keypoints, to.hand_right_keypoints, t),
     hand_left_keypoints: blendKeypoints(from.hand_left_keypoints, to.hand_left_keypoints, t),
     pose_keypoints: blendKeypoints(from.pose_keypoints, to.pose_keypoints, t),
   };
+}
+
+function blendFramesDetailed(from: AvatarFrame, to: AvatarFrame, t: number): AvatarFrame {
+  return {
+    hand_right_keypoints: blendHandKeypointsDetailed(from.hand_right_keypoints, to.hand_right_keypoints, t),
+    hand_left_keypoints: blendHandKeypointsDetailed(from.hand_left_keypoints, to.hand_left_keypoints, t),
+    pose_keypoints: blendKeypoints(from.pose_keypoints, to.pose_keypoints, t),
+  };
+}
+
+function densifyFrames(frames: AvatarFrame[], interpolationSteps = 2): AvatarFrame[] {
+  if (frames.length < 2 || interpolationSteps <= 0) {
+    return frames;
+  }
+
+  const output: AvatarFrame[] = [];
+  for (let i = 0; i < frames.length - 1; i += 1) {
+    const current = frames[i];
+    const next = frames[i + 1];
+    output.push(current);
+
+    for (let step = 1; step <= interpolationSteps; step += 1) {
+      const t = step / (interpolationSteps + 1);
+      const eased = t < 0.5
+        ? 4 * t * t * t
+        : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      output.push(blendFramesDetailed(current, next, eased));
+    }
+  }
+
+  output.push(frames[frames.length - 1]);
+  return output;
 }
 
 function withCoarticulation(sequence: { frames: AvatarFrame[]; duration: number; label: string }[]): { frames: AvatarFrame[]; duration: number; label: string }[] {
@@ -200,9 +260,9 @@ export function ProSignAvatar({
       const converted = convertBackendFrames(frames);
       if (hasMeaningfulBackendMotion(converted)) {
         const fps = metadata?.fps || 30;
-        const frameDuration = 1000 / fps;
+        const frameDuration = (1000 / fps) / 3;
         return [{
-          frames: converted,
+          frames: densifyFrames(converted, 2),
           duration: frameDuration,
           label: metadata?.gloss || 'Traduction',
         }];
@@ -214,8 +274,8 @@ export function ProSignAvatar({
     // Priority 2: Local LSF gesture database
     const lsfGestures = translateTextToGestures(text);
     const baseSequence = lsfGestures.map(g => ({
-      frames: g.frames,
-      duration: g.frameDuration,
+      frames: densifyFrames(g.frames, 2),
+      duration: g.frameDuration / 3,
       label: g.word,
     }));
     return withCoarticulation(baseSequence);
