@@ -25,3 +25,11 @@ export {
   type SignTranslationResponse,
   type SignTranslationData,
 } from './sign-translation.service';
+export {
+  contextualAnalysisService,
+  type WeatherAlertResponse,
+  type SkinAlert,
+  type SeasonalPrediction,
+  type SkinDailyLog,
+  type CreateSkinLogDto,
+} from './contextual-analysis.service';
