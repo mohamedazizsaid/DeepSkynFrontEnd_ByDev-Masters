@@ -4,15 +4,18 @@
  * Supports both backend keypoints data and local LSF gesture database
  */
 
-import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, Pause, RotateCcw, SkipForward, Volume2, Settings, Maximize2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipForward, Volume2, Settings, Maximize2, User } from 'lucide-react';
 import { type AvatarFrame, type AvatarKeypoint } from './sign-avatar-renderer';
 import { SignAvatar3D } from './sign-avatar-3d';
 import {
   translateTextToGestures,
 } from './lsf-gesture-database';
 import type { Frame } from '../../lib/services/sign-translation.service';
+
+// Lazy load the Mixamo avatar
+const MixamoAvatar3D = lazy(() => import('./mixamo-avatar-3d'));
 
 interface ProSignAvatarProps {
   /** Text to translate to sign language */
@@ -32,11 +35,13 @@ interface ProSignAvatarProps {
   /** Show controls */
   showControls?: boolean;
   /** Avatar style */
-  style?: 'cartoon' | 'skeleton' | 'silhouette';
+  style?: 'skeleton' | 'silhouette' | 'realistic';
   /** Compact mode for inline display */
   compact?: boolean;
   /** Dark mode */
   isDark?: boolean;
+  /** Avatar gender for realistic mode */
+  gender?: 'female' | 'male';
 }
 
 /**
@@ -44,6 +49,20 @@ interface ProSignAvatarProps {
  * Handles normalization of coordinates
  */
 function convertBackendFrames(frames: Frame[]): AvatarFrame[] {
+  // DEBUG: Log raw backend frames
+  console.log('[ProSignAvatar] Converting backend frames:', frames.length);
+  if (frames.length > 0) {
+    const f0 = frames[0];
+    const f1 = frames.length > 1 ? frames[1] : null;
+    const fLast = frames[frames.length - 1];
+    console.log('[ProSignAvatar] Frame 0 right hand:', f0.hand_right_keypoints?.slice(0, 5));
+    console.log('[ProSignAvatar] Frame 0 left hand:', f0.hand_left_keypoints?.slice(0, 5));
+    if (f1) {
+      console.log('[ProSignAvatar] Frame 1 right hand:', f1.hand_right_keypoints?.slice(0, 5));
+    }
+    console.log('[ProSignAvatar] Last frame right hand:', fLast.hand_right_keypoints?.slice(0, 5));
+  }
+
   return frames.map(frame => {
     const convertKps = (kps: Array<{id: string; x: number; y: number; z: number}>): AvatarKeypoint[] => {
       if (!kps || kps.length === 0) return [];
@@ -84,6 +103,29 @@ function hasMeaningfulBackendMotion(frames: AvatarFrame[]): boolean {
   let prevAnchor: AvatarKeypoint | null = null;
   let motionSum = 0;
   let motionSamples = 0;
+  let variedFrames = 0;
+  let prevFrame: AvatarFrame | null = null;
+
+  const frameDelta = (a: AvatarFrame, b: AvatarFrame): number => {
+    const collect = (kps: AvatarKeypoint[]) => kps.slice(0, 21);
+    const ar = collect(a.hand_right_keypoints);
+    const br = collect(b.hand_right_keypoints);
+    const al = collect(a.hand_left_keypoints);
+    const bl = collect(b.hand_left_keypoints);
+    const ap = a.pose_keypoints.slice(0, 17);
+    const bp = b.pose_keypoints.slice(0, 17);
+
+    const diff = (x: AvatarKeypoint[], y: AvatarKeypoint[]) => {
+      const len = Math.min(x.length, y.length);
+      let sum = 0;
+      for (let i = 0; i < len; i += 1) {
+        sum += Math.abs(x[i].x - y[i].x) + Math.abs(x[i].y - y[i].y) + Math.abs(x[i].z - y[i].z);
+      }
+      return len > 0 ? sum / len : 0;
+    };
+
+    return diff(ar, br) + diff(al, bl) + diff(ap, bp);
+  };
 
   for (const frame of frames) {
     const pointsCount =
@@ -105,17 +147,48 @@ function hasMeaningfulBackendMotion(frames: AvatarFrame[]): boolean {
     if (anchor) {
       prevAnchor = anchor;
     }
+
+    if (prevFrame) {
+      const delta = frameDelta(prevFrame, frame);
+      // Lowered threshold from 0.00025 to 0.00005 for normalized coordinates
+      if (delta > 0.00005) {
+        variedFrames += 1;
+      }
+    }
+    prevFrame = frame;
   }
 
-  if (nonEmptyFrames < Math.max(2, Math.floor(frames.length * 0.5))) {
+  // DEBUG: Log motion detection values
+  const averageMotion = motionSamples > 0 ? motionSum / motionSamples : 0;
+  console.log('[hasMeaningfulBackendMotion] Analysis:', {
+    totalFrames: frames.length,
+    nonEmptyFrames,
+    motionSamples,
+    averageMotion,
+    variedFrames,
+    threshold: 0.0001,  // Lowered threshold for normalized coords
+    varianceThreshold: Math.floor(frames.length * 0.1),  // Lower variance requirement
+  });
+
+  // If we have enough non-empty frames with keypoints, consider it valid motion
+  // The actual movement quality will be determined by the animation
+  if (nonEmptyFrames < Math.max(2, Math.floor(frames.length * 0.3))) {
+    console.log('[hasMeaningfulBackendMotion] FAIL: Not enough non-empty frames');
     return false;
   }
+  
+  // If variance fallback (anchor points don't move much but individual keypoints do)
   if (motionSamples === 0) {
-    return false;
+    const result = variedFrames > Math.floor(frames.length * 0.1);
+    console.log('[hasMeaningfulBackendMotion]', result ? 'PASS' : 'FAIL', '(variance fallback)');
+    return result;
   }
 
-  const averageMotion = motionSum / motionSamples;
-  return averageMotion > 0.0008;
+  // Lower threshold: 0.0001 (was 0.00045) for normalized 0-1 coordinates
+  // Also check if at least 10% of frames show variation (was 20%)
+  const hasMotion = averageMotion > 0.0001 || variedFrames > Math.floor(frames.length * 0.1);
+  console.log('[hasMeaningfulBackendMotion]', hasMotion ? 'PASS' : 'FAIL');
+  return hasMotion;
 }
 
 function blendKeypoints(from: AvatarKeypoint[], to: AvatarKeypoint[], t: number): AvatarKeypoint[] {
@@ -238,9 +311,10 @@ export function ProSignAvatar({
   width = '100%',
   height = '480px',
   showControls = true,
-  style = 'cartoon',
+  style = 'realistic',
   compact = false,
   isDark = true,
+  gender = 'female',
 }: ProSignAvatarProps) {
   const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -248,7 +322,7 @@ export function ProSignAvatar({
   const [currentGestureIndex, setCurrentGestureIndex] = useState(0);
   const [currentFrameInGesture, setCurrentFrameInGesture] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
-  const [avatarStyle, setAvatarStyle] = useState(style);
+  const [avatarStyle, setAvatarStyle] = useState<'skeleton' | 'silhouette' | 'realistic'>(style || 'realistic');
   const [speed, setSpeed] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activeFrame, setActiveFrame] = useState<AvatarFrame | null>(null);
@@ -258,16 +332,16 @@ export function ProSignAvatar({
     // Priority 1: backend frames only if they contain real motion
     if (frames && frames.length > 0) {
       const converted = convertBackendFrames(frames);
-      if (hasMeaningfulBackendMotion(converted)) {
-        const fps = metadata?.fps || 30;
-        const frameDuration = (1000 / fps) / 3;
+      const fps = metadata?.fps || 30;
+      const frameDuration = (1000 / fps) / 3;
+      const hasMotion = hasMeaningfulBackendMotion(converted);
+      if (hasMotion) {
         return [{
           frames: densifyFrames(converted, 2),
           duration: frameDuration,
           label: metadata?.gloss || 'Traduction',
         }];
       }
-
       console.warn('[ProSignAvatar] Backend frames look static. Falling back to local gesture synthesis.');
     }
 
@@ -394,6 +468,9 @@ export function ProSignAvatar({
     : 0;
 
   const currentLabel = gestureSequence[currentGestureIndex]?.label || '';
+  const isLikelyFingerspelling =
+    metadata?.source === 'fingerspelling-only' ||
+    (metadata?.gloss?.trim()?.length ?? 0) <= 2;
 
   return (
     <div
@@ -406,17 +483,34 @@ export function ProSignAvatar({
           className="w-full h-full"
           style={{ borderRadius: isFullscreen ? 0 : '1rem', overflow: 'hidden' }}
         >
-          <SignAvatar3D
-            frame={activeFrame}
-            styleMode={avatarStyle}
-            isDark={isDark}
-            utterance={currentLabel || text}
-          />
+          {avatarStyle === 'realistic' ? (
+            <Suspense fallback={
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-[#0a0a1a] to-[#12122a]">
+                <div className="flex flex-col items-center gap-3 text-white">
+                  <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm opacity-70">Chargement avatar Mixamo...</span>
+                </div>
+              </div>
+            }>
+              <MixamoAvatar3D
+                frame={activeFrame}
+                utterance={currentLabel || text}
+                modelPath="/models/ybot.fbx"
+              />
+            </Suspense>
+          ) : (
+            <SignAvatar3D
+              frame={activeFrame}
+              styleMode={avatarStyle as 'skeleton' | 'silhouette'}
+              isDark={isDark}
+              utterance={currentLabel || text}
+            />
+          )}
         </div>
 
         {/* Current word overlay */}
         <AnimatePresence mode="wait">
-          {currentLabel && isPlaying && (
+          {currentLabel && isPlaying && !isLikelyFingerspelling && (
             <motion.div
               key={currentLabel}
               initial={{ opacity: 0, y: 20, scale: 0.8 }}
@@ -525,7 +619,7 @@ export function ProSignAvatar({
                   initial={{ opacity: 0, y: 10, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                  className="absolute bottom-full right-0 mb-2 p-3 bg-black/80 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl min-w-[180px]"
+                  className="absolute bottom-full right-0 mb-2 p-3 bg-black/90 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl min-w-[200px]"
                 >
                   {/* Speed */}
                   <div className="mb-3">
@@ -547,21 +641,25 @@ export function ProSignAvatar({
                     </div>
                   </div>
 
-                  {/* Style */}
+                  {/* Avatar Style */}
                   <div>
-                    <p className="text-white/60 text-xs font-medium mb-1.5">Style</p>
-                    <div className="flex gap-1">
-                      {(['cartoon', 'skeleton', 'silhouette'] as const).map(s => (
+                    <p className="text-white/60 text-xs font-medium mb-1.5">Style d'avatar</p>
+                    <div className="flex flex-wrap gap-1">
+                      {([
+                        { key: 'realistic', label: 'Mixamo 3D', icon: '🤖' },
+                        { key: 'skeleton', label: 'Squelette', icon: '🦴' },
+                        { key: 'silhouette', label: 'Silhouette', icon: '👥' },
+                      ] as const).map(({ key, label, icon }) => (
                         <button
-                          key={s}
-                          onClick={() => setAvatarStyle(s)}
-                          className={`px-2 py-1 rounded-md text-xs font-medium transition-all capitalize ${
-                            avatarStyle === s
+                          key={key}
+                          onClick={() => setAvatarStyle(key)}
+                          className={`px-2 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${
+                            avatarStyle === key
                               ? 'bg-indigo-500 text-white'
                               : 'bg-white/10 text-white/60 hover:bg-white/20'
                           }`}
                         >
-                          {s === 'cartoon' ? '🧑' : s === 'skeleton' ? '🦴' : '👤'} {s}
+                          <span>{icon}</span> {label}
                         </button>
                       ))}
                     </div>

@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Loader, AlertCircle, Volume2, Info, Hand } from 'lucide-react';
+import { X, AlertCircle, Volume2, Info, Hand } from 'lucide-react';
 import { ProSignAvatar } from './sign-avatar/pro-sign-avatar';
 import { useSignTranslation } from '../hooks/use-sign-translation';
 import { getSpeechToTextService } from '../lib/services/speech-to-text.service';
@@ -140,11 +140,13 @@ export function SignTranslationModal({
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+  const hasServerFrames = Boolean(activeFrames && activeFrames.length > 0);
   const isExplicitRealTranslation = activeMetadata?.translation_quality === 'real';
   const looksLikeMockGloss = !isExplicitRealTranslation
     && Boolean(normalizedDisplayText && normalizedGloss)
     && normalizedGloss === normalizedDisplayText.slice(0, normalizedGloss.length);
-  const shouldIgnoreServerFrames = !isExplicitRealTranslation || looksLikeMockGloss;
+  // Keep backend frames whenever they exist; let ProSignAvatar decide motion quality.
+  const shouldIgnoreServerFrames = !hasServerFrames && looksLikeMockGloss;
   const trustedFrames = shouldIgnoreServerFrames ? undefined : activeFrames;
   const trustedMetadata = shouldIgnoreServerFrames ? undefined : activeMetadata;
   const isUsingServerTranslation = Boolean(trustedFrames && trustedFrames.length > 0);
@@ -330,36 +332,64 @@ export function SignTranslationModal({
 
                   {/* Right Column: Avatar & Actions */}
                   <div className="flex-1 md:w-[50%] flex flex-col justify-between">
-                    <div className="w-full relative rounded-3xl overflow-hidden shadow-inner flex-1 min-h-[350px] md:min-h-[400px]">
+                    <div className="w-full relative rounded-3xl overflow-hidden flex-1 min-h-[350px] md:min-h-[420px]"
+                      style={{
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255,255,255,0.1)',
+                      }}
+                    >
                       {isAvatarLoading ? (
-                        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 border border-gray-100 rounded-3xl">
+                        <div className="absolute inset-0 flex items-center justify-center rounded-3xl"
+                          style={{
+                            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
+                          }}
+                        >
                           <div className="flex flex-col items-center gap-4">
-                            <div className="relative w-16 h-16">
+                            <div className="relative w-20 h-20">
                               <motion.div
                                 animate={{ rotate: 360 }}
-                                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                                className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#0EA5E9] border-r-[#8B5CF6]"
+                                transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+                                className="absolute inset-0 rounded-full"
+                                style={{
+                                  background: 'conic-gradient(from 0deg, transparent, #0EA5E9, #8B5CF6, transparent)',
+                                  maskImage: 'radial-gradient(transparent 55%, black 56%)',
+                                  WebkitMaskImage: 'radial-gradient(transparent 55%, black 56%)',
+                                }}
                               />
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <Loader className="w-6 h-6 text-[#0EA5E9] animate-pulse" />
+                                <motion.div
+                                  animate={{ scale: [1, 1.1, 1] }}
+                                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                                >
+                                  <Hand className="w-8 h-8 text-[#0EA5E9]" />
+                                </motion.div>
                               </div>
                             </div>
                             <div className="text-center">
-                              <p className="text-gray-900 font-bold">Génération en cours...</p>
-                              <p className="text-xs text-gray-500 mt-1">Connexion au moteur LSF</p>
+                              <p className="text-white font-bold text-lg">Préparation de l'avatar...</p>
+                              <p className="text-sm text-gray-400 mt-1">Connexion au moteur LSF</p>
                             </div>
                           </div>
                         </div>
                       ) : activeError ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-red-50 border border-red-100 rounded-3xl">
-                           <div className="p-4 bg-red-100 rounded-full mb-3">
-                             <AlertCircle className="w-8 h-8 text-red-500" />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center rounded-3xl"
+                          style={{
+                            background: 'linear-gradient(135deg, #1a0a0a 0%, #2d1515 50%, #1a0a0a 100%)',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                          }}
+                        >
+                           <div className="p-4 bg-red-900/30 rounded-full mb-3 border border-red-500/20">
+                             <AlertCircle className="w-8 h-8 text-red-400" />
                            </div>
-                           <p className="text-sm font-bold text-red-600">{activeError}</p>
-                           <p className="text-xs text-red-500 mt-1">L'avatar utilisera un mode hors ligne simplifié.</p>
+                           <p className="text-sm font-bold text-red-300">{activeError}</p>
+                           <p className="text-xs text-red-400/70 mt-1">L'avatar utilisera un mode hors ligne simplifié.</p>
                         </div>
                       ) : (
-                        <div className="absolute inset-0 border border-[#1e293b] rounded-3xl overflow-hidden bg-black shadow-2xl">
+                        <div className="absolute inset-0 rounded-3xl overflow-hidden"
+                          style={{
+                            border: '1px solid rgba(59, 130, 246, 0.15)',
+                            boxShadow: 'inset 0 0 60px rgba(59, 130, 246, 0.05)',
+                          }}
+                        >
                           <ProSignAvatar
                             text={textForDisplay}
                             frames={trustedFrames}
@@ -369,6 +399,7 @@ export function SignTranslationModal({
                             height="100%"
                             showControls={true}
                             isDark={true}
+                            style="realistic"
                           />
                         </div>
                       )}

@@ -65,7 +65,7 @@ export function PostCard({
   const [showMenu, setShowMenu] = useState(false);
   const [showShareFlow, setShowShareFlow] = useState(false);
   const [shareState, setShareState] = useState<'idle' | 'preparing' | 'opening' | 'success' | 'error'>('idle');
-  const shareTimerRef = useRef<number | null>(null);
+  const shareTimersRef = useRef<number[]>([]);
 
   // Sign Translation LSF
   const [showLSFModal, setShowLSFModal] = useState(false);
@@ -82,11 +82,14 @@ export function PostCard({
   const subText = isHcHigh ? 'text-yellow-400' : isDark ? 'text-gray-400' : 'text-[#6B7280]';
   const btnHover = isHcHigh ? 'hover:bg-yellow-400/20 text-yellow-500' : isDark ? 'hover:bg-[#334155] text-gray-400' : 'hover:bg-gray-100 text-[#6B7280]';
 
+  const clearShareTimers = () => {
+    shareTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
+    shareTimersRef.current = [];
+  };
+
   useEffect(() => {
     return () => {
-      if (shareTimerRef.current) {
-        window.clearTimeout(shareTimerRef.current);
-      }
+      clearShareTimers();
     };
   }, []);
 
@@ -97,11 +100,15 @@ export function PostCard({
   };
 
   const buildShareUrl = () => {
-    const safeContent = (post.content || '').trim();
+    const safeContent = (post.content || '').replace(/\s+/g, ' ').trim();
     const shareTarget = `${window.location.origin}${window.location.pathname}?postId=${encodeURIComponent(post.id)}`;
-    const quote = safeContent ? safeContent.slice(0, 160) : `${post.userName} a partage un post sur DeepSkyn`;
+    const quote = safeContent
+      ? safeContent.slice(0, 600)
+      : `${post.userName} a partage un post sur DeepSkyn`;
+    const firstHashtagMatch = safeContent.match(/#\w+/);
+    const hashtag = firstHashtagMatch ? firstHashtagMatch[0] : '#DeepSkyn';
 
-    return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareTarget)}&quote=${encodeURIComponent(quote)}`;
+    return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareTarget)}&quote=${encodeURIComponent(quote)}&hashtag=${encodeURIComponent(hashtag)}`;
   };
 
   const handleShare = async () => {
@@ -109,43 +116,47 @@ export function PostCard({
       onShare(post.id);
     }
 
-    if (shareTimerRef.current) {
-      window.clearTimeout(shareTimerRef.current);
-    }
+    clearShareTimers();
 
     setShowShareFlow(true);
     setShareState('preparing');
 
     const facebookShareUrl = buildShareUrl();
+    const popup = window.open('', '_blank', 'width=640,height=720');
 
-    shareTimerRef.current = window.setTimeout(async () => {
-      setShareState('opening');
+    if (!popup) {
+      setShareState('error');
+      toast.error('Impossible d ouvrir Facebook. Popup bloquee.');
 
-      const popup = window.open(facebookShareUrl, '_blank', 'noopener,noreferrer,width=640,height=720');
-
-      if (!popup) {
-        setShareState('error');
-        toast.error('Impossible d ouvrir Facebook. Popup bloquee.');
-
-        try {
-          const fallbackUrl = `${window.location.origin}${window.location.pathname}?postId=${encodeURIComponent(post.id)}`;
-          await navigator.clipboard.writeText(fallbackUrl);
-          toast.success(t('community.copyLinkSuccess') || 'Lien du post copie !');
-        } catch {
-          // Clipboard can fail on insecure contexts, keep UX feedback in share flow.
-        }
-
-        return;
+      try {
+        const fallbackText = `${(post.content || '').trim()}\n\n${window.location.origin}${window.location.pathname}?postId=${encodeURIComponent(post.id)}`.trim();
+        await navigator.clipboard.writeText(fallbackText);
+        toast.success('Texte et lien copies. Collez-les dans Facebook.');
+      } catch {
+        // Clipboard can fail on insecure contexts, keep UX feedback in share flow.
       }
 
-      setShareState('success');
-      toast.success('Partage Facebook lance avec succes !');
+      return;
+    }
 
-      shareTimerRef.current = window.setTimeout(() => {
-        setShowShareFlow(false);
-        setShareState('idle');
-      }, 2200);
-    }, 350);
+    // Keep new window isolated from this page while preserving reliable popup detection.
+    popup.opener = null;
+    popup.location.href = facebookShareUrl;
+
+    shareTimersRef.current.push(window.setTimeout(() => {
+      setShareState('opening');
+    }, 220));
+
+    shareTimersRef.current.push(window.setTimeout(() => {
+      setShareState('success');
+      toast.success('Partage Facebook pret avec le contenu du post.');
+    }, 520));
+
+    shareTimersRef.current.push(window.setTimeout(() => {
+      setShowShareFlow(false);
+      setShareState('idle');
+      clearShareTimers();
+    }, 2400));
   };
 
   const handleLSFTranslate = async () => {
@@ -283,6 +294,39 @@ export function PostCard({
   };
 
   const currentReaction = REACTIONS.find(r => r.id === reaction) || REACTIONS[0];
+  const shareStep = shareState === 'preparing' ? 1 : shareState === 'opening' ? 2 : shareState === 'success' ? 3 : shareState === 'error' ? 2 : 0;
+  const isSharePulseActive = shareState === 'preparing' || shareState === 'opening';
+
+  const shareContainerVariants = {
+    hidden: { opacity: 0, y: 16, scale: 0.985 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: 'spring',
+        stiffness: 320,
+        damping: 26,
+        staggerChildren: 0.08,
+        delayChildren: 0.03,
+      },
+    },
+    exit: {
+      opacity: 0,
+      y: 10,
+      scale: 0.985,
+      transition: { duration: 0.2 },
+    },
+  } as const;
+
+  const shareItemVariants = {
+    hidden: { opacity: 0, y: 8 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: 'spring', stiffness: 360, damping: 24 },
+    },
+  } as const;
 
   return (
     <motion.div
@@ -521,21 +565,39 @@ export function PostCard({
       <AnimatePresence>
         {showShareFlow && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
+            variants={shareContainerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             className={`mx-4 mb-3 rounded-xl border p-3 ${isHcHigh ? 'border-yellow-400 bg-black' : isDark ? 'border-[#334155] bg-[#0f172a]' : 'border-[#E5E7EB] bg-[#F8FAFC]'}`}
           >
             <div className="flex items-center gap-3">
               <motion.div
+                variants={shareItemVariants}
                 initial={{ scale: 0.9, opacity: 0.7 }}
                 animate={{
                   scale: shareState === 'preparing' || shareState === 'opening' ? [0.95, 1.08, 0.95] : 1,
                   opacity: 1,
                 }}
                 transition={{ repeat: shareState === 'preparing' || shareState === 'opening' ? Infinity : 0, duration: 1.2 }}
-                className={`w-10 h-10 rounded-full flex items-center justify-center ${isHcHigh ? 'bg-yellow-400 text-black' : isDark ? 'bg-[#1e293b] text-[#60A5FA]' : 'bg-[#DBEAFE] text-[#1D4ED8]'}`}
+                className={`relative w-10 h-10 rounded-full flex items-center justify-center ${isHcHigh ? 'bg-yellow-400 text-black' : isDark ? 'bg-[#1e293b] text-[#60A5FA]' : 'bg-[#DBEAFE] text-[#1D4ED8]'}`}
               >
+                {isSharePulseActive && (
+                  <>
+                    <motion.span
+                      aria-hidden="true"
+                      className="absolute inset-0 rounded-full border border-[#1877F2]/60"
+                      animate={{ scale: [1, 1.45], opacity: [0.6, 0] }}
+                      transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
+                    />
+                    <motion.span
+                      aria-hidden="true"
+                      className="absolute inset-0 rounded-full border border-[#1877F2]/40"
+                      animate={{ scale: [1, 1.65], opacity: [0.45, 0] }}
+                      transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut', delay: 0.25 }}
+                    />
+                  </>
+                )}
                 {shareState === 'success' ? (
                   <CheckCircle2 className="w-5 h-5" />
                 ) : shareState === 'error' ? (
@@ -545,14 +607,24 @@ export function PostCard({
                 )}
               </motion.div>
 
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm font-bold ${textColor}`}>
-                  {shareState === 'preparing' && 'Preparation du partage Facebook...'}
-                  {shareState === 'opening' && 'Ouverture de Facebook...'}
-                  {shareState === 'success' && 'Post pret a etre partage sur Facebook'}
-                  {shareState === 'error' && 'Partage direct bloque. Lien copie si possible.'}
-                </p>
-                <div className="mt-2 h-1.5 rounded-full overflow-hidden bg-black/10 dark:bg-white/10">
+              <motion.div variants={shareItemVariants} className="flex-1 min-w-0">
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={shareState}
+                    initial={{ opacity: 0, y: 6, filter: 'blur(3px)' }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    exit={{ opacity: 0, y: -4, filter: 'blur(2px)' }}
+                    transition={{ duration: 0.22 }}
+                    className={`text-sm font-bold ${textColor}`}
+                  >
+                    {shareState === 'preparing' && 'Preparation du partage Facebook...'}
+                    {shareState === 'opening' && 'Ouverture de Facebook...'}
+                    {shareState === 'success' && 'Post pret a etre partage sur Facebook'}
+                    {shareState === 'error' && 'Partage direct bloque. Lien copie si possible.'}
+                  </motion.p>
+                </AnimatePresence>
+
+                <motion.div variants={shareItemVariants} className="mt-2 h-1.5 rounded-full overflow-hidden bg-black/10 dark:bg-white/10">
                   <motion.div
                     className={`h-full ${shareState === 'error' ? 'bg-red-500' : 'bg-[#1877F2]'}`}
                     initial={{ width: '15%' }}
@@ -566,23 +638,37 @@ export function PostCard({
                               ? '100%'
                               : '45%',
                     }}
-                    transition={{ duration: 0.35 }}
+                    transition={{ duration: 0.35, ease: 'easeOut' }}
                   />
-                </div>
-              </div>
+                </motion.div>
 
-              <button
+                <motion.div variants={shareItemVariants} className="mt-2.5 flex items-center gap-1.5">
+                  {[1, 2, 3].map((step) => (
+                    <motion.span
+                      key={step}
+                      initial={{ scale: 0.8, opacity: 0.5 }}
+                      animate={{
+                        scale: shareStep >= step ? 1 : 0.9,
+                        opacity: shareStep >= step ? 1 : 0.45,
+                      }}
+                      transition={{ delay: step * 0.04, duration: 0.2 }}
+                      className={`h-1.5 rounded-full ${shareStep >= step ? 'w-6 bg-[#1877F2]' : 'w-4 bg-black/20 dark:bg-white/20'}`}
+                    />
+                  ))}
+                </motion.div>
+              </motion.div>
+
+              <motion.button
+                variants={shareItemVariants}
                 onClick={() => {
-                  if (shareTimerRef.current) {
-                    window.clearTimeout(shareTimerRef.current);
-                  }
+                  clearShareTimers();
                   setShowShareFlow(false);
                   setShareState('idle');
                 }}
                 className={`text-xs font-semibold px-2 py-1 rounded-md transition-colors ${isHcHigh ? 'text-yellow-400 hover:bg-yellow-400/20' : isDark ? 'text-gray-300 hover:bg-[#1e293b]' : 'text-[#475569] hover:bg-white'}`}
               >
                 Fermer
-              </button>
+              </motion.button>
             </div>
           </motion.div>
         )}

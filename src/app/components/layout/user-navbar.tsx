@@ -290,12 +290,12 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
     return (
         <nav className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm transition-all duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-20">
+                <div className="flex justify-between h-[74px]">
                     <div className="flex">
                         {/* Logo */}
                         <div data-tour="navbar-logo" className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => onNavigate('dashboard')}>
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center mr-2 shadow-lg shadow-[#0EA5E9]/20">
-                                <Sparkles className="w-6 h-6 text-white" />
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center mr-2 shadow-lg shadow-[#0EA5E9]/20">
+                                <Sparkles className="w-5 h-5 text-white" />
                             </div>
                             <span className="text-xl font-bold bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent hidden sm:block">
                                 DeepSkyn

@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import {
   Scan, Calendar, MessageCircle, TrendingUp, TrendingDown, Sparkles,
   ArrowRight, Droplets, Fingerprint, Sun, Activity, Clock, Star,
   Shield, Zap, Eye, Heart
 } from 'lucide-react';
 import { Button } from '../button';
-import { Card } from '../card';
 import { RadialBarChart, RadialBar, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { useAuthStore } from '../../../stores/auth.store';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
@@ -22,6 +21,7 @@ interface DashboardPageProps {
 export function DashboardPage({ onNavigate }: DashboardPageProps) {
   const { user } = useAuthStore();
   const { theme, contrastMode, t } = useAccessibilityStore();
+  const shouldReduceMotion = useReducedMotion();
   const isDark = theme === 'dark';
   const isHcHigh = contrastMode === 'high';
 
@@ -73,6 +73,18 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     }));
   }, [stats]);
 
+  const weeklyTrend = useMemo(() => {
+    const history = stats?.healthScoreHistory;
+    if (!history || history.length < 2) return null;
+    const [prev, curr] = history.slice(-2);
+    const diff = curr.score - prev.score;
+    return {
+      diff,
+      up: diff > 0,
+      down: diff < 0,
+    };
+  }, [stats]);
+
   const detailed = latestAnalysis?.results?.detailedAnalysis;
   const skinMetrics = [
     { label: t('dashboard.hydration'), value: detailed?.hydration?.score ?? 0, color: '#06B6D4', icon: <Droplets className="w-4 h-4" /> },
@@ -100,10 +112,19 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
   const cardBg = isHcHigh ? 'bg-black border-2 border-yellow-400' : isDark ? 'bg-[#1e293b]/80 backdrop-blur-sm border-[#334155]' : 'bg-white/80 backdrop-blur-sm border-[#E5E7EB]';
   const textPrimary = isHcHigh ? 'text-cyan-400' : isDark ? 'text-gray-100' : 'text-[#111827]';
   const textSecondary = isHcHigh ? 'text-yellow-300' : isDark ? 'text-gray-400' : 'text-[#6B7280]';
-  const borderColor = isHcHigh ? 'border-yellow-400' : isDark ? 'border-[#334155]' : 'border-[#E5E7EB]';
+  const panelClass = `${cardBg} shadow-lg`;
+
+  const tooltipStyle = {
+    backgroundColor: isDark ? '#0f172a' : '#ffffff',
+    border: `1px solid ${isDark ? '#334155' : '#E5E7EB'}`,
+    borderRadius: '14px',
+    color: isDark ? '#e2e8f0' : '#111827',
+    boxShadow: isDark ? '0 12px 24px rgba(2,6,23,0.45)' : '0 12px 24px rgba(15,23,42,0.12)',
+  };
 
   const quickActions = [
     {
+      id: 'analysis',
       icon: <Scan className="w-5 h-5" />,
       title: t('dashboard.newAnalysis'),
       description: t('dashboard.scanFace'),
@@ -111,6 +132,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       onClick: () => onNavigate('analysis')
     },
     {
+      id: 'routine',
       icon: <Calendar className="w-5 h-5" />,
       title: t('dashboard.myRoutine'),
       description: t('dashboard.dailySteps'),
@@ -118,6 +140,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       onClick: () => onNavigate('routine')
     },
     {
+      id: 'chat',
       icon: <MessageCircle className="w-5 h-5" />,
       title: t('dashboard.aiCoach'),
       description: t('dashboard.personalizedAdvice'),
@@ -125,6 +148,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       onClick: () => onNavigate('chat')
     },
     {
+      id: 'community',
       icon: <Heart className="w-5 h-5" />,
       title: t('dashboard.communityAction'),
       description: t('dashboard.shareDiscover'),
@@ -133,12 +157,69 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     },
   ];
 
+  const quickActionById = (id: 'analysis' | 'routine' | 'chat' | 'community') =>
+    quickActions.find((action) => action.id === id) ?? quickActions[0];
+
+  const heroAction = useMemo(() => {
+    const totalAnalyses = stats?.totalAnalyses ?? 0;
+
+    // First-time users should be guided to their first analysis.
+    if (!latestAnalysis || totalAnalyses === 0) {
+      return quickActionById('analysis');
+    }
+
+    // If analysis is running, guide users to AI coach while waiting.
+    if (latestAnalysis.status === 'processing') {
+      return quickActionById('chat');
+    }
+
+    // Low score: prioritize coaching recommendations.
+    if (skinHealthScore < 55) {
+      return quickActionById('chat');
+    }
+
+    // Negative trend: encourage a new scan.
+    if (scoreChange < 0) {
+      return quickActionById('analysis');
+    }
+
+    // Otherwise suggest routine continuity.
+    return quickActionById('routine');
+  }, [latestAnalysis, stats, skinHealthScore, scoreChange, quickActions]);
+
+  const compactActions = quickActions.filter((action) => action.id !== heroAction.id);
+
+  if (dataLoading) {
+    return (
+      <div className="p-4 sm:p-8 max-w-7xl mx-auto">
+        <div className="space-y-6 animate-pulse">
+          <div className={`h-10 w-72 rounded-xl ${isDark ? 'bg-[#334155]' : 'bg-[#E5E7EB]'}`} />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className={`rounded-2xl border p-4 ${cardBg}`}>
+                <div className={`h-4 w-28 rounded ${isDark ? 'bg-[#334155]' : 'bg-[#E5E7EB]'}`} />
+                <div className={`h-8 w-20 rounded mt-3 ${isDark ? 'bg-[#334155]' : 'bg-[#E5E7EB]'}`} />
+              </div>
+            ))}
+          </div>
+          <div className="grid lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className={`h-80 rounded-2xl border ${cardBg}`} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto">
+    <div className="relative p-4 sm:p-8 max-w-7xl mx-auto">
+
       {/* ═══ Welcome Header ═══ */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={shouldReduceMotion ? false : { opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.45, ease: 'easeOut' }}
         className="mb-8"
       >
         <div className="flex items-center justify-between flex-wrap gap-4">
@@ -147,8 +228,20 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
               {getGreeting()}, <span className="bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent">{userName}</span> 👋
             </h1>
             <p className={`${textSecondary} mt-1`}>{t('dashboard.skinOverview')}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${isDark ? 'bg-[#0f172a] text-[#93C5FD]' : 'bg-[#EFF6FF] text-[#0EA5E9]'}`}>
+                <Activity className="w-3.5 h-3.5" />
+                {t('dashboard.analyses')}: {stats?.totalAnalyses ?? 0}
+              </span>
+              {latestAnalysis?.createdAt && (
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${isDark ? 'bg-[#0f172a] text-gray-300' : 'bg-[#F3F4F6] text-[#374151]'}`}>
+                  <Clock className="w-3.5 h-3.5" />
+                  {formatAnalysisDate(latestAnalysis.createdAt)}
+                </span>
+              )}
+            </div>
           </div>
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <motion.div whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }} whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}>
             <Button onClick={() => onNavigate('analysis')} className="gap-2">
               <Scan className="w-4 h-4" />
               {t('dashboard.newAnalysis')}
@@ -167,11 +260,11 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
         ].map((stat, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0, y: 20 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 * i }}
-            whileHover={{ y: -3 }}
-            className={`rounded-2xl border p-4 shadow-sm transition-shadow hover:shadow-md ${cardBg}`}
+            transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.05 * i, duration: 0.35, ease: 'easeOut' }}
+            whileHover={shouldReduceMotion ? undefined : { y: -3 }}
+            className={`rounded-2xl border p-4 shadow-sm transition-all hover:shadow-lg ${cardBg}`}
           >
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-xl" style={{ backgroundColor: stat.color + '15' }}>
@@ -191,17 +284,25 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       <div className="grid lg:grid-cols-3 gap-6 mb-6">
         {/* Skin Health Score - Hero Card */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className={`rounded-2xl border p-6 shadow-sm ${cardBg}`}
+          transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.1, duration: 0.4, ease: 'easeOut' }}
+          className={`rounded-2xl border p-6 ${panelClass}`}
           data-tour="dashboard-score"
         >
           <div className="flex items-center justify-between mb-2">
             <h3 className={`text-base font-bold ${textPrimary}`}>{t('dashboard.globalScore')}</h3>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: scoreLevel.color + '15', color: scoreLevel.color }}>
-              {scoreLevel.emoji} {scoreLevel.label}
-            </span>
+            <div className="flex flex-col items-end gap-1.5">
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: scoreLevel.color + '15', color: scoreLevel.color }}>
+                {scoreLevel.emoji} {scoreLevel.label}
+              </span>
+              {weeklyTrend && (
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${weeklyTrend.up ? 'bg-[#10B981]/10 text-[#10B981]' : weeklyTrend.down ? 'bg-[#EF4444]/10 text-[#EF4444]' : isDark ? 'bg-gray-700 text-gray-300' : 'bg-[#F3F4F6] text-[#6B7280]'}`}>
+                  {weeklyTrend.up ? <TrendingUp className="w-3 h-3" /> : weeklyTrend.down ? <TrendingDown className="w-3 h-3" /> : <Activity className="w-3 h-3" />}
+                  Hebdo {weeklyTrend.diff > 0 ? '+' : ''}{weeklyTrend.diff}
+                </span>
+              )}
+            </div>
           </div>
           <div className="relative w-44 h-44 mx-auto my-2">
             <ResponsiveContainer width="100%" height="100%">
@@ -236,10 +337,10 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
 
         {/* Âge Comparaison */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className={`rounded-2xl border p-6 shadow-sm ${cardBg}`}
+          transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.2, duration: 0.4, ease: 'easeOut' }}
+          className={`rounded-2xl border p-6 ${panelClass}`}
         >
           <h3 className={`text-base font-bold mb-5 ${textPrimary}`}>{t('dashboard.ageComparison')}</h3>
           <div className="space-y-5">
@@ -249,7 +350,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                 <span className={`text-xl font-bold ${textPrimary}`}>{realAge}</span>
               </div>
               <div className={`h-2.5 rounded-full overflow-hidden ${isDark ? 'bg-gray-700' : 'bg-[#F3F4F6]'}`}>
-                <motion.div className="h-full bg-gradient-to-r from-[#6B7280] to-[#9CA3AF] rounded-full" initial={{ width: 0 }} animate={{ width: `${Math.min(realAge, 100)}%` }} transition={{ duration: 1, delay: 0.3 }} />
+                <motion.div className="h-full bg-gradient-to-r from-[#6B7280] to-[#9CA3AF] rounded-full" initial={{ width: 0 }} animate={{ width: `${Math.min(realAge, 100)}%` }} transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.9, delay: 0.2 }} />
               </div>
             </div>
             <div>
@@ -258,7 +359,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                 <span className="text-xl font-bold text-[#0EA5E9]">{skinAge ?? '—'}</span>
               </div>
               <div className={`h-2.5 rounded-full overflow-hidden ${isDark ? 'bg-gray-700' : 'bg-[#F3F4F6]'}`}>
-                <motion.div className="h-full bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] rounded-full" initial={{ width: 0 }} animate={{ width: `${Math.min(skinAge ?? 0, 100)}%` }} transition={{ duration: 1, delay: 0.4 }} />
+                <motion.div className="h-full bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] rounded-full" initial={{ width: 0 }} animate={{ width: `${Math.min(skinAge ?? 0, 100)}%` }} transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.9, delay: 0.3 }} />
               </div>
             </div>
             {skinAge !== null ? (
@@ -282,10 +383,10 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
 
         {/* Skin Metrics */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className={`rounded-2xl border p-6 shadow-sm ${cardBg}`}
+          transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.3, duration: 0.4, ease: 'easeOut' }}
+          className={`rounded-2xl border p-6 ${panelClass}`}
         >
           <h3 className={`text-base font-bold mb-5 ${textPrimary}`}>{t('dashboard.skinMetrics')}</h3>
           <div className="space-y-4">
@@ -304,15 +405,15 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                     style={{ backgroundColor: metric.color }}
                     initial={{ width: 0 }}
                     animate={{ width: `${metric.value}%` }}
-                    transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
+                    transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.9, delay: 0.35 + index * 0.08 }}
                   />
                 </div>
               </div>
             ))}
           </div>
           <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
+            whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
             onClick={() => onNavigate('analysis')}
             className={`w-full mt-5 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
               isHcHigh ? 'bg-yellow-400 text-black' : 'bg-[#0EA5E9]/10 text-[#0EA5E9] hover:bg-[#0EA5E9]/20'
@@ -325,10 +426,10 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
 
       {/* ═══ Evolution Chart ═══ */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className={`rounded-2xl border p-6 shadow-sm mb-6 ${cardBg}`}
+        transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.4, duration: 0.4, ease: 'easeOut' }}
+        className={`rounded-2xl border p-6 mb-6 ${panelClass}`}
         data-tour="dashboard-evolution"
       >
         <div className="flex items-center justify-between mb-6">
@@ -354,13 +455,10 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                 <XAxis dataKey="date" stroke={isDark ? '#64748b' : '#6B7280'} fontSize={12} />
                 <YAxis stroke={isDark ? '#64748b' : '#6B7280'} domain={[0, 100]} fontSize={12} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: isDark ? '#1e293b' : 'white',
-                    border: `1px solid ${isDark ? '#334155' : '#E5E7EB'}`,
-                    borderRadius: '12px',
-                    color: isDark ? '#e2e8f0' : '#111827',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  }}
+                  contentStyle={tooltipStyle}
+                  labelStyle={{ fontWeight: 700, marginBottom: 4 }}
+                  formatter={(value) => [`${value}/100`, t('dashboard.globalScore')]}
+                  labelFormatter={(label) => `${t('common.date')}: ${label}`}
                 />
                 <Area type="monotone" dataKey="score" stroke="#0EA5E9" strokeWidth={3} fill="url(#areaFill)" dot={{ fill: '#0EA5E9', r: 5, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
               </AreaChart>
@@ -378,23 +476,49 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Quick Actions */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className={`rounded-2xl border p-6 shadow-sm ${cardBg}`}
+          transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.5, duration: 0.4, ease: 'easeOut' }}
+          className={`rounded-2xl border p-6 ${panelClass}`}
           data-tour="dashboard-quick-actions"
         >
           <h3 className={`text-base font-bold mb-4 ${textPrimary}`}>{t('dashboard.quickActions')}</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {quickActions.map((action, index) => (
+          <div className="space-y-3">
+            <motion.button
+              onClick={heroAction.onClick}
+              className={`w-full p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:shadow-md group text-left ${
+                isHcHigh ? 'border-yellow-400 hover:bg-yellow-400/10' : isDark ? 'border-[#334155] hover:border-[#0EA5E9] hover:bg-[#0EA5E9]/5' : 'border-[#E5E7EB] hover:border-[#0EA5E9] hover:bg-[#F0F9FF]'
+              }`}
+              whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.99 }}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white bg-gradient-to-br ${heroAction.gradient} shadow-sm`}>
+                    {heroAction.icon}
+                  </div>
+                  <div>
+                    <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide mb-1.5 ${isDark ? 'bg-[#0EA5E9]/15 text-[#7DD3FC]' : 'bg-[#E0F2FE] text-[#0369A1]'}`}>
+                      Recommande
+                    </div>
+                    <div className={`text-sm font-bold ${textPrimary} group-hover:text-[#0EA5E9] transition-colors`}>{heroAction.title}</div>
+                    <div className={`text-xs ${textSecondary} mt-0.5`}>{heroAction.description}</div>
+                  </div>
+                </div>
+                <ArrowRight className={`w-4 h-4 ${isHcHigh ? 'text-yellow-400' : 'text-[#0EA5E9]'}`} />
+              </div>
+            </motion.button>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {compactActions.map((action, index) => (
               <motion.button
-                key={index}
+                key={index + 1}
                 onClick={action.onClick}
                 className={`flex flex-col items-center gap-3 p-4 rounded-xl border transition-all duration-200 hover:shadow-md group ${
                   isHcHigh ? 'border-yellow-400 hover:bg-yellow-400/10' : isDark ? 'border-[#334155] hover:border-[#0EA5E9] hover:bg-[#0EA5E9]/5' : 'border-[#E5E7EB] hover:border-[#0EA5E9] hover:bg-[#F0F9FF]'
                 }`}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
               >
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-white bg-gradient-to-br ${action.gradient} shadow-sm`}>
                   {action.icon}
@@ -405,15 +529,16 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                 </div>
               </motion.button>
             ))}
+            </div>
           </div>
         </motion.div>
 
         {/* Recent Activity */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className={`rounded-2xl border p-6 shadow-sm ${cardBg}`}
+          transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.6, duration: 0.4, ease: 'easeOut' }}
+          className={`rounded-2xl border p-6 ${panelClass}`}
         >
           <h3 className={`text-base font-bold mb-4 ${textPrimary}`}>{t('dashboard.recentActivity')}</h3>
           <div className="space-y-3">
