@@ -43,6 +43,7 @@ interface AccessibilityState {
     colorBlindFilter: ColorBlindFilter;
     readingGuide: boolean;
     speechRate: number;
+    eyeTracking: boolean;
 
     // Actions
     setLanguage: (lang: Language) => void;
@@ -72,6 +73,8 @@ interface AccessibilityState {
     processVoiceCommand: (command: string) => void;
     togglePanel: () => void;
     closePanel: () => void;
+    toggleEyeTracking: () => void;
+    setEyeTracking: (enabled: boolean) => void;
 }
 
 // Keep recognition instance outside React lifecycle
@@ -187,6 +190,7 @@ export const useAccessibilityStore = create<AccessibilityState>()(
             colorBlindFilter: 'none' as ColorBlindFilter,
             readingGuide: false,
             speechRate: 1,
+            eyeTracking: false,
 
             setLanguage: (lang) => {
                 set({ language: lang });
@@ -551,6 +555,21 @@ export const useAccessibilityStore = create<AccessibilityState>()(
 
             togglePanel: () => set({ isPanelOpen: !get().isPanelOpen }),
             closePanel: () => set({ isPanelOpen: false }),
+
+            toggleEyeTracking: () => {
+                const next = !get().eyeTracking;
+                set({ eyeTracking: next });
+                // Émettre un événement personnalisé pour que EyeTrackingProvider puisse réagir
+                const event = new CustomEvent('eye-tracking-toggle', { detail: { enabled: next } });
+                window.dispatchEvent(event);
+                announce(next ? 'Suivi oculaire activé. Bougez votre tête pour contrôler le curseur.' : 'Suivi oculaire désactivé');
+            },
+
+            setEyeTracking: (enabled: boolean) => {
+                set({ eyeTracking: enabled });
+                const event = new CustomEvent('eye-tracking-toggle', { detail: { enabled } });
+                window.dispatchEvent(event);
+            },
         }),
         {
             name: 'deepskyn-accessibility',
