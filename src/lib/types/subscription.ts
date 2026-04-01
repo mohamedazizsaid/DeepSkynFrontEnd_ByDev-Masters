@@ -41,3 +41,44 @@ export interface SubscriptionUsageSummary {
     chatMessages: SubscriptionQuotaItem;
   };
 }
+
+export interface CouponEstimatedDiscount {
+  before: number;
+  discount: number;
+  after: number;
+  currency: string;
+}
+
+export interface CouponValidationResult {
+  valid: boolean;
+  couponId: string;
+  couponCode: string;
+  stripePromotionCodeId: string | null;
+  estimated: CouponEstimatedDiscount | null;
+}
+
+export interface SubscriptionPaymentHistoryItem {
+  invoiceId: string;
+  invoiceNumber: string | null;
+  createdAt: string;
+  status: string | null;
+  amountPaid: number;
+  amountDue: number;
+  currency: string;
+  hostedInvoiceUrl: string | null;
+  invoicePdfUrl: string | null;
+}
+
+export interface SubscriptionPaymentHistoryResponse {
+  payments: SubscriptionPaymentHistoryItem[];
+}
+
+export interface SubscriptionInvoiceResponse {
+  invoiceId: string;
+  invoiceNumber: string | null;
+  status: string | null;
+  amountPaid: number;
+  currency: string;
+  hostedInvoiceUrl: string | null;
+  invoicePdfUrl: string | null;
+}

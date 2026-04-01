@@ -41,12 +41,23 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     try {
       const result = await notificationService.getAll(page, 20);
       // Handle both PaginatedResponse and direct Array
-      const notifications = Array.isArray(result) ? result : (result as any).notifications || [];
-      const unreadCount = Array.isArray(result) ? get().unreadCount : (result as any).unreadCount ?? get().unreadCount;
+      const notificationsFromApi = Array.isArray(result) ? result : (result as any).notifications || [];
+      const unreadCountFromApi = Array.isArray(result) ? 0 : (result as any).unreadCount ?? 0;
+
+      // Keep local notifications (created in frontend) so they are not lost after API refresh.
+      const localNotifications = get().notifications.filter(
+        (n) => typeof n.id === 'string' && n.id.startsWith('local-')
+      );
+
+      const apiIds = new Set(notificationsFromApi.map((n: Notification) => n.id));
+      const localOnly = localNotifications.filter((n) => !apiIds.has(n.id));
+
+      const mergedNotifications = [...localOnly, ...notificationsFromApi];
+      const localUnread = localOnly.filter((n) => !n.isRead).length;
       
       set({ 
-        notifications: notifications,
-        unreadCount: unreadCount
+        notifications: mergedNotifications,
+        unreadCount: unreadCountFromApi + localUnread
       });
     } catch {
       // silent fail

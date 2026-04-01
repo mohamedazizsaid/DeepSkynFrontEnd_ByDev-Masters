@@ -1,5 +1,9 @@
 import apiClient from '../api-client';
 import type {
+  CouponValidationResult,
+  SubscriptionInvoiceResponse,
+  SubscriptionPaymentHistoryItem,
+  SubscriptionPaymentHistoryResponse,
   Subscription,
   SubscriptionPlanInfo,
   SubscriptionUsageSummary,
@@ -60,19 +64,51 @@ export const subscriptionService = {
     return unwrapSubscription(res.data);
   },
 
-  async renew(): Promise<Subscription> {
-    const res = await apiClient.post<any>('/subscriptions/renew');
-    return unwrapSubscription(res.data);
+  async renewStripeCheckout(
+    plan: string,
+    couponCode?: string,
+  ): Promise<{ id: string; url: string | null }> {
+    const res = await apiClient.post<{ url: string | null; id: string }>(
+      '/subscriptions/renew',
+      {
+        plan,
+        planCode: plan,
+        couponCode: couponCode || undefined,
+      },
+    );
+    return res.data;
   },
 
-  async createStripeCheckout(plan: string): Promise<{ id: string; url: string | null }> {
+  async validateCoupon(couponCode: string, planCode: string): Promise<CouponValidationResult> {
+    const res = await apiClient.post<CouponValidationResult>('/coupons/validate', {
+      couponCode,
+      planCode,
+    });
+    return res.data;
+  },
+
+  async createStripeCheckout(
+    plan: string,
+    couponCode?: string,
+  ): Promise<{ id: string; url: string | null }> {
     const res = await apiClient.post<{ url: string | null; id: string }>(
       '/subscriptions/stripe/checkout',
       {
         plan,
         planCode: plan,
+        couponCode: couponCode || undefined,
       },
     );
+    return res.data;
+  },
+
+  async getPaymentHistory(): Promise<SubscriptionPaymentHistoryItem[]> {
+    const res = await apiClient.get<SubscriptionPaymentHistoryResponse>('/subscriptions/payments/history');
+    return Array.isArray(res.data?.payments) ? res.data.payments : [];
+  },
+
+  async getInvoice(invoiceId: string): Promise<SubscriptionInvoiceResponse> {
+    const res = await apiClient.get<SubscriptionInvoiceResponse>(`/subscriptions/payments/${invoiceId}/invoice`);
     return res.data;
   },
 };

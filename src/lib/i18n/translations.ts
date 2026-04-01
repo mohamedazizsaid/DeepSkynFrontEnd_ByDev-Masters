@@ -410,6 +410,7 @@ const fr = {
       notifications: 'Notifications',
       appearance: 'Apparence',
       language: 'Langue & Région',
+      paymentHistory: 'Historique de paiement',
       help: "Centre d'aide",
       terms: "Conditions d'utilisation",
     },
@@ -507,6 +508,43 @@ const fr = {
       description: "L'interface de DeepSkyn s'affichera en",
       warning: 'Bientôt disponible',
       warningDesc: 'Plus de langues seront ajoutées dans les prochaines mises à jour.'
+    },
+    paymentHistory: {
+      title: 'Historique de paiement',
+      subtitle: 'Consultez vos paiements et téléchargez vos factures',
+      loading: 'Chargement des paiements...',
+      loadError: 'Impossible de charger l\'historique des paiements.',
+      emptyTitle: 'Aucun paiement pour le moment',
+      emptyDescription: 'Vos factures d\'abonnement apparaîtront ici après un paiement réussi.',
+      invoice: 'Facture',
+      date: 'Date',
+      amountPaid: 'Montant payé',
+      amountDue: 'Montant dû',
+      currency: 'Devise',
+      openInvoice: 'Ouvrir la facture',
+      downloadInvoice: 'Télécharger la facture',
+      noInvoice: 'Aucun lien de facture disponible pour ce paiement.',
+      invoiceLoadError: 'Impossible de récupérer la facture.',
+      popupBlocked: 'Veuillez autoriser les pop-ups pour ouvrir la facture.',
+      invoiceDetailsTitle: 'Détails de la facture',
+      issueDate: 'Date d\'émission',
+      paymentStatus: 'Statut du paiement',
+      invoiceId: 'ID de facture',
+      chargesSummary: 'Résumé des montants',
+      description: 'Description',
+      amount: 'Montant',
+      subscriptionCharge: 'Frais d\'abonnement',
+      balanceDue: 'Solde restant',
+      total: 'Total',
+      footerNote: 'Facture générée depuis votre espace DeepSkyn. Merci pour votre confiance.',
+      printOrSave: 'Imprimer / Enregistrer en PDF',
+      statusValues: {
+        paid: 'Payé',
+        open: 'Ouvert',
+        draft: 'Brouillon',
+        void: 'Annulé',
+        uncollectible: 'Non recouvrable'
+      }
     },
     help: {
       title: "Centre d'aide",
@@ -1015,6 +1053,132 @@ const fr = {
       yesterday: 'Hier',
       daysAgo: 'Il y a {count} jours',
       weeksAgo: 'Il y a {count} semaine'
+    },
+    dailyTipTitle: 'Conseil du jour',
+    proTip: 'Astuce pro'
+  },
+  subscriptionPage: {
+    common: {
+      notDefined: 'Non défini'
+    },
+    planNames: {
+      free: 'Free',
+      premiumMonthly: 'Premium Mensuel',
+      premiumYearly: 'Premium Annuel'
+    },
+    toasts: {
+      paymentSuccess: 'Paiement réussi !',
+      paymentCancelled: 'Paiement annulé.',
+      renewPlanNotFound: 'Impossible de trouver votre ancien plan pour le renouvellement.'
+    },
+    header: {
+      title: 'Choisissez votre plan',
+      subtitle: 'Débloquez des fonctionnalités premium pour une meilleure santé de peau',
+      renewPreviousPlan: 'Renouveler le plan précédent'
+    },
+    currentSub: {
+      start: 'Début',
+      end: 'Fin',
+      remainingDays: '{count} jours restants',
+      expired: 'Expiré',
+      na: 'N/A'
+    },
+    plans: {
+      mostPopular: 'Le plus populaire',
+      currentPlan: 'Plan actuel',
+      upgradeNow: 'Mettre à niveau',
+      periodMonth: 'mois',
+      periodYear: 'an',
+      periodForever: 'à vie'
+    },
+    features: {
+      basicSkinAnalysis: 'Analyse de peau basique',
+      advancedAIAnalysis: 'Analyse IA avancée',
+      unlimitedAIAnalysis: 'Analyses IA illimitées',
+      personalizedRoutine: 'Routine personnalisée',
+      aiCoach: 'Coach IA',
+      dailySkincareRoutine: 'Routine skincare quotidienne',
+      chatWithAICoach: 'Discussion avec le coach IA',
+      communityAccess: 'Accès à la communauté',
+      prioritySupport: 'Support prioritaire',
+      unlimitedAccess: 'Accès illimité',
+      monthlyReports: 'Rapports mensuels',
+      detailedReports: 'Rapports détaillés',
+      premiumRecommendations: 'Recommandations premium',
+      advancedRecommendations: 'Recommandations avancées',
+      progressTracking: 'Suivi de progression',
+      faceScan: 'Scan du visage',
+      twoMonthsFree: '2 mois gratuits',
+      earlyAccessNewFeatures: 'Accès anticipé aux nouvelles fonctionnalités',
+      threeAnalysesPerMonth: '3 analyses par mois',
+      generalGuidance: 'Conseils généraux'
+    },
+    benefits: {
+      title: 'Avantages Premium',
+      advancedAI: {
+        title: 'Analyse IA avancée',
+        description: 'Obtenez des insights plus poussés grâce à nos algorithmes IA premium entraînés sur des millions d’images de peau.'
+      },
+      unlimitedAccess: {
+        title: 'Accès illimité',
+        description: 'Téléversements photo illimités, conversations IA et rapports détaillés à tout moment.'
+      },
+      prioritySupport: {
+        title: 'Support prioritaire',
+        description: 'Recevez des réponses prioritaires de votre coach IA et accédez à des ressources exclusives.'
+      }
+    },
+    faq: {
+      title: 'Questions fréquentes',
+      q1: {
+        question: 'Que comprend le plan Free ?',
+        answer: 'Le plan Free inclut l’analyse de peau basique, des conseils généraux et jusqu’à 3 analyses par mois.'
+      },
+      q2: {
+        question: 'Que débloque Premium dans DeepSkyn ?',
+        answer: 'Premium débloque les analyses IA avancées/illimitées, le chat avec le coach IA, les rapports détaillés et le suivi de progression.'
+      },
+      q3: {
+        question: 'Comment se passent le paiement et les factures ?',
+        answer: 'Le paiement est sécurisé via Stripe. Vous pouvez appliquer un code promo lors du checkout, puis retrouver vos factures dans l’historique de paiement.'
+      },
+      q4: {
+        question: 'Puis-je annuler puis renouveler plus tard ?',
+        answer: 'Oui. Vous pouvez annuler à tout moment et garder l’accès premium jusqu’à la fin de la période en cours, puis renouveler votre dernier plan depuis la page abonnement.'
+      }
+    },
+    checkout: {
+      title: 'Paiement Stripe',
+      renewTitle: 'Renouveler l’abonnement',
+      planLabel: 'Plan',
+      price: 'Prix',
+      newPrice: 'Nouveau prix',
+      save: 'Économie',
+      freePlan: 'Ce plan est gratuit.',
+      couponLabel: 'Code promo (optionnel)',
+      couponPlaceholder: 'Ex: WELCOME20',
+      couponApplied: 'Coupon appliqué',
+      validateCoupon: 'Valider le coupon',
+      renewWithStripe: 'Renouveler avec Stripe',
+      continueToPayment: 'Continuer vers le paiement',
+      enterCouponFirst: 'Entrez d’abord un code promo.',
+      couponValid: 'Coupon valide et prêt pour le paiement.',
+      invalidCoupon: 'Code promo invalide.',
+      startPaymentFailed: 'Échec du démarrage du paiement. Veuillez réessayer.'
+    },
+    successModal: {
+      title: 'Paiement confirmé',
+      subtitle: 'Votre abonnement premium est actif. Profitez de toutes les fonctionnalités.',
+      plan: 'Plan',
+      endDate: 'Fin',
+      continue: 'Continuer'
+    },
+    expiredModal: {
+      title: 'Abonnement expiré',
+      message: 'Votre dernier abonnement est terminé. Votre compte est maintenant sur le plan Free.',
+      renewHint: 'Vous pouvez renouveler ce plan maintenant.',
+      later: 'Plus tard',
+      renewNow: 'Renouveler maintenant'
     }
   },
 };
@@ -1396,6 +1560,7 @@ const en: TranslationKeys = {
       notifications: 'Notifications',
       appearance: 'Appearance',
       language: 'Language & Region',
+      paymentHistory: 'Payment History',
       help: 'Help Center',
       terms: 'Terms of Use',
     },
@@ -1494,6 +1659,43 @@ const en: TranslationKeys = {
       warning: 'Soon available',
       warningDesc: 'More languages will be added in upcoming updates.'
     },
+    paymentHistory: {
+      title: 'Payment History',
+      subtitle: 'Review your payments and download invoices',
+      loading: 'Loading payments...',
+      loadError: 'Unable to load payment history.',
+      emptyTitle: 'No payments yet',
+      emptyDescription: 'Your subscription invoices will appear here after successful payments.',
+      invoice: 'Invoice',
+      date: 'Date',
+      amountPaid: 'Amount paid',
+      amountDue: 'Amount due',
+      currency: 'Currency',
+      openInvoice: 'Open invoice',
+      downloadInvoice: 'Download invoice',
+      noInvoice: 'No invoice link available for this payment.',
+      invoiceLoadError: 'Unable to retrieve invoice.',
+      popupBlocked: 'Please allow pop-ups to open the invoice.',
+      invoiceDetailsTitle: 'Invoice details',
+      issueDate: 'Issue date',
+      paymentStatus: 'Payment status',
+      invoiceId: 'Invoice ID',
+      chargesSummary: 'Charges summary',
+      description: 'Description',
+      amount: 'Amount',
+      subscriptionCharge: 'Subscription charge',
+      balanceDue: 'Balance due',
+      total: 'Total',
+      footerNote: 'Invoice generated from your DeepSkyn account. Thank you for your trust.',
+      printOrSave: 'Print / Save as PDF',
+      statusValues: {
+        paid: 'Paid',
+        open: 'Open',
+        draft: 'Draft',
+        void: 'Void',
+        uncollectible: 'Uncollectible'
+      }
+    },
     help: {
       title: 'Help Center',
       subtitle: 'FAQs and Support',
@@ -1585,6 +1787,132 @@ const en: TranslationKeys = {
       yesterday: 'Yesterday',
       daysAgo: '{count} days ago',
       weeksAgo: '{count} week ago'
+    },
+    dailyTipTitle: 'Tip of the day',
+    proTip: 'Pro tip'
+  },
+  subscriptionPage: {
+    common: {
+      notDefined: 'Not defined'
+    },
+    planNames: {
+      free: 'Free',
+      premiumMonthly: 'Premium Monthly',
+      premiumYearly: 'Premium Yearly'
+    },
+    toasts: {
+      paymentSuccess: 'Payment successful!',
+      paymentCancelled: 'Payment cancelled.',
+      renewPlanNotFound: 'Unable to find your previous plan for renewal.'
+    },
+    header: {
+      title: 'Choose Your Plan',
+      subtitle: 'Unlock premium features for better skin health',
+      renewPreviousPlan: 'Renew Previous Plan'
+    },
+    currentSub: {
+      start: 'Start',
+      end: 'End',
+      remainingDays: '{count} days left',
+      expired: 'Expired',
+      na: 'N/A'
+    },
+    plans: {
+      mostPopular: 'Most Popular',
+      currentPlan: 'Current Plan',
+      upgradeNow: 'Upgrade Now',
+      periodMonth: 'month',
+      periodYear: 'year',
+      periodForever: 'lifetime'
+    },
+    features: {
+      basicSkinAnalysis: 'Basic skin analysis',
+      advancedAIAnalysis: 'Advanced AI analysis',
+      unlimitedAIAnalysis: 'Unlimited AI analyses',
+      personalizedRoutine: 'Personalized routine',
+      aiCoach: 'AI coach',
+      dailySkincareRoutine: 'Daily skincare routine',
+      chatWithAICoach: 'Chat with AI coach',
+      communityAccess: 'Community access',
+      prioritySupport: 'Priority support',
+      unlimitedAccess: 'Unlimited access',
+      monthlyReports: 'Monthly reports',
+      detailedReports: 'Detailed reports',
+      premiumRecommendations: 'Premium recommendations',
+      advancedRecommendations: 'Advanced recommendations',
+      progressTracking: 'Progress tracking',
+      faceScan: 'Face scan',
+      twoMonthsFree: '2 months free',
+      earlyAccessNewFeatures: 'Early access to new features',
+      threeAnalysesPerMonth: '3 analyses per month',
+      generalGuidance: 'General guidance'
+    },
+    benefits: {
+      title: 'Premium Benefits',
+      advancedAI: {
+        title: 'Advanced AI Analysis',
+        description: 'Get deeper insights with our premium AI algorithms trained on millions of skin images.'
+      },
+      unlimitedAccess: {
+        title: 'Unlimited Access',
+        description: 'Unlimited photo uploads, AI conversations, and detailed reports whenever you need them.'
+      },
+      prioritySupport: {
+        title: 'Priority Support',
+        description: 'Get priority responses from our AI coach and access exclusive skincare resources.'
+      }
+    },
+    faq: {
+      title: 'Frequently Asked Questions',
+      q1: {
+        question: 'What is included in the Free plan?',
+        answer: 'The Free plan includes basic skin analysis, general guidance, and up to 3 analyses per month.'
+      },
+      q2: {
+        question: 'What do Premium plans unlock in DeepSkyn?',
+        answer: 'Premium unlocks advanced and unlimited AI analyses, AI coach chat, detailed reports, and progress tracking.'
+      },
+      q3: {
+        question: 'How do payment and invoices work?',
+        answer: 'Payments are secured by Stripe. You can apply a coupon at checkout and access invoices from payment history.'
+      },
+      q4: {
+        question: 'Can I cancel and renew later?',
+        answer: 'Yes. You can cancel anytime, keep premium access until the current period ends, then renew your previous plan from the subscription page.'
+      }
+    },
+    checkout: {
+      title: 'Stripe Checkout',
+      renewTitle: 'Renew Subscription',
+      planLabel: 'Plan',
+      price: 'Price',
+      newPrice: 'New price',
+      save: 'Save',
+      freePlan: 'This plan is free.',
+      couponLabel: 'Coupon code (optional)',
+      couponPlaceholder: 'Ex: WELCOME20',
+      couponApplied: 'Coupon applied',
+      validateCoupon: 'Validate coupon',
+      renewWithStripe: 'Renew with Stripe',
+      continueToPayment: 'Continue to payment',
+      enterCouponFirst: 'Enter a coupon code first.',
+      couponValid: 'Coupon valid and ready for checkout.',
+      invalidCoupon: 'Invalid coupon code.',
+      startPaymentFailed: 'Failed to start payment. Please try again.'
+    },
+    successModal: {
+      title: 'Payment confirmed',
+      subtitle: 'Your premium subscription is active. Enjoy all features.',
+      plan: 'Plan',
+      endDate: 'End',
+      continue: 'Continue'
+    },
+    expiredModal: {
+      title: 'Subscription expired',
+      message: 'Your last subscription has ended. Your account is now on the Free plan.',
+      renewHint: 'You can renew this plan now.',
+      later: 'Later',
+      renewNow: 'Renew now'
     }
   },
   // Auth
@@ -2379,6 +2707,7 @@ const ar: TranslationKeys = {
       notifications: 'الإشعارات',
       appearance: 'المظهر',
       language: 'اللغة والمنطقة',
+      paymentHistory: 'سجل المدفوعات',
       help: 'مركز المساعدة',
       terms: 'شروط الاستخدام',
     },
@@ -2477,6 +2806,43 @@ const ar: TranslationKeys = {
       warning: 'قريباً',
       warningDesc: 'سيتم إضافة المزيد من اللغات في التحديثات القادمة.'
     },
+    paymentHistory: {
+      title: 'سجل المدفوعات',
+      subtitle: 'راجع مدفوعاتك وقم بتنزيل الفواتير',
+      loading: 'جاري تحميل المدفوعات...',
+      loadError: 'تعذر تحميل سجل المدفوعات.',
+      emptyTitle: 'لا توجد مدفوعات حالياً',
+      emptyDescription: 'ستظهر فواتير الاشتراك هنا بعد نجاح الدفع.',
+      invoice: 'فاتورة',
+      date: 'التاريخ',
+      amountPaid: 'المبلغ المدفوع',
+      amountDue: 'المبلغ المستحق',
+      currency: 'العملة',
+      openInvoice: 'فتح الفاتورة',
+      downloadInvoice: 'تنزيل الفاتورة',
+      noInvoice: 'لا يوجد رابط فاتورة متاح لهذه العملية.',
+      invoiceLoadError: 'تعذر جلب الفاتورة.',
+      popupBlocked: 'يرجى السماح بالنوافذ المنبثقة لفتح الفاتورة.',
+      invoiceDetailsTitle: 'تفاصيل الفاتورة',
+      issueDate: 'تاريخ الإصدار',
+      paymentStatus: 'حالة الدفع',
+      invoiceId: 'معرّف الفاتورة',
+      chargesSummary: 'ملخص الرسوم',
+      description: 'الوصف',
+      amount: 'المبلغ',
+      subscriptionCharge: 'رسوم الاشتراك',
+      balanceDue: 'الرصيد المستحق',
+      total: 'الإجمالي',
+      footerNote: 'تم إنشاء الفاتورة من حسابك في DeepSkyn. شكراً لثقتك.',
+      printOrSave: 'طباعة / حفظ كملف PDF',
+      statusValues: {
+        paid: 'مدفوع',
+        open: 'مفتوح',
+        draft: 'مسودة',
+        void: 'ملغى',
+        uncollectible: 'غير قابل للتحصيل'
+      }
+    },
     help: {
       title: 'مركز المساعدة',
       subtitle: 'الأسئلة الشائعة والدعم',
@@ -2568,6 +2934,132 @@ const ar: TranslationKeys = {
       yesterday: 'أمس',
       daysAgo: 'منذ {count} أيام',
       weeksAgo: 'منذ {count} أسبوع'
+    },
+    dailyTipTitle: 'نصيحة اليوم',
+    proTip: 'نصيحة احترافية'
+  },
+  subscriptionPage: {
+    common: {
+      notDefined: 'غير محدد'
+    },
+    planNames: {
+      free: 'مجاني',
+      premiumMonthly: 'بريميوم شهري',
+      premiumYearly: 'بريميوم سنوي'
+    },
+    toasts: {
+      paymentSuccess: 'تم الدفع بنجاح!',
+      paymentCancelled: 'تم إلغاء الدفع.',
+      renewPlanNotFound: 'تعذر العثور على خطتك السابقة للتجديد.'
+    },
+    header: {
+      title: 'اختر خطتك',
+      subtitle: 'افتح الميزات المميزة لصحة بشرة أفضل',
+      renewPreviousPlan: 'تجديد الخطة السابقة'
+    },
+    currentSub: {
+      start: 'البداية',
+      end: 'النهاية',
+      remainingDays: 'متبقي {count} يوم',
+      expired: 'منتهي',
+      na: 'غير متاح'
+    },
+    plans: {
+      mostPopular: 'الأكثر شيوعاً',
+      currentPlan: 'الخطة الحالية',
+      upgradeNow: 'الترقية الآن',
+      periodMonth: 'شهر',
+      periodYear: 'سنة',
+      periodForever: 'مدى الحياة'
+    },
+    features: {
+      basicSkinAnalysis: 'تحليل البشرة الأساسي',
+      advancedAIAnalysis: 'تحليل ذكاء اصطناعي متقدم',
+      unlimitedAIAnalysis: 'تحاليل ذكاء اصطناعي غير محدودة',
+      personalizedRoutine: 'روتين مخصص',
+      aiCoach: 'مدرب ذكاء اصطناعي',
+      dailySkincareRoutine: 'روتين عناية يومي',
+      chatWithAICoach: 'دردشة مع المدرب الذكي',
+      communityAccess: 'الوصول إلى المجتمع',
+      prioritySupport: 'دعم أولوية',
+      unlimitedAccess: 'وصول غير محدود',
+      monthlyReports: 'تقارير شهرية',
+      detailedReports: 'تقارير مفصلة',
+      premiumRecommendations: 'توصيات مميزة',
+      advancedRecommendations: 'توصيات متقدمة',
+      progressTracking: 'تتبع التقدم',
+      faceScan: 'مسح الوجه',
+      twoMonthsFree: 'شهران مجاناً',
+      earlyAccessNewFeatures: 'وصول مبكر للميزات الجديدة',
+      threeAnalysesPerMonth: '3 تحليلات شهرياً',
+      generalGuidance: 'إرشادات عامة'
+    },
+    benefits: {
+      title: 'مزايا بريميوم',
+      advancedAI: {
+        title: 'تحليل ذكاء اصطناعي متقدم',
+        description: 'احصل على رؤى أعمق بفضل خوارزمياتنا المتقدمة المدربة على ملايين صور البشرة.'
+      },
+      unlimitedAccess: {
+        title: 'وصول غير محدود',
+        description: 'رفع صور غير محدود، محادثات مع الذكاء الاصطناعي، وتقارير مفصلة في أي وقت.'
+      },
+      prioritySupport: {
+        title: 'دعم أولوية',
+        description: 'احصل على ردود أسرع من مدرب الذكاء الاصطناعي ووصول إلى موارد حصرية.'
+      }
+    },
+    faq: {
+      title: 'الأسئلة الشائعة',
+      q1: {
+        question: 'ماذا تتضمن الخطة المجانية؟',
+        answer: 'تشمل الخطة المجانية تحليل البشرة الأساسي، إرشادات عامة، وحتى 3 تحليلات شهرياً.'
+      },
+      q2: {
+        question: 'ماذا يفتح اشتراك بريميوم في DeepSkyn؟',
+        answer: 'يفتح بريميوم تحليلات ذكاء اصطناعي متقدمة وغير محدودة، دردشة مع المدرب الذكي، تقارير مفصلة، وتتبع التقدم.'
+      },
+      q3: {
+        question: 'كيف يعمل الدفع والفواتير؟',
+        answer: 'الدفع آمن عبر Stripe. يمكنك تطبيق كوبون أثناء الدفع ثم الوصول إلى الفواتير من سجل المدفوعات.'
+      },
+      q4: {
+        question: 'هل يمكنني الإلغاء ثم التجديد لاحقاً؟',
+        answer: 'نعم، يمكنك الإلغاء في أي وقت مع بقاء الميزات حتى نهاية الفترة الحالية، ثم تجديد آخر خطة من صفحة الاشتراك.'
+      }
+    },
+    checkout: {
+      title: 'الدفع عبر Stripe',
+      renewTitle: 'تجديد الاشتراك',
+      planLabel: 'الخطة',
+      price: 'السعر',
+      newPrice: 'السعر الجديد',
+      save: 'توفير',
+      freePlan: 'هذه الخطة مجانية.',
+      couponLabel: 'رمز الخصم (اختياري)',
+      couponPlaceholder: 'مثال: WELCOME20',
+      couponApplied: 'تم تطبيق الكوبون',
+      validateCoupon: 'تحقق من الكوبون',
+      renewWithStripe: 'جدد عبر Stripe',
+      continueToPayment: 'المتابعة إلى الدفع',
+      enterCouponFirst: 'أدخل رمز خصم أولاً.',
+      couponValid: 'الكوبون صالح وجاهز للدفع.',
+      invalidCoupon: 'رمز خصم غير صالح.',
+      startPaymentFailed: 'فشل بدء الدفع. يرجى المحاولة مرة أخرى.'
+    },
+    successModal: {
+      title: 'تم تأكيد الدفع',
+      subtitle: 'اشتراكك المميز نشط الآن. استمتع بكل الميزات.',
+      plan: 'الخطة',
+      endDate: 'النهاية',
+      continue: 'متابعة'
+    },
+    expiredModal: {
+      title: 'انتهى الاشتراك',
+      message: 'انتهى اشتراكك السابق. تم تحويل حسابك الآن إلى الخطة المجانية.',
+      renewHint: 'يمكنك تجديد هذه الخطة الآن.',
+      later: 'لاحقاً',
+      renewNow: 'جدد الآن'
     }
   },
   // Auth
@@ -3362,6 +3854,7 @@ const es: TranslationKeys = {
       notifications: 'Notificaciones',
       appearance: 'Apariencia',
       language: 'Idioma y Región',
+      paymentHistory: 'Historial de pagos',
       help: 'Centro de Ayuda',
       terms: 'Condiciones de uso',
     },
@@ -3460,6 +3953,43 @@ const es: TranslationKeys = {
       warning: 'Próximamente',
       warningDesc: 'Se añadirán más idiomas en futuras actualizaciones.'
     },
+    paymentHistory: {
+      title: 'Historial de pagos',
+      subtitle: 'Consulta tus pagos y descarga facturas',
+      loading: 'Cargando pagos...',
+      loadError: 'No se pudo cargar el historial de pagos.',
+      emptyTitle: 'Aún no hay pagos',
+      emptyDescription: 'Tus facturas de suscripción aparecerán aquí después de pagos exitosos.',
+      invoice: 'Factura',
+      date: 'Fecha',
+      amountPaid: 'Monto pagado',
+      amountDue: 'Monto pendiente',
+      currency: 'Moneda',
+      openInvoice: 'Abrir factura',
+      downloadInvoice: 'Descargar factura',
+      noInvoice: 'No hay enlace de factura disponible para este pago.',
+      invoiceLoadError: 'No se pudo recuperar la factura.',
+      popupBlocked: 'Permite las ventanas emergentes para abrir la factura.',
+      invoiceDetailsTitle: 'Detalles de la factura',
+      issueDate: 'Fecha de emisión',
+      paymentStatus: 'Estado del pago',
+      invoiceId: 'ID de factura',
+      chargesSummary: 'Resumen de cargos',
+      description: 'Descripción',
+      amount: 'Monto',
+      subscriptionCharge: 'Cargo de suscripción',
+      balanceDue: 'Saldo pendiente',
+      total: 'Total',
+      footerNote: 'Factura generada desde tu cuenta DeepSkyn. Gracias por tu confianza.',
+      printOrSave: 'Imprimir / Guardar como PDF',
+      statusValues: {
+        paid: 'Pagado',
+        open: 'Abierto',
+        draft: 'Borrador',
+        void: 'Anulado',
+        uncollectible: 'Incobrable'
+      }
+    },
     help: {
       title: 'Centro de Ayuda',
       subtitle: 'FAQs y Soporte',
@@ -3551,6 +4081,132 @@ const es: TranslationKeys = {
       yesterday: 'Ayer',
       daysAgo: 'Hace {count} días',
       weeksAgo: 'Hace {count} semana'
+    },
+    dailyTipTitle: 'Consejo del día',
+    proTip: 'Consejo pro'
+  },
+  subscriptionPage: {
+    common: {
+      notDefined: 'No definido'
+    },
+    planNames: {
+      free: 'Gratis',
+      premiumMonthly: 'Premium Mensual',
+      premiumYearly: 'Premium Anual'
+    },
+    toasts: {
+      paymentSuccess: '¡Pago exitoso!',
+      paymentCancelled: 'Pago cancelado.',
+      renewPlanNotFound: 'No se pudo encontrar tu plan anterior para renovar.'
+    },
+    header: {
+      title: 'Elige tu plan',
+      subtitle: 'Desbloquea funciones premium para una mejor salud de la piel',
+      renewPreviousPlan: 'Renovar plan anterior'
+    },
+    currentSub: {
+      start: 'Inicio',
+      end: 'Fin',
+      remainingDays: 'Quedan {count} días',
+      expired: 'Expirado',
+      na: 'N/A'
+    },
+    plans: {
+      mostPopular: 'Más popular',
+      currentPlan: 'Plan actual',
+      upgradeNow: 'Mejorar ahora',
+      periodMonth: 'mes',
+      periodYear: 'año',
+      periodForever: 'de por vida'
+    },
+    features: {
+      basicSkinAnalysis: 'Análisis básico de piel',
+      advancedAIAnalysis: 'Análisis avanzado con IA',
+      unlimitedAIAnalysis: 'Análisis IA ilimitados',
+      personalizedRoutine: 'Rutina personalizada',
+      aiCoach: 'Coach IA',
+      dailySkincareRoutine: 'Rutina diaria de skincare',
+      chatWithAICoach: 'Chat con el coach IA',
+      communityAccess: 'Acceso a la comunidad',
+      prioritySupport: 'Soporte prioritario',
+      unlimitedAccess: 'Acceso ilimitado',
+      monthlyReports: 'Informes mensuales',
+      detailedReports: 'Informes detallados',
+      premiumRecommendations: 'Recomendaciones premium',
+      advancedRecommendations: 'Recomendaciones avanzadas',
+      progressTracking: 'Seguimiento de progreso',
+      faceScan: 'Escaneo facial',
+      twoMonthsFree: '2 meses gratis',
+      earlyAccessNewFeatures: 'Acceso anticipado a nuevas funciones',
+      threeAnalysesPerMonth: '3 análisis por mes',
+      generalGuidance: 'Guía general'
+    },
+    benefits: {
+      title: 'Beneficios Premium',
+      advancedAI: {
+        title: 'Análisis IA avanzado',
+        description: 'Obtén análisis más profundos con algoritmos IA premium entrenados con millones de imágenes de piel.'
+      },
+      unlimitedAccess: {
+        title: 'Acceso ilimitado',
+        description: 'Subidas de fotos ilimitadas, conversaciones IA e informes detallados cuando lo necesites.'
+      },
+      prioritySupport: {
+        title: 'Soporte prioritario',
+        description: 'Recibe respuestas prioritarias de tu coach IA y acceso a recursos exclusivos.'
+      }
+    },
+    faq: {
+      title: 'Preguntas frecuentes',
+      q1: {
+        question: '¿Qué incluye el plan Gratis?',
+        answer: 'El plan Gratis incluye análisis básico de piel, guía general y hasta 3 análisis por mes.'
+      },
+      q2: {
+        question: '¿Qué desbloquea Premium en DeepSkyn?',
+        answer: 'Premium desbloquea análisis IA avanzados e ilimitados, chat con el coach IA, informes detallados y seguimiento de progreso.'
+      },
+      q3: {
+        question: '¿Cómo funcionan el pago y las facturas?',
+        answer: 'Los pagos son seguros con Stripe. Puedes aplicar un cupón en el checkout y consultar tus facturas en el historial de pagos.'
+      },
+      q4: {
+        question: '¿Puedo cancelar y renovar después?',
+        answer: 'Sí. Puedes cancelar en cualquier momento, mantener el acceso premium hasta el final del período actual y renovar tu plan anterior desde la página de suscripción.'
+      }
+    },
+    checkout: {
+      title: 'Pago con Stripe',
+      renewTitle: 'Renovar suscripción',
+      planLabel: 'Plan',
+      price: 'Precio',
+      newPrice: 'Nuevo precio',
+      save: 'Ahorra',
+      freePlan: 'Este plan es gratuito.',
+      couponLabel: 'Código de cupón (opcional)',
+      couponPlaceholder: 'Ej: WELCOME20',
+      couponApplied: 'Cupón aplicado',
+      validateCoupon: 'Validar cupón',
+      renewWithStripe: 'Renovar con Stripe',
+      continueToPayment: 'Continuar al pago',
+      enterCouponFirst: 'Primero ingresa un cupón.',
+      couponValid: 'Cupón válido y listo para pagar.',
+      invalidCoupon: 'Código de cupón inválido.',
+      startPaymentFailed: 'No se pudo iniciar el pago. Inténtalo de nuevo.'
+    },
+    successModal: {
+      title: 'Pago confirmado',
+      subtitle: 'Tu suscripción premium está activa. Disfruta todas las funciones.',
+      plan: 'Plan',
+      endDate: 'Fin',
+      continue: 'Continuar'
+    },
+    expiredModal: {
+      title: 'Suscripción expirada',
+      message: 'Tu última suscripción terminó. Tu cuenta ahora está en el plan Gratis.',
+      renewHint: 'Puedes renovar este plan ahora.',
+      later: 'Más tarde',
+      renewNow: 'Renovar ahora'
     }
   },
   // Auth

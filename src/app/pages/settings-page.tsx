@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Settings, Shield, Bell, User, Palette, LogOut, ChevronRight, ArrowLeft, Lock, Globe, HelpCircle, FileText } from 'lucide-react';
+import { Settings, Shield, Bell, User, Palette, LogOut, ChevronRight, ArrowLeft, Lock, Globe, HelpCircle, FileText, ReceiptText } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth.store';
 import { useNavigate } from 'react-router-dom';
 import { TwoFactorSettings } from './two-factor-settings';
@@ -11,6 +11,7 @@ import { HelpSettings } from './help-settings';
 import { TermsSettings } from './terms-settings';
 import { AppearanceSettings } from './appearance-settings';
 import { NotificationSettings } from './notification-settings';
+import { PaymentHistorySettings } from './payment-history-settings';
 import toast from 'react-hot-toast';
 
 import { useAccessibilityStore } from '../../stores/accessibility.store';
@@ -23,7 +24,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const { user, logout } = useAuthStore();
   const { t } = useAccessibilityStore();
   const navigate = useNavigate();
-  const [currentView, setCurrentView] = useState<'main' | '2fa' | 'personal' | 'password' | 'language' | 'help' | 'terms' | 'notifications' | 'appearance'>('main');
+  const [currentView, setCurrentView] = useState<'main' | '2fa' | 'personal' | 'password' | 'language' | 'help' | 'terms' | 'notifications' | 'appearance' | 'payment-history'>('main');
 
   const handleLogout = async () => {
     try {
@@ -105,6 +106,15 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
     {
       title: t('settings.sections.support'),
       items: [
+        {
+          id: 'payment-history',
+          icon: <ReceiptText className="w-5 h-5" />,
+          label: t('settings.tabs.paymentHistory'),
+          description: t('settings.paymentHistory.subtitle'),
+          color: 'from-[#0EA5E9] to-[#8B5CF6]',
+          iconBg: 'bg-[#0EA5E9]/10',
+          iconColor: 'text-[#0EA5E9]',
+        },
         {
           id: 'help',
           icon: <HelpCircle className="w-5 h-5" />,
@@ -316,6 +326,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
              {currentView === 'notifications' && <NotificationSettings onBack={() => setCurrentView('main')} />}
              {currentView === 'appearance' && <AppearanceSettings onBack={() => setCurrentView('main')} />}
              {currentView === 'language' && <LanguageSettings onBack={() => setCurrentView('main')} />}
+             {currentView === 'payment-history' && <PaymentHistorySettings onBack={() => setCurrentView('main')} />}
              {currentView === 'help' && <HelpSettings onBack={() => setCurrentView('main')} />}
              {currentView === 'terms' && <TermsSettings onBack={() => setCurrentView('main')} />}
           </div>
