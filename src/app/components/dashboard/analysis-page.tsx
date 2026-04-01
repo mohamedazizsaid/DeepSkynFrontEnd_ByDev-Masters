@@ -5,7 +5,7 @@ import {
   Upload, Camera, Loader2, RefreshCw, AlertTriangle,
   Droplets, Eye, CircleDot, Sun, Smile, Flame, Heart, Zap,
   Package, Leaf, Shield, Microscope, MapPin, Wind, Thermometer,
-  Calendar, Clock, ChevronRight, Activity, Target, Award,
+  Calendar, Clock, ChevronRight, Activity, Target, Award, ShieldX,
 } from 'lucide-react';
 import { Button } from '../button';
 import { Card } from '../card';
@@ -17,6 +17,7 @@ import {
 } from 'recharts';
 import { analysisService } from '../../../lib/services/analysis.service';
 import { subscriptionService } from '../../../lib/services/subscription.service';
+import { faceVerificationService } from '../../../lib/services/face-verification.service';
 import { contextualAnalysisService, type WeatherAlertResponse, type AIAdvice } from '../../../lib/services/contextual-analysis.service';
 import { fetchCompleteWeatherData } from '../../../lib/services/weather.service';
 import {
@@ -31,12 +32,15 @@ import type { DetailedScoreItem } from '../../../lib/analysis-helpers';
 import { CameraScanModal } from './camera-scan-modal';
 import { PredictiveRoutineCard } from '../../../components/analysis';
 import { AnalysisHistory } from './analysis-history';
+import { useFaceVerification } from '../../../lib/hooks/useFaceVerification';
 import toast from 'react-hot-toast';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 interface AnalysisPageProps {
   onBack: () => void;
   onUpgrade?: () => void;
+  onNavigateToSettings?: () => void;
+  onNavigateToRoutine?: () => void;
 }
 
 // Icon map for metric keys
@@ -51,7 +55,7 @@ const METRIC_ICONS: Record<string, React.ReactNode> = {
   elasticity:   <Zap className="w-6 h-6" />,
 };
 
-export function AnalysisPage({ onBack, onUpgrade }: AnalysisPageProps) {
+export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNavigateToRoutine }: AnalysisPageProps) {
   // ─── State ───
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [stats, setStats] = useState<AnalysisStats | null>(null);
@@ -64,7 +68,16 @@ export function AnalysisPage({ onBack, onUpgrade }: AnalysisPageProps) {
   const [analysisLimit, setAnalysisLimit] = useState<number | null>(3);
   const [analysisUsed, setAnalysisUsed] = useState(0);
   const [analysisResetAt, setAnalysisResetAt] = useState<string | null>(null);
+  const [verifyingUpload, setVerifyingUpload] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Face verification hook
+  const { 
+    isModelLoaded, 
+    loadModels, 
+    extractDescriptorFromImage,
+    verifyFromImage,
+  } = useFaceVerification();
 
   // Weather & AI state
   const [weatherData, setWeatherData] = useState<WeatherAlertResponse | null>(null);
@@ -73,6 +86,11 @@ export function AnalysisPage({ onBack, onUpgrade }: AnalysisPageProps) {
   const [showAnalysisHistory, setShowAnalysisHistory] = useState(false);
 
   const { theme, contrastMode } = useAccessibilityStore();
+
+  // Load face-api models on mount
+  useEffect(() => {
+    loadModels();
+  }, [loadModels]);
 
   const formatResetDate = (value?: string | null): string => {
     if (!value) return 'soon';
@@ -210,7 +228,7 @@ export function AnalysisPage({ onBack, onUpgrade }: AnalysisPageProps) {
 
   useEffect(() => { loadData(); loadWeatherData(); }, []);
 
-  // ─── Upload handler ───
+  // ─── Upload handler with face verification ───
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files?.length) return;
@@ -222,6 +240,76 @@ export function AnalysisPage({ onBack, onUpgrade }: AnalysisPageProps) {
       toast.error('Maximum 5 images allowed.');
       return;
     }
+
+    // Step 1: Face verification on uploaded image
+    if (isModelLoaded) {
+      setVerifyingUpload(true);
+      try {
+        // Create an image from the first uploaded file to verify face
+        const file = files[0];
+        const imageUrl = URL.createObjectURL(file);
+        
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error('Impossible de charger l\'image'));
+          img.src = imageUrl;
+        });
+
+        // Extract face descriptor from uploaded image
+        const descriptor = await extractDescriptorFromImage(img);
+        URL.revokeObjectURL(imageUrl);
+
+        if (!descriptor) {
+          toast.error('Aucun visage détecté dans l\'image. Veuillez utiliser une photo montrant clairement votre visage.', {
+            duration: 5000,
+            icon: '👤',
+          });
+          setVerifyingUpload(false);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          return;
+        }
+
+        // Verify face with backend
+        const verification = await faceVerificationService.verify({ descriptor });
+
+        if (!verification.verified) {
+          if (verification.needsProfilePhoto) {
+            toast.error(verification.message, {
+              duration: 6000,
+              icon: '⚙️',
+            });
+            // Redirect to settings if needed
+            if (onNavigateToSettings) {
+              setTimeout(() => onNavigateToSettings(), 2000);
+            }
+          } else {
+            toast.error(verification.message, {
+              duration: 5000,
+              icon: '🚫',
+            });
+          }
+          setVerifyingUpload(false);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          return;
+        }
+
+        // Face verified!
+        toast.success(verification.message, { duration: 2000, icon: '✅' });
+      } catch (err) {
+        console.error('Face verification error:', err);
+        toast.error('Erreur lors de la vérification faciale. Veuillez réessayer.');
+        setVerifyingUpload(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      } finally {
+        setVerifyingUpload(false);
+      }
+    }
+
+    // Step 2: Proceed with upload
     setUploading(true);
     try {
       const result = await analysisService.uploadAndAnalyze(Array.from(files));
@@ -317,9 +405,23 @@ export function AnalysisPage({ onBack, onUpgrade }: AnalysisPageProps) {
             </p>
             <div className="flex gap-3">
               <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
-              <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading || analysisLimitReached}>
-                {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                {uploading ? 'Uploading...' : analysisLimitReached ? 'Limit reached' : 'Upload Photos'}
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading || verifyingUpload || analysisLimitReached}>
+                {verifyingUpload ? (
+                  <>
+                    <ShieldX className="w-5 h-5 animate-pulse" />
+                    Vérification...
+                  </>
+                ) : uploading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5" />
+                    {analysisLimitReached ? 'Limit reached' : 'Upload Photos'}
+                  </>
+                )}
               </Button>
               <Button onClick={() => setScanOpen(true)} className="bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4]">
                 <Camera className="w-5 h-5" />
@@ -359,6 +461,7 @@ export function AnalysisPage({ onBack, onUpgrade }: AnalysisPageProps) {
           canSaveAnalysis={!analysisLimitReached}
           analysisBlockedMessage={`Monthly analysis limit reached. Reset: ${formatResetDate(analysisResetAt)}.`}
           onUpgrade={onUpgrade}
+          onNavigateToSettings={onNavigateToSettings}
         />
       </div>
     );
@@ -432,11 +535,25 @@ export function AnalysisPage({ onBack, onUpgrade }: AnalysisPageProps) {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading || analysisLimitReached}
+                  disabled={uploading || verifyingUpload || analysisLimitReached}
                   className="px-6 py-3 rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium shadow-lg border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                  <span>{uploading ? 'Analyse...' : analysisLimitReached ? 'Limite' : 'Nouvelle'}</span>
+                  {verifyingUpload ? (
+                    <>
+                      <ShieldX className="w-5 h-5 animate-pulse" />
+                      <span>Vérif...</span>
+                    </>
+                  ) : uploading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Analyse...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-5 h-5" />
+                      <span>{analysisLimitReached ? 'Limite' : 'Nouvelle'}</span>
+                    </>
+                  )}
                 </motion.button>
               </div>
             </div>
@@ -1194,6 +1311,7 @@ export function AnalysisPage({ onBack, onUpgrade }: AnalysisPageProps) {
               detectedIssues: analysis.conditions || [],
               skinType: results.skinType || 'normal',
             }}
+            onNavigateToRoutine={onNavigateToRoutine}
           />
         </motion.div>
       )}
@@ -1213,6 +1331,7 @@ export function AnalysisPage({ onBack, onUpgrade }: AnalysisPageProps) {
         canSaveAnalysis={!analysisLimitReached}
         analysisBlockedMessage={`Monthly analysis limit reached. Reset: ${formatResetDate(analysisResetAt)}.`}
         onUpgrade={onUpgrade}
+        onNavigateToSettings={onNavigateToSettings}
       />
       </div>
     </div>

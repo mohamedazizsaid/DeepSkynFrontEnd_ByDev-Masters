@@ -41,4 +41,11 @@ export const predictiveRoutineService = {
     );
     return res.data;
   },
+
+  async validateAndActivateRoutine(routineId: string): Promise<{ success: boolean; routineId: string; message: string }> {
+    const res = await apiClient.post<{ success: boolean; routineId: string; message: string }>(
+      `/predictive-routine/${routineId}/validate`,
+    );
+    return res.data;
+  },
 };
