@@ -1,17 +1,87 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Sun, Moon, Lightbulb, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Sparkles, Sun, Moon, Lightbulb, AlertTriangle, CheckCircle2, Loader2, Check } from 'lucide-react';
 import { Card } from '../../app/components/ui/card';
+import { Button } from '../../app/components/button';
 import { usePredictiveRoutine } from '../../hooks/usePredictiveRoutine';
+import { predictiveRoutineService } from '../../lib/services/predictive-routine.service';
 import type { AnalysisResult } from '../../lib/services/predictive-routine.service';
+import toast from 'react-hot-toast';
 
 interface PredictiveRoutineCardProps {
   analysisId: string;
   analysisResult: AnalysisResult;
+  onNavigateToRoutine?: () => void;
 }
 
-export function PredictiveRoutineCard({ analysisId, analysisResult }: PredictiveRoutineCardProps) {
-  const { routine, loading, error } = usePredictiveRoutine(analysisId, analysisResult);
+export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateToRoutine }: PredictiveRoutineCardProps) {
+  const { routine, routineId, loading, error } = usePredictiveRoutine(analysisId, analysisResult);
+  const [validating, setValidating] = useState(false);
+  const [validated, setValidated] = useState(false);
+
+  const handleValidateRoutine = async () => {
+    console.log('🔍 Validation clicked, routineId:', routineId);
+    
+    if (!routineId) {
+      console.error('❌ No routineId available');
+      toast.error('ID de routine manquant. Veuillez réessayer.', {
+        style: {
+          borderRadius: '12px',
+          background: '#FFFFFF',
+          color: '#EF4444',
+          border: '1px solid #FEE2E2',
+          padding: '12px',
+        },
+      });
+      return;
+    }
+
+    setValidating(true);
+    try {
+      console.log('📤 Calling API to validate routine:', routineId);
+      const result = await predictiveRoutineService.validateAndActivateRoutine(routineId);
+      console.log('✅ API response:', result);
+      
+      if (result.success) {
+        setValidated(true);
+        toast.success('✅ Routine activée avec succès ! Redirection en cours...', {
+          duration: 3000,
+          style: {
+            borderRadius: '12px',
+            background: '#FFFFFF',
+            color: '#111827',
+            border: '1px solid #10B981',
+            padding: '12px',
+          },
+        });
+
+        // Rediriger vers la page routine après 2 secondes
+        setTimeout(() => {
+          console.log('🔄 Redirecting to routine page...');
+          if (onNavigateToRoutine) {
+            onNavigateToRoutine();
+          }
+        }, 2000);
+      }
+    } catch (err: any) {
+      console.error('❌ Error validating routine:', err);
+      console.error('Error details:', err?.response?.data);
+      toast.error(err?.response?.data?.message || 'Erreur lors de la validation de la routine', {
+        style: {
+          borderRadius: '12px',
+          background: '#FFFFFF',
+          color: '#EF4444',
+          border: '1px solid #FEE2E2',
+          padding: '12px',
+        },
+      });
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  // Debug log
+  console.log('🔍 PredictiveRoutineCard render:', { routineId, hasRoutine: !!routine, loading, error });
 
   if (loading) {
     return (
@@ -140,6 +210,41 @@ export function PredictiveRoutineCard({ analysisId, analysisResult }: Predictive
             </div>
           </div>
         </div>
+
+        {/* Validation Button */}
+        {!validated ? (
+          <div className="mt-6">
+            <Button
+              onClick={handleValidateRoutine}
+              disabled={validating || !routineId}
+              className="w-full bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white font-semibold py-4 rounded-xl shadow-lg shadow-[#0EA5E9]/20 hover:shadow-xl hover:shadow-[#0EA5E9]/30 transition-all disabled:opacity-50"
+            >
+              {validating ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Activation en cours...
+                </>
+              ) : !routineId ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Génération en cours...
+                </>
+              ) : (
+                <>
+                  <Check className="w-5 h-5 mr-2" />
+                  Valider et activer cette routine
+                </>
+              )}
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200">
+            <div className="flex items-center justify-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+              <span className="text-sm font-semibold text-emerald-700">Routine activée avec succès !</span>
+            </div>
+          </div>
+        )}
 
         {/* Footer note */}
         <div className="mt-6 p-4 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0]">

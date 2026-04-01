@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MapPin, Mail, User, Calendar, Share2, ArrowLeft, ChevronDown, Camera, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Mail, User, Calendar, Share2, ArrowLeft, ChevronDown, Camera, Image as ImageIcon, ShieldCheck, ShieldX, RefreshCw, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth.store';
 import { authService } from '../../lib/services/auth.service';
 import { addressService, AddressData } from '../../lib/services/address.service';
+import { faceVerificationService, type FaceReferenceStatus } from '../../lib/services/face-verification.service';
+import { useFaceVerification } from '../../lib/hooks/useFaceVerification';
 import { AddressMapPicker } from '../../components/location/address-map-picker';
 import { Button } from '../components/button';
 import { Input } from '../components/input';
@@ -25,6 +27,16 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
   const [isGenderOpen, setIsGenderOpen] = useState(false);
   const genderRef = useRef<HTMLDivElement>(null);
+  const profileImageRef = useRef<HTMLImageElement>(null);
+  
+  // Face verification state
+  const [faceReferenceStatus, setFaceReferenceStatus] = useState<FaceReferenceStatus | null>(null);
+  const [isLoadingFaceStatus, setIsLoadingFaceStatus] = useState(false);
+  const [isRegisteringFace, setIsRegisteringFace] = useState(false);
+  
+  // Face verification hook
+  const { isModelLoaded, loadModels, extractDescriptorFromImage, registerFromProfilePhoto } = useFaceVerification();
+  
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -48,9 +60,11 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Load address on component mount
+  // Load address and face reference status on component mount
   useEffect(() => {
     loadUserAddress();
+    loadFaceReferenceStatus();
+    loadModels();
   }, []);
 
   const loadUserAddress = async () => {
@@ -71,6 +85,84 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
       console.error('Error loading address:', error);
     } finally {
       setIsLoadingAddress(false);
+    }
+  };
+
+  // Load face reference status
+  const loadFaceReferenceStatus = async () => {
+    setIsLoadingFaceStatus(true);
+    try {
+      const status = await faceVerificationService.getStatus();
+      setFaceReferenceStatus(status);
+    } catch (error) {
+      console.error('Error loading face reference status:', error);
+    } finally {
+      setIsLoadingFaceStatus(false);
+    }
+  };
+
+  // Register face from current profile photo
+  const handleRegisterFace = async () => {
+    if (!formData.avatar) {
+      toast.error('Vous devez d\'abord définir une photo de profil', {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+      });
+      return;
+    }
+
+    setIsRegisteringFace(true);
+    try {
+      // Create an image element from the avatar URL
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Impossible de charger l\'image'));
+        img.src = formData.avatar;
+      });
+
+      // Extract face descriptor
+      const descriptor = await extractDescriptorFromImage(img);
+      
+      if (!descriptor) {
+        toast.error('Aucun visage détecté dans votre photo de profil. Veuillez utiliser une photo montrant clairement votre visage.', {
+          style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+        });
+        return;
+      }
+
+      // Register the face reference
+      await faceVerificationService.registerFromProfile({ descriptor });
+      
+      toast.success('Référence faciale enregistrée avec succès ! Vous pouvez maintenant utiliser l\'analyse de peau.', {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
+      });
+
+      // Reload status
+      await loadFaceReferenceStatus();
+    } catch (error: any) {
+      console.error('Error registering face:', error);
+      toast.error(error?.response?.data?.message || 'Erreur lors de l\'enregistrement de la référence faciale', {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+      });
+    } finally {
+      setIsRegisteringFace(false);
+    }
+  };
+
+  // Reset face reference
+  const handleResetFaceReference = async () => {
+    try {
+      await faceVerificationService.reset();
+      toast.success('Référence faciale réinitialisée', {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
+      });
+      await loadFaceReferenceStatus();
+    } catch (error) {
+      toast.error('Erreur lors de la réinitialisation', {
+        style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
+      });
     }
   };
 
@@ -512,6 +604,136 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
             </div>
           </div>
         </div>
+      </motion.div>
+
+      {/* Face Verification / Sécurité Biométrique */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.25 }}
+        className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6"
+      >
+        <h3 className="text-lg font-bold text-[#111827] mb-2 flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-[#0EA5E9]" />
+          Vérification Faciale
+        </h3>
+        <p className="text-xs text-[#6B7280] mb-4">
+          Sécurisez vos analyses de peau en vérifiant votre identité par reconnaissance faciale
+        </p>
+
+        {isLoadingFaceStatus ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 text-[#0EA5E9] animate-spin" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Status display */}
+            <div className="p-4 rounded-xl bg-gray-50/50 border border-gray-100">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-gray-700">Statut de la référence faciale</span>
+                <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
+                  faceReferenceStatus?.hasFaceReference 
+                    ? 'bg-emerald-100 text-emerald-700' 
+                    : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {faceReferenceStatus?.hasFaceReference ? (
+                    <>
+                      <ShieldCheck className="w-3 h-3" />
+                      Active
+                    </>
+                  ) : (
+                    <>
+                      <ShieldX className="w-3 h-3" />
+                      Non configurée
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              {faceReferenceStatus?.hasFaceReference ? (
+                <div className="text-xs text-gray-500">
+                  <p>Votre référence faciale est configurée. Les analyses de peau sont sécurisées par reconnaissance faciale.</p>
+                  {faceReferenceStatus.faceReference?.updatedAt && (
+                    <p className="mt-1 text-[10px] text-gray-400">
+                      Dernière mise à jour : {new Date(faceReferenceStatus.faceReference.updatedAt).toLocaleDateString('fr-FR')}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="text-xs text-gray-500">
+                  {!formData.avatar ? (
+                    <p>Vous devez d'abord définir une photo de profil pour activer la vérification faciale.</p>
+                  ) : (
+                    <p>Enregistrez votre référence faciale depuis votre photo de profil pour sécuriser vos analyses.</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-wrap gap-2">
+              {!faceReferenceStatus?.hasFaceReference && formData.avatar && (
+                <Button
+                  onClick={handleRegisterFace}
+                  disabled={isRegisteringFace || !isModelLoaded}
+                  size="sm"
+                  className="bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6]"
+                >
+                  {isRegisteringFace ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Enregistrement...
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-4 h-4 mr-2" />
+                      Enregistrer ma référence faciale
+                    </>
+                  )}
+                </Button>
+              )}
+              
+              {faceReferenceStatus?.hasFaceReference && (
+                <>
+                  <Button
+                    onClick={handleRegisterFace}
+                    disabled={isRegisteringFace || !isModelLoaded || !formData.avatar}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {isRegisteringFace ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Mise à jour...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Mettre à jour
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleResetFaceReference}
+                    size="sm"
+                    variant="outline"
+                    className="text-red-600 hover:text-red-700 hover:border-red-300"
+                  >
+                    <ShieldX className="w-4 h-4 mr-2" />
+                    Réinitialiser
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {/* Info box */}
+            <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
+              <p className="text-[11px] text-blue-700">
+                <strong>Comment ça fonctionne :</strong> Votre photo de profil est utilisée comme référence pour vérifier votre identité avant chaque analyse de peau. Cela empêche d'autres personnes d'utiliser votre compte pour leurs analyses.
+              </p>
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>
   );

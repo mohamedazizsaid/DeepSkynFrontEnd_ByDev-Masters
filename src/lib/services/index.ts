@@ -33,3 +33,9 @@ export {
   type SkinDailyLog,
   type CreateSkinLogDto,
 } from './contextual-analysis.service';
+export {
+  faceVerificationService,
+  type FaceVerificationResult,
+  type FaceReferenceStatus,
+  type VerifyFaceDto,
+} from './face-verification.service';
