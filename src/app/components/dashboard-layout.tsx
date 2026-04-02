@@ -183,12 +183,14 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
   const renderPage = () => {
     const commonProps = { onBack: () => setCurrentPage('dashboard') };
     const premiumProps = { onUpgrade: () => setCurrentPage('subscription') };
+    const settingsNavProps = { onNavigateToSettings: () => setCurrentPage('settings') };
+    const routineNavProps = { onNavigateToRoutine: () => setCurrentPage('routine') };
 
     switch (currentPage) {
       case 'dashboard':
         return <DashboardPage onNavigate={handleNavigate} />;
       case 'analysis':
-        return <AnalysisPage {...commonProps} {...premiumProps} />;
+        return <AnalysisPage {...commonProps} {...premiumProps} {...settingsNavProps} {...routineNavProps} />;
       case 'evolution':
         return <EvolutionPage {...commonProps} />;
       case 'routine':

@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Camera, X, Loader2, RotateCcw, Save, Sparkles, AlertCircle, Lock, Crown } from 'lucide-react';
+import { Camera, X, Loader2, RotateCcw, Save, Sparkles, AlertCircle, Lock, Crown, ShieldCheck, ShieldX, UserCheck } from 'lucide-react';
 import { analysisService } from '../../../lib/services/analysis.service';
 import { extractDetailedScores } from '../../../lib/analysis-helpers';
+import { useFaceVerification } from '../../../lib/hooks/useFaceVerification';
 import type { GeminiAnalysisResult } from '../../../lib/types';
 import toast from 'react-hot-toast';
 
@@ -32,9 +33,11 @@ interface CameraScanModalProps {
   canSaveAnalysis?: boolean;
   analysisBlockedMessage?: string;
   onUpgrade?: () => void;
+  /** Called when user needs to go to settings for face registration */
+  onNavigateToSettings?: () => void;
 }
 
-type ScanPhase = 'camera' | 'scanning' | 'results';
+type ScanPhase = 'camera' | 'verifying' | 'verification_failed' | 'scanning' | 'results';
 
 export function CameraScanModal({
   open,
@@ -43,6 +46,7 @@ export function CameraScanModal({
   canSaveAnalysis = true,
   analysisBlockedMessage,
   onUpgrade,
+  onNavigateToSettings,
 }: CameraScanModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -52,6 +56,23 @@ export function CameraScanModal({
   const [result, setResult] = useState<GeminiAnalysisResult | null>(null);
   const [saving, setSaving] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [verificationMessage, setVerificationMessage] = useState<string>('');
+  const [localVerificationResult, setLocalVerificationResult] = useState<{ needsProfilePhoto: boolean } | null>(null);
+
+  // Face verification hook
+  const {
+    isLoading: isVerifying,
+    isModelLoaded,
+    verificationResult,
+    loadModels,
+    verifyFromVideo,
+    reset: resetVerification,
+  } = useFaceVerification();
+
+  // Load face-api models on mount
+  useEffect(() => {
+    loadModels();
+  }, [loadModels]);
 
   // ─── Camera lifecycle ───
   const startCamera = useCallback(async () => {
@@ -78,14 +99,17 @@ export function CameraScanModal({
     if (open) {
       setPhase('camera');
       setResult(null);
+      setVerificationMessage('');
+      setLocalVerificationResult(null);
+      resetVerification();
       startCamera();
     } else {
       stopCamera();
     }
     return () => stopCamera();
-  }, [open, startCamera, stopCamera]);
+  }, [open, startCamera, stopCamera, resetVerification]);
 
-  // ─── Capture + Scan ───
+  // ─── Face Verification + Capture + Scan ───
   const captureAndScan = async () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -98,7 +122,33 @@ export function CameraScanModal({
     if (!ctx) return;
     ctx.drawImage(video, 0, 0);
 
-    // Convert to base64 (strip the data:image/jpeg;base64, prefix)
+    // Step 1: Face Verification
+    if (isModelLoaded) {
+      setPhase('verifying');
+      
+      const verification = await verifyFromVideo(video);
+      
+      if (!verification) {
+        setVerificationMessage('Erreur lors de la vérification faciale. Veuillez réessayer.');
+        setLocalVerificationResult({ needsProfilePhoto: false });
+        setPhase('verification_failed');
+        return;
+      }
+
+      if (!verification.verified) {
+        setVerificationMessage(verification.message);
+        setLocalVerificationResult({ needsProfilePhoto: verification.needsProfilePhoto });
+        setPhase('verification_failed');
+        stopCamera();
+        return;
+      }
+
+      // Face verified - show success message briefly
+      setVerificationMessage(verification.message);
+      toast.success(verification.message, { duration: 2000 });
+    }
+
+    // Step 2: Proceed with skin analysis
     const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
     const base64 = dataUrl.split(',')[1];
 
@@ -222,7 +272,7 @@ export function CameraScanModal({
 
           <div className="p-8">
             {/* Header */}
-            {(phase === 'camera' || phase === 'scanning') && (
+            {(phase === 'camera' || phase === 'scanning' || phase === 'verifying') && (
               <div className="flex items-center gap-3 mb-8">
                 <div
                   className="p-2.5 rounded-2xl flex-shrink-0"
@@ -239,6 +289,7 @@ export function CameraScanModal({
                   </h3>
                   <p className="text-gray-500 text-xs mt-0.5">
                     {phase === 'camera' && 'Position your face in the frame'}
+                    {phase === 'verifying' && 'Vérification de votre identité...'}
                     {phase === 'scanning' && 'AI is analyzing your skin...'}
                   </p>
                 </div>
@@ -354,6 +405,137 @@ export function CameraScanModal({
                       transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.15 }}
                     />
                   ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Face Verification in Progress */}
+            {phase === 'verifying' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-20"
+              >
+                <motion.div
+                  className="relative w-20 h-20 mx-auto mb-5"
+                >
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      border: '3px solid transparent',
+                      borderTopColor: '#8B5CF6',
+                      borderRightColor: '#EC4899',
+                    }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <motion.div
+                      animate={{ scale: [1, 1.15, 1] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      <UserCheck className="w-8 h-8 text-[#8B5CF6]" />
+                    </motion.div>
+                  </div>
+                </motion.div>
+                <p className="text-gray-900 font-semibold text-lg mb-1">
+                  Vérification d'identité...
+                </p>
+                <p className="text-gray-500 text-sm">
+                  Nous vérifions que vous êtes le propriétaire du compte
+                </p>
+                <div className="flex justify-center gap-1.5 mt-5">
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={i}
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: '#8B5CF6' }}
+                      animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }}
+                      transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Face Verification Failed */}
+            {phase === 'verification_failed' && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-12"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                  className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center"
+                  style={{
+                    background: localVerificationResult?.needsProfilePhoto 
+                      ? 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(236,72,153,0.1))'
+                      : 'linear-gradient(135deg, rgba(239,68,68,0.1), rgba(236,72,153,0.1))',
+                    border: localVerificationResult?.needsProfilePhoto 
+                      ? '2px solid rgba(245,158,11,0.3)'
+                      : '2px solid rgba(239,68,68,0.3)',
+                  }}
+                >
+                  {localVerificationResult?.needsProfilePhoto ? (
+                    <Camera className="w-12 h-12 text-amber-500" />
+                  ) : (
+                    <ShieldX className="w-12 h-12 text-red-500" />
+                  )}
+                </motion.div>
+                
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {localVerificationResult?.needsProfilePhoto 
+                    ? 'Configuration requise'
+                    : 'Vérification échouée'}
+                </h3>
+                <p className="text-gray-600 mb-6 max-w-sm mx-auto">
+                  {verificationMessage}
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  {localVerificationResult?.needsProfilePhoto ? (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        onClose();
+                        if (onNavigateToSettings) {
+                          onNavigateToSettings();
+                        }
+                      }}
+                      className="px-6 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20"
+                    >
+                      <Camera className="w-4 h-4 inline mr-2" />
+                      Configurer ma photo de profil
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        setPhase('camera');
+                        setVerificationMessage('');
+                        setLocalVerificationResult(null);
+                        resetVerification();
+                        startCamera();
+                      }}
+                      className="px-6 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white shadow-lg shadow-[#0EA5E9]/20"
+                    >
+                      <RotateCcw className="w-4 h-4 inline mr-2" />
+                      Réessayer
+                    </motion.button>
+                  )}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={onClose}
+                    className="px-6 py-3 rounded-xl font-semibold text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                  >
+                    Fermer
+                  </motion.button>
                 </div>
               </motion.div>
             )}

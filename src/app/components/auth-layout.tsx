@@ -60,13 +60,13 @@ export function AuthLayout({ children, title, subtitle, imageSrc }: AuthLayoutPr
 
             {/* Navbar */}
             <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/40 dark:border-white/10 bg-white/75 dark:bg-[#1a2844]/75 backdrop-blur-xl">
-                <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+                <div className="max-w-7xl mx-auto px-6 py-2.5 flex items-center justify-between">
                     <button
                         onClick={() => navigate('/')}
                         className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                     >
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center shadow-lg shadow-[#3BBDF4]/30">
-                            <Sparkles className="w-6 h-6 text-white" />
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center shadow-lg shadow-[#3BBDF4]/30">
+                            <Sparkles className="w-5 h-5 text-white" />
                         </div>
                         <span className="text-2xl font-bold bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent tracking-tight">
                             DeepSkyn

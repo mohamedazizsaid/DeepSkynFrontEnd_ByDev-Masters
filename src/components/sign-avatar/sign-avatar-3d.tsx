@@ -116,6 +116,24 @@ function toWorld(kp: AvatarKeypoint): THREE.Vector3 {
   );
 }
 
+// Centered version for hands-only modes (skeleton/silhouette)
+// Centers the hand in the viewport and zooms in
+function toWorldCentered(kp: AvatarKeypoint, handCenter: { x: number; y: number }, isRight: boolean): THREE.Vector3 {
+  const x = clamp(kp.x, 0, 1);
+  const y = clamp(kp.y, 0, 1);
+  const z = clamp(kp.z, -1, 1);
+
+  // Offset to center the hand
+  const offsetX = isRight ? -0.25 : 0.25; // Spread hands apart horizontally
+  
+  // Scale and center the keypoints relative to hand center
+  return new THREE.Vector3(
+    ((x - handCenter.x) * 2.5) + offsetX, // Scale up and center, offset for left/right
+    ((handCenter.y - y) * 2.5) + 0.1,     // Scale up and center vertically
+    -z * 0.5 + 0.3,                        // Push forward
+  );
+}
+
 function segmentTransform(start: THREE.Vector3, end: THREE.Vector3) {
   const dir = new THREE.Vector3().subVectors(end, start);
   const length = Math.max(dir.length(), 0.0001);
@@ -285,21 +303,62 @@ function Hand({
   skin,
   bone,
   isSkeleton,
+  wristAnchor,
+  centered,
+  isRight,
 }: {
   keypoints: AvatarKeypoint[];
   skin: string;
   bone: string;
   isSkeleton: boolean;
+  wristAnchor?: THREE.Vector3; // Position from body pose_keypoints
+  centered?: boolean; // For hands-only modes (skeleton/silhouette)
+  isRight?: boolean; // Is this the right hand
 }) {
   const groupRef = useRef<THREE.Group>(null);
 
-  // Keep hands slightly in front of the torso to avoid visual occlusion during fast signs.
-  const pts = keypoints.map((kp) => {
-    const p = toWorld(kp);
-    return new THREE.Vector3(p.x, p.y, p.z + 0.1);
-  });
+  // Convert keypoints to world space and anchor to body wrist position
+  const pts = useMemo(() => {
+    if (keypoints.length === 0) return [];
+    
+    // For centered mode (hands-only), center the hands in view
+    if (centered) {
+      // Calculate hand center from wrist position
+      const wristKp = keypoints[0];
+      const handCenter = { x: wristKp.x, y: wristKp.y };
+      
+      // Use centered transformation
+      return keypoints.map((kp) => toWorldCentered(kp, handCenter, isRight ?? false));
+    }
+    
+    // First convert all keypoints to world space
+    const worldPts = keypoints.map((kp) => toWorld(kp));
+    
+    // If we have a wrist anchor from the body, reposition the hand relative to it
+    if (wristAnchor && worldPts.length > 0) {
+      const handWrist = worldPts[0]; // Index 0 is wrist in hand keypoints
+      const offset = new THREE.Vector3().subVectors(wristAnchor, handWrist);
+      
+      // Move all points to align with body wrist and push forward
+      return worldPts.map((p) => {
+        return new THREE.Vector3(
+          p.x + offset.x,
+          p.y + offset.y,
+          p.z + offset.z + 0.25 // Push significantly forward to appear in front of body
+        );
+      });
+    }
+    
+    // Fallback: just push forward
+    return worldPts.map((p) => new THREE.Vector3(p.x, p.y, p.z + 0.25));
+  }, [keypoints, wristAnchor, centered, isRight]);
 
   const maps = useMemo(() => createProceduralHandMaps(skin), [skin]);
+
+  // Early return if no keypoints
+  if (pts.length < 21) {
+    return null;
+  }
 
   const wristToMiddle = new THREE.Vector3().subVectors(pts[9], pts[0]);
   const palmYaw = Math.atan2(wristToMiddle.x, wristToMiddle.y) * 0.6;
@@ -656,14 +715,23 @@ function AvatarRig({
   const groupRef = useRef<THREE.Group>(null);
   const mouthRef = useRef<THREE.Mesh>(null);
   const chestRef = useRef<THREE.Mesh>(null);
+  const leftEyeRef = useRef<THREE.Group>(null);
+  const rightEyeRef = useRef<THREE.Group>(null);
+  const leftBrowRef = useRef<THREE.Mesh>(null);
+  const rightBrowRef = useRef<THREE.Mesh>(null);
 
   const palette = useMemo(() => {
     if (styleMode === 'skeleton') {
       return {
         skin: '#8ec5ff',
-        cloth: '#65a6ff',
+        cloth: '#4a7dcc',
         bone: '#a8d5ff',
         head: '#d4ebff',
+        hair: '#5a9aff',
+        eye: '#1a4a8a',
+        iris: '#2d6bc4',
+        shirt: '#3a6bb8',
+        accent: '#7cb3ff',
       };
     }
     if (styleMode === 'silhouette') {
@@ -672,13 +740,23 @@ function AvatarRig({
         cloth: '#0b1220',
         bone: '#1f2f49',
         head: '#111b2f',
+        hair: '#080d15',
+        eye: '#1a2540',
+        iris: '#0a1525',
+        shirt: '#0d1825',
+        accent: '#1a2a40',
       };
     }
     return {
-      skin: '#efc3a5',
-      cloth: '#2f6ac8',
+      skin: '#f5d0b5',
+      cloth: '#1e40af',
       bone: '#b7d9ff',
-      head: '#f2c8ae',
+      head: '#f7d5bc',
+      hair: '#3d2314',
+      eye: '#ffffff',
+      iris: '#4a6741',
+      shirt: '#2563eb',
+      accent: '#3b82f6',
     };
   }, [styleMode]);
 
@@ -728,88 +806,278 @@ function AvatarRig({
       const open = speaking ? 0.7 + Math.sin(t * 7.5) * 0.25 : 0.35;
       mouthRef.current.scale.y = THREE.MathUtils.damp(mouthRef.current.scale.y, open, 8, delta);
     }
+
+    // Eye blinking animation
+    const blinkCycle = t % 4.5;
+    const blinkAmount = blinkCycle < 0.15 ? Math.sin((blinkCycle / 0.15) * Math.PI) * 0.85 : 0;
+    if (leftEyeRef.current && rightEyeRef.current) {
+      leftEyeRef.current.scale.y = 1 - blinkAmount;
+      rightEyeRef.current.scale.y = 1 - blinkAmount;
+    }
+
+    // Eyebrow subtle animation (expressive)
+    const browLift = Math.sin(t * 0.8) * 0.003;
+    if (leftBrowRef.current && rightBrowRef.current) {
+      leftBrowRef.current.position.y = 0.115 + browLift;
+      rightBrowRef.current.position.y = 0.115 + browLift;
+    }
   });
 
   const skeleton = styleMode === 'skeleton';
+  const handsOnly = styleMode === 'skeleton' || styleMode === 'silhouette';
 
+  // For hands-only modes (skeleton/silhouette), only render the hands
+  if (handsOnly) {
+    return (
+      <group ref={groupRef}>
+        <Hand keypoints={frame.hand_left_keypoints} skin={palette.skin} bone={palette.bone} isSkeleton={skeleton} centered={true} isRight={false} />
+        <Hand keypoints={frame.hand_right_keypoints} skin={palette.skin} bone={palette.bone} isSkeleton={skeleton} centered={true} isRight={true} />
+      </group>
+    );
+  }
+
+  // Full body render for cartoon mode
   return (
     <group ref={groupRef}>
+      {/* Torso/Body - Professional shirt with collar */}
       <Segment
         start={shoulderCenter}
         end={hipCenter}
-        radius={skeleton ? 0.03 : 0.085}
-        color={skeleton ? palette.bone : palette.cloth}
+        radius={0.088}
+        color={palette.shirt}
+        roughness={0.6}
       />
 
-      {!skeleton && (
-        <>
-          <Segment start={lShoulder} end={rShoulder} radius={0.055} color={palette.cloth} />
-          <Segment start={lHip} end={rHip} radius={0.06} color={palette.cloth} />
-          <mesh ref={chestRef} position={[torsoCenter.x, torsoCenter.y + 0.06, torsoCenter.z + 0.02]} castShadow receiveShadow>
-            <sphereGeometry args={[0.125, 26, 20]} />
-            <meshStandardMaterial color={palette.cloth} roughness={0.55} metalness={0.01} />
-          </mesh>
-        </>
-      )}
-
-      <Segment start={lShoulder} end={lElbow} radius={skeleton ? 0.014 : 0.038} color={skeleton ? palette.bone : palette.cloth} />
-      <Segment start={lElbow} end={lWrist} radius={skeleton ? 0.011 : 0.026} color={palette.skin} />
-      <Segment start={rShoulder} end={rElbow} radius={skeleton ? 0.014 : 0.038} color={skeleton ? palette.bone : palette.cloth} />
-      <Segment start={rElbow} end={rWrist} radius={skeleton ? 0.011 : 0.026} color={palette.skin} />
-
-      <Segment start={new THREE.Vector3(shoulderCenter.x, shoulderCenter.y + 0.03, shoulderCenter.z)} end={headCenter} radius={skeleton ? 0.015 : 0.045} color={palette.skin} />
-
-      <mesh position={[headCenter.x, headCenter.y + 0.07, headCenter.z]} castShadow receiveShadow>
-        <sphereGeometry args={[skeleton ? 0.095 : 0.16, 24, 24]} />
-        <meshStandardMaterial color={skeleton ? palette.bone : palette.head} roughness={0.45} metalness={0.02} />
+      {/* Shoulders */}
+      <Segment start={lShoulder} end={rShoulder} radius={0.058} color={palette.shirt} />
+      <Segment start={lHip} end={rHip} radius={0.062} color={palette.shirt} />
+      
+      {/* Chest with shirt */}
+      <mesh ref={chestRef} position={[torsoCenter.x, torsoCenter.y + 0.06, torsoCenter.z + 0.02]} castShadow receiveShadow>
+        <sphereGeometry args={[0.128, 28, 22]} />
+        <meshStandardMaterial color={palette.shirt} roughness={0.62} metalness={0.02} />
+      </mesh>
+      
+      {/* Shirt collar left */}
+      <mesh position={[shoulderCenter.x - 0.04, shoulderCenter.y + 0.04, shoulderCenter.z + 0.06]} rotation={[0.3, 0.4, 0.2]}>
+        <boxGeometry args={[0.025, 0.045, 0.01]} />
+        <meshStandardMaterial color={palette.shirt} roughness={0.5} />
+      </mesh>
+      {/* Shirt collar right */}
+      <mesh position={[shoulderCenter.x + 0.04, shoulderCenter.y + 0.04, shoulderCenter.z + 0.06]} rotation={[0.3, -0.4, -0.2]}>
+        <boxGeometry args={[0.025, 0.045, 0.01]} />
+        <meshStandardMaterial color={palette.shirt} roughness={0.5} />
+      </mesh>
+      
+      {/* Shirt V-neck accent */}
+      <mesh position={[shoulderCenter.x, shoulderCenter.y + 0.02, shoulderCenter.z + 0.08]} rotation={[0.2, 0, 0]}>
+        <coneGeometry args={[0.025, 0.05, 3]} />
+        <meshStandardMaterial color={palette.accent} roughness={0.55} />
       </mesh>
 
-      {!skeleton && (
-        <>
-          <mesh position={[headCenter.x - 0.045, headCenter.y + 0.085, headCenter.z + 0.13]}>
-            <sphereGeometry args={[0.012, 10, 10]} />
-            <meshStandardMaterial color="#fefefe" roughness={0.2} />
-          </mesh>
-          <mesh position={[headCenter.x + 0.045, headCenter.y + 0.085, headCenter.z + 0.13]}>
-            <sphereGeometry args={[0.012, 10, 10]} />
-            <meshStandardMaterial color="#fefefe" roughness={0.2} />
-          </mesh>
-          <mesh ref={mouthRef} position={[headCenter.x, headCenter.y + 0.025, headCenter.z + 0.145]}>
-            <sphereGeometry args={[0.023, 10, 10]} />
-            <meshStandardMaterial color="#c86e71" roughness={0.4} />
-          </mesh>
-        </>
-      )}
+      {/* Arms */}
+      <Segment start={lShoulder} end={lElbow} radius={0.04} color={palette.shirt} />
+      <Segment start={lElbow} end={lWrist} radius={0.028} color={palette.skin} />
+      <Segment start={rShoulder} end={rElbow} radius={0.04} color={palette.shirt} />
+      <Segment start={rElbow} end={rWrist} radius={0.028} color={palette.skin} />
 
-      <Hand keypoints={frame.hand_left_keypoints} skin={palette.skin} bone={palette.bone} isSkeleton={skeleton} />
-      <Hand keypoints={frame.hand_right_keypoints} skin={palette.skin} bone={palette.bone} isSkeleton={skeleton} />
+      {/* Neck */}
+      <Segment start={new THREE.Vector3(shoulderCenter.x, shoulderCenter.y + 0.03, shoulderCenter.z)} end={headCenter} radius={0.048} color={palette.skin} />
+
+      {/* Head */}
+      <mesh position={[headCenter.x, headCenter.y + 0.07, headCenter.z]} castShadow receiveShadow>
+        <sphereGeometry args={[0.155, 32, 32]} />
+        <meshPhysicalMaterial 
+          color={palette.head} 
+          roughness={0.42} 
+          metalness={0.01}
+          clearcoat={0.08}
+          clearcoatRoughness={0.6}
+        />
+      </mesh>
+
+      {/* Hair - Stylized professional look */}
+      <mesh position={[headCenter.x, headCenter.y + 0.16, headCenter.z - 0.02]} castShadow>
+        <sphereGeometry args={[0.14, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
+        <meshStandardMaterial color={palette.hair} roughness={0.75} metalness={0.05} />
+      </mesh>
+      {/* Hair sides */}
+      <mesh position={[headCenter.x - 0.12, headCenter.y + 0.09, headCenter.z - 0.02]} rotation={[0, 0, 0.3]}>
+        <sphereGeometry args={[0.055, 16, 12]} />
+        <meshStandardMaterial color={palette.hair} roughness={0.72} />
+      </mesh>
+      <mesh position={[headCenter.x + 0.12, headCenter.y + 0.09, headCenter.z - 0.02]} rotation={[0, 0, -0.3]}>
+        <sphereGeometry args={[0.055, 16, 12]} />
+        <meshStandardMaterial color={palette.hair} roughness={0.72} />
+      </mesh>
+      {/* Hair back */}
+      <mesh position={[headCenter.x, headCenter.y + 0.06, headCenter.z - 0.14]}>
+        <sphereGeometry args={[0.11, 20, 14]} />
+        <meshStandardMaterial color={palette.hair} roughness={0.7} />
+      </mesh>
+
+      {/* Ears */}
+      <mesh position={[headCenter.x - 0.145, headCenter.y + 0.07, headCenter.z]} rotation={[0, -0.3, 0]}>
+        <sphereGeometry args={[0.028, 12, 10]} />
+        <meshStandardMaterial color={palette.head} roughness={0.5} />
+      </mesh>
+      <mesh position={[headCenter.x + 0.145, headCenter.y + 0.07, headCenter.z]} rotation={[0, 0.3, 0]}>
+        <sphereGeometry args={[0.028, 12, 10]} />
+        <meshStandardMaterial color={palette.head} roughness={0.5} />
+      </mesh>
+
+      {/* Left Eye Group */}
+      <group ref={leftEyeRef} position={[headCenter.x - 0.048, headCenter.y + 0.085, headCenter.z + 0.13]}>
+        {/* Eye white */}
+        <mesh>
+          <sphereGeometry args={[0.022, 16, 14]} />
+          <meshPhysicalMaterial color={palette.eye} roughness={0.15} metalness={0} clearcoat={0.3} />
+        </mesh>
+        {/* Iris */}
+        <mesh position={[0, 0, 0.012]}>
+          <sphereGeometry args={[0.012, 14, 12]} />
+          <meshStandardMaterial color={palette.iris} roughness={0.2} />
+        </mesh>
+        {/* Pupil */}
+        <mesh position={[0, 0, 0.018]}>
+          <sphereGeometry args={[0.006, 10, 10]} />
+          <meshStandardMaterial color="#0a0a0a" roughness={0.1} />
+        </mesh>
+        {/* Eye highlight */}
+        <mesh position={[0.004, 0.005, 0.021]}>
+          <sphereGeometry args={[0.0025, 8, 8]} />
+          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.3} />
+        </mesh>
+      </group>
+
+      {/* Right Eye Group */}
+      <group ref={rightEyeRef} position={[headCenter.x + 0.048, headCenter.y + 0.085, headCenter.z + 0.13]}>
+        {/* Eye white */}
+        <mesh>
+          <sphereGeometry args={[0.022, 16, 14]} />
+          <meshPhysicalMaterial color={palette.eye} roughness={0.15} metalness={0} clearcoat={0.3} />
+        </mesh>
+        {/* Iris */}
+        <mesh position={[0, 0, 0.012]}>
+          <sphereGeometry args={[0.012, 14, 12]} />
+          <meshStandardMaterial color={palette.iris} roughness={0.2} />
+        </mesh>
+        {/* Pupil */}
+        <mesh position={[0, 0, 0.018]}>
+          <sphereGeometry args={[0.006, 10, 10]} />
+          <meshStandardMaterial color="#0a0a0a" roughness={0.1} />
+        </mesh>
+        {/* Eye highlight */}
+        <mesh position={[0.004, 0.005, 0.021]}>
+          <sphereGeometry args={[0.0025, 8, 8]} />
+          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.3} />
+        </mesh>
+      </group>
+
+      {/* Eyebrows */}
+      <mesh ref={leftBrowRef} position={[headCenter.x - 0.048, headCenter.y + 0.115, headCenter.z + 0.125]} rotation={[0.1, 0, 0.15]}>
+        <boxGeometry args={[0.04, 0.008, 0.012]} />
+        <meshStandardMaterial color={palette.hair} roughness={0.7} />
+      </mesh>
+      <mesh ref={rightBrowRef} position={[headCenter.x + 0.048, headCenter.y + 0.115, headCenter.z + 0.125]} rotation={[0.1, 0, -0.15]}>
+        <boxGeometry args={[0.04, 0.008, 0.012]} />
+        <meshStandardMaterial color={palette.hair} roughness={0.7} />
+      </mesh>
+
+      {/* Nose */}
+      <mesh position={[headCenter.x, headCenter.y + 0.055, headCenter.z + 0.145]}>
+        <sphereGeometry args={[0.018, 12, 10]} />
+        <meshStandardMaterial color={palette.head} roughness={0.5} />
+      </mesh>
+      <mesh position={[headCenter.x, headCenter.y + 0.045, headCenter.z + 0.155]}>
+        <sphereGeometry args={[0.012, 10, 8]} />
+        <meshStandardMaterial color={palette.head} roughness={0.55} />
+      </mesh>
+
+      {/* Mouth - Animated */}
+      <mesh ref={mouthRef} position={[headCenter.x, headCenter.y + 0.02, headCenter.z + 0.148]}>
+        <sphereGeometry args={[0.022, 14, 12]} />
+        <meshStandardMaterial color="#c76b6e" roughness={0.35} />
+      </mesh>
+      {/* Lips outline */}
+      <mesh position={[headCenter.x, headCenter.y + 0.028, headCenter.z + 0.152]} scale={[1.3, 0.4, 0.5]}>
+        <sphereGeometry args={[0.018, 12, 10]} />
+        <meshStandardMaterial color="#d18080" roughness={0.4} />
+      </mesh>
+
+      <Hand keypoints={frame.hand_left_keypoints} skin={palette.skin} bone={palette.bone} isSkeleton={false} wristAnchor={lWrist} />
+      <Hand keypoints={frame.hand_right_keypoints} skin={palette.skin} bone={palette.bone} isSkeleton={false} wristAnchor={rWrist} />
     </group>
   );
 }
 
 export function SignAvatar3D({ frame, styleMode, isDark = true, utterance }: SignAvatar3DProps) {
   const safeFrame = useMemo(() => ensureFrame(frame), [frame]);
+  
+  // Adjust camera position based on mode
+  const handsOnly = styleMode === 'skeleton' || styleMode === 'silhouette';
+  const cameraPosition: [number, number, number] = handsOnly 
+    ? [0, 0.15, 1.8]  // Closer and slightly higher for hands-only view
+    : [0, 0.06, 2.35]; // Default for full body
+  const cameraFov = handsOnly ? 45 : 32; // Wider FOV for hands-only
 
   const bg = isDark
-    ? 'radial-gradient(120% 100% at 50% 10%, #1f2b4d 0%, #0e1630 45%, #080d1d 100%)'
-    : 'radial-gradient(120% 100% at 50% 10%, #bcd5ff 0%, #8db4fa 40%, #5c82d6 100%)';
+    ? 'radial-gradient(ellipse 150% 120% at 50% 5%, #1a2744 0%, #0f172a 35%, #070b14 85%, #030508 100%)'
+    : 'radial-gradient(ellipse 150% 120% at 50% 5%, #e0eaff 0%, #b8d4ff 35%, #8ab8f5 85%, #6a9fea 100%)';
 
   return (
-    <div className="w-full h-full" style={{ background: bg }}>
+    <div className="w-full h-full relative overflow-hidden" style={{ background: bg }}>
+      {/* Subtle vignette overlay */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: isDark 
+            ? 'radial-gradient(ellipse 80% 70% at 50% 45%, transparent 0%, rgba(0,0,0,0.35) 100%)'
+            : 'radial-gradient(ellipse 80% 70% at 50% 45%, transparent 0%, rgba(0,0,0,0.08) 100%)',
+          zIndex: 10,
+        }}
+      />
       <Canvas
         shadows
-        dpr={[1, 1.5]}
-        camera={{ position: [0, 0.08, 2.45], fov: 34 }}
+        dpr={[1, 2]}
+        camera={{ position: cameraPosition, fov: cameraFov }}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       >
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[2, 3, 2]} intensity={1.05} castShadow />
-        <directionalLight position={[-2.2, 1.4, 1.1]} intensity={0.35} color="#9bc8ff" />
-        <spotLight position={[0, 2.1, 2.3]} intensity={0.48} angle={0.48} penumbra={0.5} color="#ffd8be" />
+        {/* Enhanced lighting setup */}
+        <ambientLight intensity={0.55} />
+        <directionalLight 
+          position={[3, 4, 3]} 
+          intensity={1.15} 
+          castShadow 
+          shadow-mapSize={[1024, 1024]}
+          shadow-bias={-0.0001}
+        />
+        <directionalLight position={[-2.5, 2, 1.5]} intensity={0.4} color="#a8d4ff" />
+        <spotLight 
+          position={[0, 2.5, 2.8]} 
+          intensity={0.55} 
+          angle={0.45} 
+          penumbra={0.6} 
+          color="#ffe4d0"
+          castShadow
+        />
+        {/* Rim light for professional look */}
+        <pointLight position={[-1.5, 0.5, -1]} intensity={0.25} color="#8ec5ff" />
+        <pointLight position={[1.5, 0.5, -1]} intensity={0.25} color="#8ec5ff" />
+        
+        {/* Fill light from below */}
+        <directionalLight position={[0, -1, 2]} intensity={0.15} color="#e8f0ff" />
 
-        <Environment preset="city" />
+        <Environment preset="studio" />
         <AvatarRig frame={safeFrame} styleMode={styleMode} utterance={utterance} />
-        <ContactShadows position={[0, -1.05, 0]} opacity={0.38} blur={2.2} scale={5} far={2.5} />
+        <ContactShadows 
+          position={[0, -1.05, 0]} 
+          opacity={0.45} 
+          blur={2.5} 
+          scale={6} 
+          far={3}
+          color={isDark ? '#0a0f1a' : '#3a5080'}
+        />
       </Canvas>
     </div>
   );

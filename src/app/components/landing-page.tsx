@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import React, { useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import CountUp from 'react-countup';
 import { Sparkles, Brain, Calendar, TrendingUp, Shield, Star, Check, ArrowRight } from 'lucide-react';
 import { Button } from './button';
@@ -16,6 +16,11 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
   const { t } = useAccessibilityStore();
   const [inView, setInView] = useState(false);
   const [pricingPeriod, setPricingPeriod] = useState<'monthly' | 'annual'>('monthly');
+  const shouldReduceMotion = useReducedMotion();
+
+  const baseViewport = { once: true, amount: 0.2, margin: '0px 0px -80px 0px' } as const;
+  const heroTransition = shouldReduceMotion ? { duration: 0 } : { duration: 0.55, ease: 'easeOut' as const };
+  const sectionTransition = (delay = 0) => (shouldReduceMotion ? { duration: 0 } : { duration: 0.45, delay, ease: 'easeOut' as const });
   
   const features = [
     {
@@ -67,14 +72,15 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
     <div className="min-h-screen relative" style={{ zIndex: 1 }}>
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-[#E5E7EB]">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <motion.div 
-            className="flex items-center gap-2"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-2 transform-gpu will-change-transform"
+            initial={shouldReduceMotion ? false : { opacity: 0, x: -20 }}
+            animate={shouldReduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }}
+            transition={sectionTransition()}
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-white" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent">
               DeepSkyn
@@ -82,9 +88,10 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
           </motion.div>
           
           <motion.div 
-            className="flex items-center gap-4"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-4 transform-gpu will-change-transform"
+            initial={shouldReduceMotion ? false : { opacity: 0, x: 20 }}
+            animate={shouldReduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }}
+            transition={sectionTransition(0.05)}
           >
             <Button variant="ghost" onClick={onLogin}>
               {t('landing.navSignIn')}
@@ -101,9 +108,10 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              className="transform-gpu will-change-transform"
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={heroTransition}
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0EA5E9]/10 rounded-full mb-6">
                 <Sparkles className="w-4 h-4 text-[#0EA5E9]" />
@@ -157,10 +165,10 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              className="relative transform-gpu will-change-transform"
+              initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="relative"
+              transition={sectionTransition(0.15)}
             >
               <div className="relative rounded-3xl overflow-hidden shadow-2xl">
                 
@@ -174,16 +182,16 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
               
               <motion.div
                 className="absolute bottom-8 left-8 right-8 bg-white/55 backdrop-blur-2xl border border-white/70 rounded-2xl p-6 shadow-xl ltr:text-left rtl:text-right"
-                initial={{ opacity: 0, y: 20 }}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
+                transition={sectionTransition(0.4)}
                 onViewportEnter={() => setInView(true)}
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm text-[#6B7280] mb-1">{t('landing.skinHealthScore')}</div>
                     <div className="text-3xl font-bold text-[#0EA5E9]">
-                      {inView && <CountUp end={87} duration={2.5} />}
+                      {inView && <CountUp end={87} duration={shouldReduceMotion ? 0 : 1.6} />}
                       /100
                     </div>
                   </div>
@@ -202,9 +210,10 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
         <div className="max-w-7xl mx-auto">
           <motion.div
             className="text-center mb-16"
-            initial={{ opacity: 0, y: 20 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={baseViewport}
+            transition={sectionTransition()}
           >
             <h2 className="text-4xl font-bold mb-4">{t('landing.featuresTitle')}</h2>
             <p className="text-xl text-[#6B7280]">{t('landing.featuresDesc')}</p>
@@ -214,10 +223,11 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             {features.map((feature, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
+                className="transform-gpu will-change-transform"
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                viewport={baseViewport}
+                transition={sectionTransition(index * 0.08)}
               >
                 <Card className="h-full p-6 bg-gradient-to-b from-white to-[#F0F9FF] border border-[rgba(59,189,244,0.15)] shadow-[0_4px_24px_rgba(59,189,244,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(59,189,244,0.12)] group relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#38BDF8] to-[#0EA5E9] transform -translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
@@ -238,9 +248,11 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
+              className="transform-gpu will-change-transform"
+              initial={shouldReduceMotion ? false : { opacity: 0, x: -24 }}
               whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              viewport={baseViewport}
+              transition={sectionTransition()}
             >
               <h2 className="text-4xl font-bold mb-6">
                 {t('landing.whyChoose')}
@@ -255,10 +267,10 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
                   <motion.div
                     key={index}
                     className="flex items-center gap-3"
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={shouldReduceMotion ? false : { opacity: 0, x: -14 }}
                     whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
+                    viewport={baseViewport}
+                    transition={sectionTransition(index * 0.06)}
                   >
                     <div className="w-6 h-6 rounded-full bg-[#0EA5E9] flex items-center justify-center flex-shrink-0">
                       <Check className="w-4 h-4 text-white" />
@@ -270,10 +282,11 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, x: 30 }}
+              className="relative transform-gpu will-change-transform"
+              initial={shouldReduceMotion ? false : { opacity: 0, x: 24 }}
               whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="relative"
+              viewport={baseViewport}
+              transition={sectionTransition(0.1)}
             >
               <div className="relative rounded-3xl overflow-hidden shadow-2xl">
                 <ImageWithFallback
@@ -292,9 +305,10 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
         <div className="max-w-7xl mx-auto">
           <motion.div
             className="text-center mb-16"
-            initial={{ opacity: 0, y: 20 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={baseViewport}
+            transition={sectionTransition()}
           >
             <h2 className="text-4xl font-bold mb-4">{t('landing.lovedBy')}</h2>
             <p className="text-xl text-[#6B7280]">{t('landing.lovedDesc')}</p>
@@ -304,10 +318,11 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             {testimonials.map((testimonial, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
+                className="transform-gpu will-change-transform"
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                viewport={baseViewport}
+                transition={sectionTransition(index * 0.08)}
               >
                 <Card className="h-full border border-[#D9ECFF] bg-gradient-to-b from-white to-[#F5FBFF] shadow-md hover:shadow-xl transition-all duration-300 relative pl-4">
                   <div className="absolute top-0 left-0 h-full w-1 bg-[#3BBDF4] rounded-l-lg"></div>
@@ -339,9 +354,10 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
         <div className="max-w-5xl mx-auto">
           <motion.div
             className="text-center mb-16"
-            initial={{ opacity: 0, y: 20 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={baseViewport}
+            transition={sectionTransition()}
           >
             <h2 className="text-4xl font-bold mb-4">{t('landing.pricingTitle')}</h2>
             <p className="text-xl text-[#6B7280]">{t('landing.pricingDesc')}</p>
@@ -367,9 +383,11 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              className="transform-gpu will-change-transform"
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={baseViewport}
+              transition={sectionTransition()}
             >
               <Card className="h-full border border-[#D7EBFF] bg-gradient-to-b from-white to-[#F7FCFF] shadow-md hover:shadow-xl transition-all duration-300">
                 <div className="mb-6">
@@ -393,10 +411,11 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              className="transform-gpu will-change-transform"
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
+              viewport={baseViewport}
+              transition={sectionTransition(0.08)}
             >
               <Card className="h-full border-2 border-[#0EA5E9] relative bg-gradient-to-b from-white to-[#F0F9FF] shadow-xl shadow-[#38BDF8]/20 md:-translate-y-1">
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white text-sm font-medium rounded-full">
@@ -424,10 +443,11 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              className="transform-gpu will-change-transform"
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
+              viewport={baseViewport}
+              transition={sectionTransition(0.16)}
             >
               <Card className="h-full border border-[#CFE8FF] bg-gradient-to-br from-white via-[#F3FAFF] to-[#ECF7FF] shadow-md hover:shadow-xl transition-all duration-300">
                 <div className="mb-6">
@@ -461,9 +481,11 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
         {/* Animated particles would go here */}
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            className="transform-gpu will-change-transform"
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={baseViewport}
+            transition={sectionTransition()}
           >
             <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
               {t('landing.readyToTransform')}

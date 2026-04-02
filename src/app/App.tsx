@@ -16,6 +16,7 @@ import { DashboardLayout } from './components/dashboard-layout';
 import { AnimatedBackground } from './components/animated-background';
 import { AccessibilityOverlays } from './components/accessibility-overlays';
 import { AccessibilityPanel } from './components/accessibility-panel';
+import { EyeTrackingWrapper } from '../components/EyeTrackingWrapper';
 import { useAuthStore } from '../stores/auth.store';
 
 const queryClient = new QueryClient({
@@ -149,7 +150,9 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AppContent />
+        <EyeTrackingWrapper>
+          <AppContent />
+        </EyeTrackingWrapper>
       </BrowserRouter>
     </QueryClientProvider>
 

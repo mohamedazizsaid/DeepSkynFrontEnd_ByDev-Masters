@@ -180,6 +180,7 @@ export function AccessibilityPanel() {
         colorBlindFilter,
         readingGuide,
         speechRate,
+        eyeTracking,
         setLanguage,
         toggleTheme,
         setContrastMode,
@@ -204,6 +205,7 @@ export function AccessibilityPanel() {
         clearSpokenText,
         togglePanel,
         closePanel,
+        toggleEyeTracking,
         t,
     } = useAccessibilityStore();
 
@@ -714,6 +716,34 @@ export function AccessibilityPanel() {
                                     />
                                 }
                             />
+
+                            {/* Eye Tracking - Suivi oculaire avec le nez */}
+                            <FeatureCard
+                                icon={Eye}
+                                iconBg={eyeTracking ? 'bg-green-500' : 'bg-green-500/60'}
+                                title="Suivi Oculaire"
+                                description="Contrôlez le curseur avec votre tête via la webcam"
+                                action={
+                                    <ToggleSwitch
+                                        checked={eyeTracking}
+                                        onChange={toggleEyeTracking}
+                                        ariaLabel="Activer le suivi oculaire"
+                                    />
+                                }
+                            />
+
+                            {/* Eye Tracking active indicator */}
+                            {eyeTracking && (
+                                <div className="flex items-center gap-[8px] px-[12px] py-[8px] rounded-lg bg-green-500/5 border border-green-500/20">
+                                    <span className="relative flex h-[10px] w-[10px]">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                                        <span className="relative inline-flex rounded-full h-[10px] w-[10px] bg-green-500" />
+                                    </span>
+                                    <span className="text-[11px] font-medium text-green-600 dark:text-green-400">
+                                        Suivi actif - Bougez la tête pour déplacer le curseur
+                                    </span>
+                                </div>
+                            )}
 
                             {/* Color Blind Filter */}
                             <div className="p-[14px] rounded-xl bg-[var(--card)] border border-[var(--border)]">
