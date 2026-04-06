@@ -105,8 +105,8 @@ export interface CreatePredictionRequest {
 export interface SimulateProductRequest {
   productName: string;
   productCategory: string;
-  ingredients: string[];
-  simulationPeriod: number; // days
+  productIngredients: string[];
+  simulationPeriod?: number; // days, default 14
 }
 
 export const digitalTwinService = {

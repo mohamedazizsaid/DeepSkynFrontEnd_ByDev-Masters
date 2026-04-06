@@ -148,8 +148,8 @@ export const useSkinJourney = () => {
     refetch,
     acceptRoutine: acceptRoutineMutation.mutate,
     dismissRoutine: dismissRoutineMutation.mutate,
-    createPrediction: createPredictionMutation.mutate,
-    simulateProduct: simulateProductMutation.mutate,
+    createPrediction: createPredictionMutation.mutateAsync,
+    simulateProduct: simulateProductMutation.mutateAsync,
     
     // Loading states
     isAcceptingRoutine: acceptRoutineMutation.isPending,
@@ -157,7 +157,8 @@ export const useSkinJourney = () => {
     isCreatingPrediction: createPredictionMutation.isPending,
     isSimulatingProduct: simulateProductMutation.isPending,
     
-    // Last simulation result
+    // Last results
+    lastPrediction: createPredictionMutation.data,
     lastSimulation: simulateProductMutation.data,
   };
 };
