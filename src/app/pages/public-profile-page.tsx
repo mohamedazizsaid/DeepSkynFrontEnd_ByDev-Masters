@@ -65,20 +65,25 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
   const isDark = theme === 'dark';
 
   const fetchProfile = useCallback(async () => {
+    const targetUserId = String(userId || '').trim();
+    if (!targetUserId) {
+      setLoading(false);
+      toast.error("Profil invalide");
+      return;
+    }
+
     try {
       setLoading(true);
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const token = localStorage.getItem('access_token') || localStorage.getItem('token');
-      
-      const response = await fetch(`${apiUrl}/users/${userId}`, { 
-        headers: { 'Authorization': `Bearer ${token}` } 
-      });
-      const userRes = await response.json();
+      const userRes = await usersService.getById(targetUserId);
+
+      if (!userRes || userRes?.id == null) {
+        throw new Error('User profile not found');
+      }
 
       setIsFollowing(userRes.isFollowing || false);
 
-      const statsRes = await usersService.getUserStats(userId);
-      const postsRes = await postsService.findByUser(userId, 1, 20);
+      const statsRes = await usersService.getUserStats(targetUserId);
+      const postsRes = await postsService.findByUser(targetUserId, 1, 20);
 
       setUser(userRes);
       setStats(statsRes);
@@ -87,7 +92,7 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
       // If routines are not in userRes, fetch them separately (already added to backend findById but optional fallback)
       if (!userRes.routines) {
          try {
-           const routines = await routineService.getUserRoutine(userId); // Assuming this might exist or we add it
+           const routines = await routineService.getUserRoutine(targetUserId); // Assuming this might exist or we add it
            setUser(prev => ({ ...prev, routines }));
          } catch (e) {
            console.log("Routines not found for user", e);

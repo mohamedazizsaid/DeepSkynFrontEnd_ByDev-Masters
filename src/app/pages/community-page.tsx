@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft, Loader2, Users, Camera, Newspaper, User, UserPlus, BarChart3, BadgeCheck, MoreHorizontal, MessageSquare, ThumbsUp, Share2, Trash2, Archive, Calendar, Filter, ChevronDown
@@ -8,7 +8,7 @@ import { Button } from '../components/button';
 import { postsService } from '../../lib/services/posts.service';
 import { usersService } from '../../lib/services/users.service';
 import { useAuthStore } from '../../stores/auth.store';
-import type { Post, Comment } from '../../lib/types';
+import type { Post, Comment, CommunityProfile } from '../../lib/types';
 import toast from 'react-hot-toast';
 import { ProfileHero } from './components/profile-hero';
 import { PostComposer } from './components/post-composer';
@@ -250,14 +250,43 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
   const { theme, contrastMode, t } = useAccessibilityStore();
   const isHcHigh = contrastMode === 'high';
   const isDark = theme === 'dark';
+  const QUICK_SUGGESTIONS_LIMIT = 5;
 
-  const [quickSuggestions, setQuickSuggestions] = useState<any[]>([]);
+  const [quickSuggestions, setQuickSuggestions] = useState<CommunityProfile[]>([]);
 
   // ─── Colors ───
   const pageBg = isHcHigh ? 'bg-black' : isDark ? 'bg-[#0f172a]' : '';
   const cardBg = isHcHigh ? 'bg-black border-2 border-yellow-400' : isDark ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#E5E7EB]';
   const textColor = isHcHigh ? 'text-cyan-400' : isDark ? 'text-gray-200' : 'text-[#111827]';
   const subText = isHcHigh ? 'text-yellow-300' : isDark ? 'text-gray-400' : 'text-[#6B7280]';
+
+  const archivedPosts = useMemo(() => {
+    if (activeTab !== 'archive') {
+      return posts;
+    }
+
+    const now = new Date();
+
+    return posts.filter((post) => {
+      const refDate = new Date(post.updatedAt || post.createdAt);
+      if (Number.isNaN(refDate.getTime())) {
+        return true;
+      }
+
+      if (dateFilter === 'month') {
+        return (
+          refDate.getFullYear() === now.getFullYear() &&
+          refDate.getMonth() === now.getMonth()
+        );
+      }
+
+      if (dateFilter === 'year') {
+        return refDate.getFullYear() === now.getFullYear();
+      }
+
+      return true;
+    });
+  }, [activeTab, posts, dateFilter]);
 
   const loadPosts = useCallback(async (pageNum = 1) => {
     try {
@@ -266,7 +295,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
         ? await postsService.getArchivedPosts(pageNum, 20)
         : activeTab === 'profile' 
         ? await postsService.getMyPosts(pageNum, 20)
-        : await postsService.getFeed(pageNum, 20);
+        : await postsService.getCommunityFeed(pageNum, 20);
         
       if (pageNum === 1) {
         setPosts(result.data || []);
@@ -419,9 +448,24 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
 
   const loadQuickSuggestions = async () => {
     try {
-      const data = await usersService.getSuggestions();
-      setQuickSuggestions(data.slice(0, 3));
-    } catch { /* ignore */ }
+      const result = await usersService.searchCommunityProfiles('', 1, QUICK_SUGGESTIONS_LIMIT);
+      const candidates = (result.data || []).slice(0, QUICK_SUGGESTIONS_LIMIT);
+
+      if (candidates.length > 0) {
+        setQuickSuggestions(candidates);
+        return;
+      }
+
+      const fallback = await usersService.getSuggestions();
+      setQuickSuggestions((fallback || []).slice(0, QUICK_SUGGESTIONS_LIMIT));
+    } catch {
+      try {
+        const fallback = await usersService.getSuggestions();
+        setQuickSuggestions((fallback || []).slice(0, QUICK_SUGGESTIONS_LIMIT));
+      } catch {
+        // ignore
+      }
+    }
   };
 
   // ─── Story Upload Handler ───
@@ -911,30 +955,37 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                     {/* Quick Suggestions */}
                     <div className={`rounded-2xl border shadow-sm p-4 ${cardBg}`}>
                       <h3 className={`font-bold text-sm ${textColor} mb-3`}>{t('community.suggestions')}</h3>
-                      {quickSuggestions.map((suggestion, i) => (
-                        <div key={suggestion.id || i} className={`flex items-center gap-3 py-2.5 ${i < 2 ? `border-b ${isHcHigh ? 'border-yellow-400/20' : isDark ? 'border-[#334155]' : 'border-[#E5E7EB]'}` : ''}`}>
-                          <div className={`w-9 h-9 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold ${isHcHigh ? 'bg-black border border-yellow-400 text-cyan-400' : 'bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] text-white'}`}>
-                            {suggestion.avatar ? <img src={suggestion.avatar} alt={suggestion.name} className="w-full h-full object-cover" /> : suggestion.name?.charAt(0) || 'U'}
-                          </div>
-                          <div className="flex-1 min-w-0" onClick={() => onViewProfile && onViewProfile(suggestion.id)} style={{ cursor: 'pointer' }}>
-                            <p className={`text-xs font-semibold truncate ${textColor} hover:text-[#0EA5E9] transition-colors`}>{suggestion.name}</p>
-                            <p className={`text-[10px] ${subText} truncate`}>{suggestion.skinProfile?.skinType ? t('community.skinType', { type: suggestion.skinProfile.skinType }) : t('community.skincareEnthusiast')}</p>
-                          </div>
-                          <button 
-                            onClick={async () => {
-                              try {
-                                const res = await usersService.toggleFollow(suggestion.id);
-                                if (res.followed) toast.success(t('common.success'));
-                                loadUserStats();
-                              } catch { toast.error(t('common.error')); }
-                            }}
-                            className={`text-[10px] font-semibold px-3 py-1.5 rounded-lg transition-colors ${isHcHigh ? 'bg-yellow-400 text-black' : 'bg-[#0EA5E9]/10 text-[#0EA5E9] hover:bg-[#0EA5E9]/20'}`}
-                          >
-                            {t('common.follow')}
-                          </button>
+                      {quickSuggestions.length === 0 ? (
+                        <div className={`text-center py-4 text-xs ${subText}`}>
+                          {t('common.noResults')}
                         </div>
-                      ))}
-                      <button onClick={() => setActiveTab('suggestions')} className={`w-full text-center text-xs font-semibold mt-3 py-2 rounded-lg transition-colors ${isHcHigh ? 'text-yellow-400 hover:bg-yellow-400/10' : 'text-[#0EA5E9] hover:bg-[#0EA5E9]/5'}`}>
+                      ) : (
+                        quickSuggestions.slice(0, QUICK_SUGGESTIONS_LIMIT).map((suggestion, i) => (
+                          <div key={suggestion.id || i} className={`flex items-center gap-3 py-2.5 ${i < Math.min(quickSuggestions.length, QUICK_SUGGESTIONS_LIMIT) - 1 ? `border-b ${isHcHigh ? 'border-yellow-400/20' : isDark ? 'border-[#334155]' : 'border-[#E5E7EB]'}` : ''}`}>
+                            <div className={`w-9 h-9 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold ${isHcHigh ? 'bg-black border border-yellow-400 text-cyan-400' : 'bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] text-white'}`}>
+                              {suggestion.avatar ? <img src={suggestion.avatar} alt={suggestion.name} className="w-full h-full object-cover" /> : suggestion.name?.charAt(0) || 'U'}
+                            </div>
+                            <div className="flex-1 min-w-0" onClick={() => onViewProfile && onViewProfile(suggestion.id)} style={{ cursor: 'pointer' }}>
+                              <p className={`text-xs font-semibold truncate ${textColor} hover:text-[#0EA5E9] transition-colors`}>{suggestion.name}</p>
+                              <p className={`text-[10px] ${subText} truncate`}>{suggestion.skinProfile?.skinType ? t('community.skinType', { type: suggestion.skinProfile.skinType }) : t('community.skincareEnthusiast')}</p>
+                            </div>
+                            <button 
+                              onClick={async () => {
+                                try {
+                                  const res = await usersService.toggleFollow(suggestion.id);
+                                  if (res.followed) toast.success(t('common.success'));
+                                  loadQuickSuggestions();
+                                  loadUserStats();
+                                } catch { toast.error(t('common.error')); }
+                              }}
+                              className={`text-[10px] font-semibold px-3 py-1.5 rounded-lg transition-colors ${isHcHigh ? 'bg-yellow-400 text-black' : 'bg-[#0EA5E9]/10 text-[#0EA5E9] hover:bg-[#0EA5E9]/20'}`}
+                            >
+                              {suggestion.isFollowing ? t('common.following') : t('common.follow')}
+                            </button>
+                          </div>
+                        ))
+                      )}
+                      <button onClick={() => { setSuggestionsFilter('all'); setActiveTab('suggestions'); }} className={`w-full text-center text-xs font-semibold mt-3 py-2 rounded-lg transition-colors ${isHcHigh ? 'text-yellow-400 hover:bg-yellow-400/10' : 'text-[#0EA5E9] hover:bg-[#0EA5E9]/5'}`}>
                         {t('common.seeAll')}
                       </button>
                     </div>
@@ -1205,14 +1256,86 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                 </div>
               </div>
 
-              {/* Archive section - No posts stored locally after archiving */}
-              <div className={`text-center py-20 rounded-3xl border-2 border-dashed transition-colors ${isDark ? 'border-white/5 bg-white/[0.02]' : 'border-gray-100 bg-gray-50/30'}`}>
-                 <div className="w-16 h-16 rounded-full bg-gray-100/50 dark:bg-white/5 flex items-center justify-center mx-auto mb-4">
-                   <Newspaper className={`w-8 h-8 opacity-20 ${textColor}`} />
-                 </div>
-                 <p className={`${subText} font-black uppercase tracking-widest text-[10px]`}>{t('community.noArchiveFound')}</p>
-                 <p className={`${subText} text-xs mt-1 opacity-60`}>{t('community.noArchiveDesc')}</p>
-              </div>
+              {archivedPosts.length === 0 ? (
+                <div className={`text-center py-20 rounded-3xl border-2 border-dashed transition-colors ${isDark ? 'border-white/5 bg-white/[0.02]' : 'border-gray-100 bg-gray-50/30'}`}>
+                  <div className="w-16 h-16 rounded-full bg-gray-100/50 dark:bg-white/5 flex items-center justify-center mx-auto mb-4">
+                    <Newspaper className={`w-8 h-8 opacity-20 ${textColor}`} />
+                  </div>
+                  <p className={`${subText} font-black uppercase tracking-widest text-[10px]`}>{t('community.noArchiveFound')}</p>
+                  <p className={`${subText} text-xs mt-1 opacity-60`}>{t('community.noArchiveDesc')}</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {archivedPosts.map((post) => (
+                    <React.Fragment key={post.id}>
+                      <PostCard
+                        post={{
+                          id: post.id,
+                          userId: post.userId,
+                          userName: post.user?.name || t('common.user'),
+                          userAvatar: post.user?.avatar ?? undefined,
+                          content: post.message,
+                          media: post.media ?? undefined,
+                          createdAt: post.createdAt,
+                          likes: post._count?.likes || 0,
+                          comments: post._count?.comments || 0,
+                          shares: 0,
+                          isLiked: post.isLiked || false,
+                          isByCurrentUser: true,
+                          reaction: post.reaction,
+                          status: post.status,
+                        }}
+                        onLike={handleToggleLike}
+                        onComment={loadComments}
+                        onDelete={handleDeletePost}
+                        onArchive={(id) => handleArchivePost(id, true)}
+                        onProfileClick={onViewProfile}
+                      />
+                      <AnimatePresence>
+                        {selectedPost === post.id && (
+                          <CommentsSection
+                            postId={post.id}
+                            comments={comments}
+                            loading={commentLoading}
+                            onAddComment={handleAddComment}
+                            newComment={newComment}
+                            setNewComment={setNewComment}
+                            userAvatar={user?.avatar}
+                            userName={user?.name || 'Utilisateur'}
+                            t={t}
+                            isDark={isDark}
+                            isHcHigh={isHcHigh}
+                            cardBg={cardBg}
+                            textColor={textColor}
+                            subText={subText}
+                            onLikeComment={handleLikeComment}
+                            onReplyComment={setReplyingTo}
+                            onDeleteComment={handleDeleteComment}
+                            replyingTo={replyingTo}
+                            setReplyingTo={setReplyingTo}
+                            currentUserId={user?.id || user?.sub}
+                          />
+                        )}
+                      </AnimatePresence>
+                    </React.Fragment>
+                  ))}
+
+                  {hasMore && (
+                    <div className="text-center pt-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setPage((p) => p + 1);
+                          loadPosts(page + 1);
+                        }}
+                        loading={loading}
+                      >
+                        {t('common.loadMore')}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -1223,6 +1346,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                 initialFilter={suggestionsFilter} 
                 followers={userStats.followersDetail} 
                 onFollowChange={() => loadUserStats()}
+                onViewProfile={onViewProfile}
               />
             </motion.div>
           )}

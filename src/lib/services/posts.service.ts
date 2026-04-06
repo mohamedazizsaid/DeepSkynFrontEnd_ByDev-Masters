@@ -1,5 +1,12 @@
 import apiClient from '../api-client';
-import type { Post, CreatePostDto, Comment, CreateCommentDto, PaginatedResponse } from '../types';
+import type {
+  Post,
+  CreatePostDto,
+  Comment,
+  CreateCommentDto,
+  PaginatedResponse,
+  PostReaction,
+} from '../types';
 
 export const postsService = {
   // ─── Posts ───
@@ -10,6 +17,13 @@ export const postsService = {
 
   async getFeed(page = 1, limit = 20): Promise<PaginatedResponse<Post>> {
     const res = await apiClient.get<PaginatedResponse<Post>>('/posts', {
+      params: { page, limit },
+    });
+    return res.data;
+  },
+
+  async getCommunityFeed(page = 1, limit = 20): Promise<PaginatedResponse<Post>> {
+    const res = await apiClient.get<PaginatedResponse<Post>>('/posts/feed/all', {
       params: { page, limit },
     });
     return res.data;
@@ -64,6 +78,71 @@ export const postsService = {
   async checkLike(postId: string): Promise<boolean> {
     const res = await apiClient.get<{ liked: boolean }>(`/likes/check/${postId}`);
     return res.data.liked;
+  },
+
+  async getPostReactions(
+    postId: string,
+    page = 1,
+    limit = 50,
+  ): Promise<PaginatedResponse<PostReaction>> {
+    const res = await apiClient.get<any>(
+      `/likes/post/${postId}/reactions`,
+      {
+        params: { page, limit },
+      },
+    );
+
+    const payload = res.data ?? {};
+    const rawItems: any[] = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload.data)
+        ? payload.data
+        : Array.isArray(payload.likes)
+          ? payload.likes
+          : Array.isArray(payload.reactions)
+            ? payload.reactions
+            : Array.isArray(payload.items)
+              ? payload.items
+              : [];
+
+    const data: PostReaction[] = rawItems.map((item: any, index: number) => ({
+      id: item.id || item.likeId || `${postId}-${item.userId || index}-${item.type || 'like'}`,
+      postId: item.postId || postId,
+      userId: item.userId || item.user?.id || item.user?.userId || '',
+      type: item.type || item.reactionType || 'like',
+      createdAt: item.createdAt || item.created_at || new Date().toISOString(),
+      user: item.user
+        ? {
+            id: item.user.id || item.user.userId || item.userId || '',
+            name:
+              item.user.name ||
+              item.user.username ||
+              item.user.displayName ||
+              item.user.fullName ||
+              null,
+            avatar:
+              item.user.avatar ||
+              item.user.profilePicture ||
+              item.user.photoUrl ||
+              null,
+          }
+        : undefined,
+    }));
+
+    const safeLimit = Number(payload.limit ?? limit) || limit;
+    const safeTotal = Number(payload.total ?? payload.count ?? data.length) || data.length;
+    const safePage = Number(payload.page ?? page) || page;
+    const safeTotalPages =
+      Number(payload.totalPages ?? payload.total_pages) ||
+      Math.max(1, Math.ceil(safeTotal / Math.max(1, safeLimit)));
+
+    return {
+      data,
+      total: safeTotal,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: safeTotalPages,
+    };
   },
 
   // ─── Comments ───

@@ -37,3 +37,25 @@ export interface CreateCommentDto {
   comment: string;
   parentId?: string;
 }
+
+export type ReactionType =
+  | 'like'
+  | 'love'
+  | 'haha'
+  | 'wow'
+  | 'sad'
+  | 'angry'
+  | string;
+
+export interface PostReaction {
+  id: string;
+  postId: string;
+  userId: string;
+  type: ReactionType;
+  createdAt: string;
+  user?: {
+    id: string;
+    name: string | null;
+    avatar: string | null;
+  };
+}

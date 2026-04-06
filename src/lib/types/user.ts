@@ -23,3 +23,20 @@ export interface CreateSkinProfileDto {
   healthScore?: number;
   lastAnalysisAt?: string;
 }
+
+export interface CommunityProfile {
+  id: string;
+  name: string | null;
+  email?: string;
+  avatar?: string | null;
+  skinType?: string | null;
+  isPublic?: boolean;
+  isFollowing?: boolean;
+  skinProfile?: {
+    skinType: SkinType | string | null;
+  } | null;
+  _count?: {
+    followers: number;
+    posts?: number;
+  };
+}

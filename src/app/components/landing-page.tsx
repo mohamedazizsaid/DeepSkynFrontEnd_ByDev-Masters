@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import CountUp from 'react-countup';
-import { Sparkles, Brain, Calendar, TrendingUp, Shield, Star, Check, ArrowRight } from 'lucide-react';
+import { Sparkles, Brain, Calendar, TrendingUp, Star, Check, ArrowRight, Loader2, AlertTriangle, LogIn, X } from 'lucide-react';
 import { Button } from './button';
 import { Card } from './card';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useAccessibilityStore } from '../../stores/accessibility.store';
+import { subscriptionService } from '../../lib/services/subscription.service';
+import type { SubscriptionPlanInfo } from '../../lib/types';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -15,7 +17,11 @@ interface LandingPageProps {
 export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
   const { t } = useAccessibilityStore();
   const [inView, setInView] = useState(false);
-  const [pricingPeriod, setPricingPeriod] = useState<'monthly' | 'annual'>('monthly');
+  const [plans, setPlans] = useState<SubscriptionPlanInfo[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [plansError, setPlansError] = useState<string | null>(null);
+  const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
+  const [selectedPlanName, setSelectedPlanName] = useState('');
   const shouldReduceMotion = useReducedMotion();
 
   const baseViewport = { once: true, amount: 0.2, margin: '0px 0px -80px 0px' } as const;
@@ -67,6 +73,237 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       rating: 5
     }
   ];
+
+  const normalizePlan = (plan: unknown): 'free' | 'premium' | 'premium_yearly' => {
+    if (typeof plan !== 'string') return 'free';
+    const p = plan.trim();
+    if (!p) return 'free';
+
+    if (p === 'FREE' || p.toLowerCase() === 'free') return 'free';
+    if (p === 'PREMIUM' || p.toLowerCase() === 'premium') return 'premium';
+    if (
+      p === 'PREMIUM_YEARLY' ||
+      p.toLowerCase() === 'premium_yearly' ||
+      p.toLowerCase() === 'premium-yearly'
+    ) {
+      return 'premium_yearly';
+    }
+
+    return 'free';
+  };
+
+  const localizePlanName = (planCode: string, backendName?: string) => {
+    const normalized = normalizePlan(planCode);
+    if (normalized === 'premium_yearly') return t('subscriptionPage.planNames.premiumYearly');
+    if (normalized === 'premium') return t('subscriptionPage.planNames.premiumMonthly');
+    if (normalized === 'free') return t('subscriptionPage.planNames.free');
+    return backendName || planCode;
+  };
+
+  const localizePeriod = (duration?: number) => {
+    if (duration === -1) return t('subscriptionPage.plans.periodForever');
+    if (duration === 365) return t('subscriptionPage.plans.periodYear');
+    return t('subscriptionPage.plans.periodMonth');
+  };
+
+  const localizeFeature = (feature: string) => {
+    const key = String(feature || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!key) return feature;
+
+    const map: Record<string, string> = {
+      'basic skin analysis': 'subscriptionPage.features.basicSkinAnalysis',
+      'basic analysis': 'subscriptionPage.features.basicSkinAnalysis',
+      'skin analysis': 'subscriptionPage.features.basicSkinAnalysis',
+      'ai skin analysis': 'subscriptionPage.features.advancedAIAnalysis',
+      'advanced ai analysis': 'subscriptionPage.features.advancedAIAnalysis',
+      'advanced analysis': 'subscriptionPage.features.advancedAIAnalysis',
+      'unlimited ai analysis': 'subscriptionPage.features.unlimitedAIAnalysis',
+      'unlimited ai analyses': 'subscriptionPage.features.unlimitedAIAnalysis',
+      'unlimited analysis': 'subscriptionPage.features.unlimitedAIAnalysis',
+      'unlimited analyses': 'subscriptionPage.features.unlimitedAIAnalysis',
+      'unlimited skin analysis': 'subscriptionPage.features.unlimitedAIAnalysis',
+      'unlimited skin analyses': 'subscriptionPage.features.unlimitedAIAnalysis',
+      'personalized routine': 'subscriptionPage.features.personalizedRoutine',
+      'personalized skincare routine': 'subscriptionPage.features.personalizedRoutine',
+      'personalized skincare plan': 'subscriptionPage.features.personalizedRoutine',
+      'ai coach': 'subscriptionPage.features.aiCoach',
+      'smart ai coach': 'subscriptionPage.features.aiCoach',
+      'daily skincare routine': 'subscriptionPage.features.dailySkincareRoutine',
+      'daily routine': 'subscriptionPage.features.dailySkincareRoutine',
+      'chat with ai coach': 'subscriptionPage.features.chatWithAICoach',
+      'ai chat': 'subscriptionPage.features.chatWithAICoach',
+      'community access': 'subscriptionPage.features.communityAccess',
+      'priority support': 'subscriptionPage.features.prioritySupport',
+      'unlimited access': 'subscriptionPage.features.unlimitedAccess',
+      'وصول غير محدود': 'subscriptionPage.features.unlimitedAccess',
+      'full access': 'subscriptionPage.features.unlimitedAccess',
+      'all premium features': 'subscriptionPage.features.unlimitedAccess',
+      '2 months free': 'subscriptionPage.features.twoMonthsFree',
+      'two months free': 'subscriptionPage.features.twoMonthsFree',
+      'early access to new features': 'subscriptionPage.features.earlyAccessNewFeatures',
+      'early access new features': 'subscriptionPage.features.earlyAccessNewFeatures',
+      '3 analyses per month': 'subscriptionPage.features.threeAnalysesPerMonth',
+      '3 analysis per month': 'subscriptionPage.features.threeAnalysesPerMonth',
+      'monthly reports': 'subscriptionPage.features.monthlyReports',
+      'detailed reports': 'subscriptionPage.features.detailedReports',
+      'premium recommendations': 'subscriptionPage.features.premiumRecommendations',
+      'advanced recommendations': 'subscriptionPage.features.advancedRecommendations',
+      'progress tracking': 'subscriptionPage.features.progressTracking',
+      'unlimited tracking': 'subscriptionPage.features.progressTracking',
+      'face scan': 'subscriptionPage.features.faceScan',
+      'روتين مخصص': 'subscriptionPage.features.personalizedRoutine',
+      'دردشة مع المدرب الذكي': 'subscriptionPage.features.chatWithAICoach',
+      'general guidance': 'subscriptionPage.features.generalGuidance',
+    };
+
+    let translationKey = map[key];
+
+    if (!translationKey && key.includes('report')) {
+      translationKey = key.includes('monthly')
+        ? 'subscriptionPage.features.monthlyReports'
+        : 'subscriptionPage.features.detailedReports';
+    }
+    if (!translationKey && key.includes('recommend')) {
+      translationKey = key.includes('advanced')
+        ? 'subscriptionPage.features.advancedRecommendations'
+        : 'subscriptionPage.features.premiumRecommendations';
+    }
+    if (!translationKey && key.includes('support')) {
+      translationKey = 'subscriptionPage.features.prioritySupport';
+    }
+    if (!translationKey && key.includes('community')) {
+      translationKey = 'subscriptionPage.features.communityAccess';
+    }
+    if (!translationKey && (key.includes('coach') || key.includes('chat'))) {
+      translationKey = key.includes('chat')
+        ? 'subscriptionPage.features.chatWithAICoach'
+        : 'subscriptionPage.features.aiCoach';
+    }
+    if (!translationKey && key.includes('routine')) {
+      translationKey = key.includes('daily')
+        ? 'subscriptionPage.features.dailySkincareRoutine'
+        : 'subscriptionPage.features.personalizedRoutine';
+    }
+    if (!translationKey && (key.includes('track') || key.includes('progress'))) {
+      translationKey = 'subscriptionPage.features.progressTracking';
+    }
+    if (!translationKey && (key.includes('face') || key.includes('scan'))) {
+      translationKey = 'subscriptionPage.features.faceScan';
+    }
+    if (!translationKey && key.includes('analysis') && key.includes('unlimited')) {
+      translationKey = 'subscriptionPage.features.unlimitedAIAnalysis';
+    }
+    if (!translationKey && key.includes('month') && (key.includes('analysis') || key.includes('analyses'))) {
+      translationKey = 'subscriptionPage.features.threeAnalysesPerMonth';
+    }
+    if (!translationKey && key.includes('early') && key.includes('feature')) {
+      translationKey = 'subscriptionPage.features.earlyAccessNewFeatures';
+    }
+    if (!translationKey && key.includes('general') && key.includes('guidance')) {
+      translationKey = 'subscriptionPage.features.generalGuidance';
+    }
+    if (!translationKey && key.includes('وصول') && key.includes('محدود')) {
+      translationKey = 'subscriptionPage.features.unlimitedAccess';
+    }
+    if (!translationKey && key.includes('روتين') && key.includes('مخصص')) {
+      translationKey = 'subscriptionPage.features.personalizedRoutine';
+    }
+    if (!translationKey && key.includes('دردشة') && key.includes('المدرب')) {
+      translationKey = 'subscriptionPage.features.chatWithAICoach';
+    }
+    if (!translationKey && key.includes('analysis')) {
+      translationKey = key.includes('advanced') || key.includes('ai')
+        ? 'subscriptionPage.features.advancedAIAnalysis'
+        : 'subscriptionPage.features.basicSkinAnalysis';
+    }
+    if (!translationKey && key.includes('unlimited')) {
+      translationKey = 'subscriptionPage.features.unlimitedAccess';
+    }
+
+    return translationKey ? t(translationKey) : feature;
+  };
+
+  const formatPrice = (value: number, _currency: string) => {
+    const displayCurrency = 'EUR';
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: displayCurrency,
+        maximumFractionDigits: 2,
+      }).format(value);
+    } catch {
+      return `${value.toFixed(2)} ${displayCurrency}`;
+    }
+  };
+
+  const loadPlans = async () => {
+    setPlansLoading(true);
+    setPlansError(null);
+    try {
+      const planList = await subscriptionService.getPlans();
+      setPlans(planList);
+    } catch {
+      setPlansError(t('landing.pricingLoadError'));
+    } finally {
+      setPlansLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadPlans();
+  }, []);
+
+  const displayPlans = useMemo(() => {
+    const order: Record<string, number> = {
+      free: 0,
+      premium: 1,
+      premium_yearly: 2,
+    };
+
+    return [...plans]
+      .sort((a, b) => {
+        const aOrder = order[normalizePlan(a.plan)] ?? 99;
+        const bOrder = order[normalizePlan(b.plan)] ?? 99;
+        return aOrder - bOrder;
+      })
+      .map((plan) => {
+        const normalized = normalizePlan(plan.plan);
+        return {
+          planCode: plan.plan,
+          name: localizePlanName(plan.plan, plan.name),
+          price: plan.price,
+          currency: plan.currency,
+          period: localizePeriod(plan.duration),
+          features: Array.from(new Set((plan.features || []).map(localizeFeature))),
+          isFree: normalized === 'free',
+          highlighted: normalized === 'premium',
+        };
+      });
+  }, [plans, t]);
+
+  const openLoginRequiredModal = (planName: string) => {
+    setSelectedPlanName(planName);
+    setShowLoginRequiredModal(true);
+  };
+
+  const closeLoginRequiredModal = () => {
+    setShowLoginRequiredModal(false);
+  };
+
+  const handlePaidPlanClick = (planName: string) => {
+    openLoginRequiredModal(planName);
+  };
+
+  const handleLoginNow = () => {
+    setShowLoginRequiredModal(false);
+    onLogin();
+  };
 
   return (
     <div className="min-h-screen relative" style={{ zIndex: 1 }}>
@@ -363,118 +600,148 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             <p className="text-xl text-[#6B7280]">{t('landing.pricingDesc')}</p>
           </motion.div>
 
-          <div className="flex justify-center items-center gap-4 mb-12">
-            <span className={`font-medium ${pricingPeriod === 'monthly' ? 'text-[#0EA5E9]' : 'text-gray-500'}`}>
-              Mensuel
-            </span>
-            <div 
-              className="w-14 h-8 flex items-center bg-gray-200 rounded-full p-1 cursor-pointer"
-              onClick={() => setPricingPeriod(pricingPeriod === 'monthly' ? 'annual' : 'monthly')}
-            >
-              <div 
-                className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-transform ${pricingPeriod === 'annual' ? 'translate-x-6' : ''}`}
-              ></div>
+          {plansLoading ? (
+            <div className="rounded-3xl border border-[#D7EBFF] bg-white/80 p-10 shadow-sm text-center">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#0EA5E9] mb-3" />
+              <p className="text-[#6B7280]">{t('landing.pricingLoading')}</p>
             </div>
-            <span className={`font-medium ${pricingPeriod === 'annual' ? 'text-[#0EA5E9]' : 'text-gray-500'}`}>
-              Annuel
-            </span>
-            <div className="bg-yellow-100 text-yellow-800 text-xs font-semibold ml-2 px-2.5 py-0.5 rounded-full">Économisez 20%</div>
-          </div>
+          ) : plansError ? (
+            <div className="rounded-3xl border border-rose-200 bg-rose-50/70 p-8 text-center">
+              <p className="text-rose-700 font-medium mb-4">{plansError}</p>
+              <Button variant="outline" onClick={() => void loadPlans()}>
+                {t('landing.pricingRetry')}
+              </Button>
+            </div>
+          ) : displayPlans.length === 0 ? (
+            <div className="rounded-3xl border border-[#E5E7EB] bg-white p-8 text-center text-[#6B7280]">
+              {t('landing.pricingNoPlans')}
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {displayPlans.map((plan, index) => (
+                <motion.div
+                  key={plan.planCode}
+                  className="transform-gpu will-change-transform"
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={baseViewport}
+                  transition={sectionTransition(index * 0.08)}
+                >
+                  <Card className={`h-full relative transition-all duration-300 ${
+                    plan.highlighted
+                      ? 'border-2 border-[#0EA5E9] bg-gradient-to-b from-white to-[#F0F9FF] shadow-xl shadow-[#38BDF8]/20 md:-translate-y-1'
+                      : 'border border-[#D7EBFF] bg-gradient-to-b from-white to-[#F7FCFF] shadow-md hover:shadow-xl'
+                  }`}>
+                    {plan.highlighted && (
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white text-sm font-medium rounded-full">
+                        {t('landing.mostPopular')}
+                      </div>
+                    )}
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <motion.div
-              className="transform-gpu will-change-transform"
-              initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={baseViewport}
-              transition={sectionTransition()}
-            >
-              <Card className="h-full border border-[#D7EBFF] bg-gradient-to-b from-white to-[#F7FCFF] shadow-md hover:shadow-xl transition-all duration-300">
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold mb-2">{t('landing.free')}</h3>
-                  <div className="text-4xl font-bold text-[#0EA5E9]">
-                    $0<span className="text-lg text-[#6B7280]">/mo</span>
-                  </div>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  {(t('landing.freeFeatures') as unknown as string[]).map((ft, i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <Check className="w-5 h-5 text-[#0EA5E9]" />
-                      <span>{ft}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button variant="outline" className="w-full border-[#93C5FD] text-[#0369A1] hover:bg-[#EFF6FF]" onClick={onGetStarted}>
-                  {t('landing.navGetStarted')}
-                </Button>
-              </Card>
-            </motion.div>
+                    <div className="mb-6">
+                      <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                      {plan.price === 0 ? (
+                        <div className="text-4xl font-bold text-[#0EA5E9]">
+                          {t('subscriptionPage.planNames.free')}
+                        </div>
+                      ) : (
+                        <div className="text-4xl font-bold text-[#0EA5E9]">
+                          {formatPrice(plan.price, plan.currency)}
+                          <span className="text-lg text-[#6B7280]">/{plan.period}</span>
+                        </div>
+                      )}
+                    </div>
 
-            <motion.div
-              className="transform-gpu will-change-transform"
-              initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={baseViewport}
-              transition={sectionTransition(0.08)}
-            >
-              <Card className="h-full border-2 border-[#0EA5E9] relative bg-gradient-to-b from-white to-[#F0F9FF] shadow-xl shadow-[#38BDF8]/20 md:-translate-y-1">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white text-sm font-medium rounded-full">
-                  {t('landing.mostPopular')}
-                </div>
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold mb-2">{t('landing.premium')}</h3>
-                  <div className="text-5xl font-bold text-[#3BBDF4]">
-                    {pricingPeriod === 'monthly' ? '$19' : '$15'}
-                    <span className="text-lg font-normal text-[#64748B]">/mo</span>
-                  </div>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  {(t('landing.premiumFeatures') as unknown as string[]).map((pt, i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <Check className="w-5 h-5 text-[#0EA5E9]" />
-                      <span>{pt}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button className="w-full bg-gradient-to-r from-[#0EA5E9] to-[#0284C7] hover:from-[#0284C7] hover:to-[#0369A1]" onClick={onGetStarted}>
-                  {t('landing.startTrial')}
-                </Button>
-              </Card>
-            </motion.div>
+                    <ul className="space-y-3 mb-8">
+                      {plan.features.map((feature, i) => (
+                        <li key={i} className="flex items-center gap-2">
+                          <Check className="w-5 h-5 text-[#0EA5E9]" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
 
-            <motion.div
-              className="transform-gpu will-change-transform"
-              initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={baseViewport}
-              transition={sectionTransition(0.16)}
-            >
-              <Card className="h-full border border-[#CFE8FF] bg-gradient-to-br from-white via-[#F3FAFF] to-[#ECF7FF] shadow-md hover:shadow-xl transition-all duration-300">
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
-                    {t('landing.enterprise')}
-                    <Shield className="w-5 h-5 text-[#0EA5E9]" />
-                  </h3>
-                  <div className="text-4xl font-bold text-[#0284C7]">
-                    {t('landing.enterprisePrice')}
-                  </div>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  {(t('landing.enterpriseFeatures') as unknown as string[]).map((et, i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <Check className="w-5 h-5 text-[#0EA5E9]" />
-                      <span>{et}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button variant="outline" className="w-full border-[#7DD3FC] text-[#0369A1] hover:bg-[#EFF6FF]" onClick={onGetStarted}>
-                  {t('landing.contactSales')}
-                </Button>
-              </Card>
-            </motion.div>
-          </div>
+                    <Button
+                      className={plan.isFree ? 'w-full' : 'w-full bg-gradient-to-r from-[#0EA5E9] to-[#0284C7] hover:from-[#0284C7] hover:to-[#0369A1]'}
+                      variant={plan.isFree ? 'outline' : 'primary'}
+                      onClick={() => {
+                        if (plan.isFree) {
+                          onGetStarted();
+                          return;
+                        }
+                        handlePaidPlanClick(plan.name);
+                      }}
+                    >
+                      {plan.isFree ? t('landing.navGetStarted') : t('landing.planConnectToBuy')}
+                    </Button>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
+
+      <AnimatePresence>
+        {showLoginRequiredModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-md z-[120]"
+              onClick={closeLoginRequiredModal}
+            />
+
+            <motion.div
+              initial={{ opacity: 0, y: 28, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md px-4 z-[121]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="relative rounded-3xl bg-white border border-gray-100 shadow-2xl overflow-hidden">
+                <div className="h-1.5 w-full bg-gradient-to-r from-[#F59E0B] via-[#0EA5E9] to-[#8B5CF6]" />
+
+                <button
+                  onClick={closeLoginRequiredModal}
+                  className="absolute top-4 right-4 p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                <div className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-200 flex items-center justify-center">
+                      <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">{t('landing.loginRequiredTitle')}</h3>
+                  </div>
+
+                  <p className="text-sm text-gray-700 leading-relaxed mb-4">
+                    {t('landing.loginRequiredDesc')}
+                  </p>
+
+                  <div className="rounded-xl border border-[#DBEAFE] bg-[#EFF6FF] px-3 py-2 text-sm text-[#1E3A8A] mb-5">
+                    {t('landing.loginRequiredPlanLabel')} <span className="font-semibold">{selectedPlanName}</span>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3">
+                    <Button variant="outline" onClick={closeLoginRequiredModal}>
+                      {t('landing.loginRequiredCancel')}
+                    </Button>
+                    <Button onClick={handleLoginNow}>
+                      <LogIn className="w-4 h-4" />
+                      {t('landing.loginRequiredAction')}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* CTA Section */}
       <section className="py-20 px-6 bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] relative overflow-hidden">

@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ThumbsUp, MessageSquare, Share2, MoreHorizontal, Trash2, Globe2, Archive, Loader, Hand, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, MoreHorizontal, Trash2, Globe2, Archive, Loader, Loader2, Hand, CheckCircle2, AlertTriangle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
 import { VideoAccessibilityPlayer } from '../../../components/video/video-accessibility-player';
 import { SignTranslationModal } from '../../../components/sign-translation-modal';
 import { useSignTranslation } from '../../../hooks/use-sign-translation';
 import { getSpeechToTextService } from '../../../lib/services/speech-to-text.service';
+import { postsService } from '../../../lib/services/posts.service';
+import type { PostReaction } from '../../../lib/types';
 
 
 export interface PostCardData {
@@ -66,6 +68,9 @@ export function PostCard({
   const [showShareFlow, setShowShareFlow] = useState(false);
   const [shareState, setShareState] = useState<'idle' | 'preparing' | 'opening' | 'success' | 'error'>('idle');
   const shareTimersRef = useRef<number[]>([]);
+  const [showReactionsModal, setShowReactionsModal] = useState(false);
+  const [reactionsLoading, setReactionsLoading] = useState(false);
+  const [reactions, setReactions] = useState<PostReaction[]>([]);
 
   // Sign Translation LSF
   const [showLSFModal, setShowLSFModal] = useState(false);
@@ -278,6 +283,14 @@ export function PostCard({
     { id: 'sad', icon: '😢', label: t('community.reactions.sad'), color: 'text-yellow-500' },
     { id: 'angry', icon: '😡', label: t('community.reactions.angry'), color: 'text-orange-500' },
   ];
+  const reactionIcons: Record<string, string> = {
+    like: '👍',
+    love: '❤️',
+    haha: '😆',
+    wow: '😮',
+    sad: '😢',
+    angry: '😡',
+  };
 
   const handleLike = (reactId: string = 'like') => {
     if (reaction === reactId) {
@@ -291,6 +304,23 @@ export function PostCard({
     }
     setShowReactions(false);
     if (onLike) onLike(post.id, reactId);
+  };
+
+  const handleShowReactions = async () => {
+    if (likeCount <= 0) return;
+
+    setShowReactionsModal(true);
+    setReactionsLoading(true);
+
+    try {
+      const result = await postsService.getPostReactions(post.id, 1, 50);
+      setReactions(result.data || []);
+    } catch {
+      setShowReactionsModal(false);
+      toast.error(t('common.error') || 'Impossible de charger les reactions');
+    } finally {
+      setReactionsLoading(false);
+    }
   };
 
   const currentReaction = REACTIONS.find(r => r.id === reaction) || REACTIONS[0];
@@ -437,7 +467,10 @@ export function PostCard({
 
       {(likeCount > 0 || post.comments > 0) && (
         <div className={`flex items-center justify-between px-4 py-2 text-xs ${subText} ${!post.media ? (isHcHigh ? 'border-t border-yellow-400/30 mt-3' : isDark ? 'border-t border-white/5 mt-3' : 'border-t border-gray-100 mt-3') : ''}`}>
-          <div className="flex items-center gap-1.5 cursor-pointer hover:underline">
+          <div
+            className={`flex items-center gap-1.5 ${likeCount > 0 ? 'cursor-pointer hover:underline' : ''}`}
+            onClick={handleShowReactions}
+          >
             {likeCount > 0 && (
               <div className="flex -space-x-1 items-center">
                  <div className={`w-5 h-5 rounded-full flex items-center justify-center border border-white dark:border-[#1e293b] z-[1] ${reaction ? '' : 'bg-blue-500'}`}>
@@ -670,6 +703,86 @@ export function PostCard({
                 Fermer
               </motion.button>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showReactionsModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowReactionsModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full max-w-md rounded-2xl border shadow-2xl p-4 ${isHcHigh ? 'bg-black border-yellow-400' : isDark ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#E5E7EB]'}`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className={`text-sm font-bold ${textColor}`}>
+                  {likeCount} {t('community.reactions.like')}
+                </h3>
+                <button
+                  onClick={() => setShowReactionsModal(false)}
+                  className={`p-1.5 rounded-lg transition-colors ${btnHover}`}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {reactionsLoading ? (
+                <div className="py-10 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#0EA5E9]" />
+                </div>
+              ) : reactions.length === 0 ? (
+                <p className={`text-sm text-center py-8 ${subText}`}>
+                  {t('common.noResults') || 'Aucune reaction'}
+                </p>
+              ) : (
+                <div className="max-h-[320px] overflow-y-auto pr-1 space-y-2">
+                  {reactions.map((item) => (
+                    (() => {
+                      const reactionUserName =
+                        item.user?.name ||
+                        item.userId ||
+                        t('common.user') ||
+                        'User';
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={`flex items-center gap-3 px-2 py-2 rounded-xl ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}
+                        >
+                          <div className={`w-9 h-9 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold ${isHcHigh ? 'bg-black border border-yellow-400 text-cyan-400' : 'bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] text-white'}`}>
+                            {item.user?.avatar ? (
+                              <img src={item.user.avatar} alt={reactionUserName} className="w-full h-full object-cover" />
+                            ) : (
+                              reactionUserName.charAt(0).toUpperCase()
+                            )}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-semibold truncate ${textColor}`}>
+                              {reactionUserName}
+                            </p>
+                          </div>
+
+                          <span className="text-xl" aria-label={item.type}>
+                            {reactionIcons[item.type] || '👍'}
+                          </span>
+                        </div>
+                      );
+                    })()
+                  ))}
+                </div>
+              )}
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
