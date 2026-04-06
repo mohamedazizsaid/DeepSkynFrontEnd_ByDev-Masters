@@ -361,12 +361,15 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
   // ─── Loading skeleton ───
   if (loading) {
     return (
-      <div className="p-8 max-w-7xl mx-auto">
-        <div className="space-y-6 mt-8">
-          <div className="h-32 rounded-3xl border border-[#DBEAFE] bg-gradient-to-r from-[#F0F9FF] via-white to-[#ECFEFF] animate-pulse" />
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-48 rounded-3xl border border-[#E2E8F0] bg-gradient-to-br from-white to-[#F8FAFC] animate-pulse" />
-          ))}
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          >
+            <Sparkles className="w-12 h-12 text-[#D4AF37] mx-auto" />
+          </motion.div>
+          <p className="text-[#6B7280] mt-4">Chargement...</p>
         </div>
       </div>
     );
@@ -469,7 +472,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
 
   // ─── Main analysis view ─── PROFESSIONAL UI/UX
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div className="min-h-screen bg-transparent">
       {/* Animated background elements */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <motion.div 
