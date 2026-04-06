@@ -1,6 +1,7 @@
 export { authService } from './auth.service';
 export { skinProfileService } from './skin-profile.service';
 export { analysisService } from './analysis.service';
+export { digitalTwinService } from './digital-twin.service';
 export { routineService } from './routine.service';
 export { chatService } from './chat.service';
 export { subscriptionService } from './subscription.service';
@@ -39,3 +40,10 @@ export {
   type FaceReferenceStatus,
   type VerifyFaceDto,
 } from './face-verification.service';
+export { 
+  predictiveRoutineService,
+  type GeneratedRoutine,
+  type PredictiveRoutineResponse,
+  type AnalysisResult,
+  type GenerateRoutineRequest
+} from './predictive-routine.service';

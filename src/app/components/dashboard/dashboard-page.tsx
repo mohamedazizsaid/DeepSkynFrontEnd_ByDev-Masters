@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import {
   Scan, Calendar, MessageCircle, TrendingUp, TrendingDown, Sparkles,
   ArrowRight, Droplets, Fingerprint, Sun, Activity, Clock, Star,
-  Shield, Zap, Eye, Heart
+  Shield, Zap, Eye, Heart, Brain
 } from 'lucide-react';
 import { Button } from '../button';
 import { RadialBarChart, RadialBar, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
@@ -13,6 +13,8 @@ import { analysisService } from '../../../lib/services/analysis.service';
 import { skinProfileService } from '../../../lib/services/skin-profile.service';
 import { calculateScoreChange, formatChartDate, formatAnalysisDate } from '../../../lib/analysis-helpers';
 import type { SkinProfile, Analysis, AnalysisStats } from '../../../lib/types';
+import { DigitalTwinDashboard } from '../../../components/DigitalTwinDashboard';
+import { useSkinJourney } from '../../../hooks/useSkinJourney';
 
 interface DashboardPageProps {
   onNavigate: (page: string) => void;
@@ -29,6 +31,14 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
   const [latestAnalysis, setLatestAnalysis] = useState<Analysis | null>(null);
   const [stats, setStats] = useState<AnalysisStats | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
+  
+  // Digital Twin hook
+  const { 
+    journey, 
+    isLoading: twinLoading, 
+    createPrediction,
+    simulateProduct,
+  } = useSkinJourney();
 
   useEffect(() => {
     const loadData = async () => {
@@ -594,6 +604,55 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           </div>
         </motion.div>
       </div>
+
+      {/* ═══ Digital Twin Section ═══ */}
+      {journey && (
+        <motion.div
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.5, duration: 0.4, ease: 'easeOut' }}
+          className="mb-6"
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <Brain className="w-5 h-5 text-purple-500" />
+            <h2 className={`text-lg font-bold ${textPrimary}`}>Digital Twin</h2>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${isDark ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-100 text-purple-600'}`}>
+              Jumeau Numérique
+            </span>
+          </div>
+          <DigitalTwinDashboard
+            journey={journey}
+            onScanMore={() => onNavigate('analysis')}
+            onViewTimeline={() => onNavigate('evolution')}
+            onCreatePrediction={() => {
+              createPrediction({ daysAhead: 7, factors: {} });
+            }}
+            onSimulateProduct={() => {
+              // Open product simulation modal or navigate
+              onNavigate('routine');
+            }}
+          />
+        </motion.div>
+      )}
+
+      {/* Loading state for Digital Twin */}
+      {twinLoading && !journey && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className={`rounded-2xl border p-6 mb-6 ${panelClass}`}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center animate-pulse">
+              <Brain className="w-5 h-5 text-purple-500" />
+            </div>
+            <div>
+              <div className={`h-4 w-32 rounded ${isDark ? 'bg-[#334155]' : 'bg-[#E5E7EB]'} animate-pulse`} />
+              <div className={`h-3 w-48 rounded mt-2 ${isDark ? 'bg-[#334155]' : 'bg-[#E5E7EB]'} animate-pulse`} />
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
