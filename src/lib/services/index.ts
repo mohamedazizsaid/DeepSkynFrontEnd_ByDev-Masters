@@ -8,6 +8,7 @@ export { subscriptionService } from './subscription.service';
 export { postsService } from './posts.service';
 export { notificationService } from './notification.service';
 export { usersService } from './users.service';
+export { adminService } from './admin.service';
 export { addressService, type AddressData, type UserAddressResponse } from './address.service';
 export {
   getWeatherData,

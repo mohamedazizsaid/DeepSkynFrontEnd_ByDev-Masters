@@ -25,6 +25,8 @@ const queryClient = new QueryClient({
   },
 });
 
+const ADMIN_ROLES = ['admin', 'ADMIN', 'realm-admin', 'super_admin', 'administrator'];
+
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -53,6 +55,17 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) return null;
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+
+  return <>{children}</>;
+}
+
+function OnboardingRoute({ children }: { children: React.ReactNode }) {
+  const { roles } = useAuthStore();
+  const isAdmin = roles.some(role => ADMIN_ROLES.includes(role));
+
+  if (isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return <>{children}</>;
 }
@@ -107,7 +120,9 @@ function AppContent() {
         {/* Protected Routes */}
         <Route path="/onboarding" element={
           <ProtectedRoute>
-            <OnboardingFlow onComplete={() => navigate('/dashboard')} />
+            <OnboardingRoute>
+              <OnboardingFlow onComplete={() => navigate('/dashboard')} />
+            </OnboardingRoute>
           </ProtectedRoute>
         } />
         <Route path="/dashboard/*" element={
