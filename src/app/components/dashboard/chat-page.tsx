@@ -130,7 +130,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     const [chatResetAt, setChatResetAt] = useState<string | null>(null);
     const [historyItems, setHistoryItems] = useState<ChatHistory[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
 
     const refreshUsage = async () => {
         try {
@@ -204,7 +204,9 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     }, []);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        const container = messagesContainerRef.current;
+        if (!container) return;
+        container.scrollTop = container.scrollHeight;
     };
 
     useEffect(() => {
@@ -322,7 +324,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     };
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto h-[calc(100vh-4rem)] flex flex-col">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-[calc(100vh-4rem)] flex flex-col">
 
             {/* Header */}
             <div className="mb-6 md:mb-8">
@@ -364,13 +366,13 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                 </div>
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-6 flex-1 min-h-0">
+            <div className="grid lg:grid-cols-3 gap-6 items-start">
                 {/* Chat Area */}
-                <div className="lg:col-span-2 flex flex-col min-h-0">
-                    <Card className="flex-1 flex flex-col h-full p-0 overflow-hidden border-[#E2E8F0] shadow-md">
+                <div className="lg:col-span-2 flex flex-col gap-4">
+                    <Card className="flex flex-col h-[70vh] sm:h-[74vh] lg:h-[78vh] min-h-[560px] max-h-[980px] p-0 overflow-hidden border-[#93C5FD] bg-gradient-to-b from-[#D9ECFF] via-[#E8F3FF] to-[#D2E8FF] shadow-lg shadow-[#0EA5E9]/15">
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-white [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-gradient-to-b from-[#D5EAFF] via-[#E7F3FF] to-[#CDE5FF] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                             <AnimatePresence>
                                 {messages.map((message) => (
                                     <motion.div
@@ -383,8 +385,8 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                                         <div className={`max-w-[88%] md:max-w-[78%] ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
                                             <div
                                                 className={`rounded-2xl px-4 py-3 ${message.type === 'user'
-                                                        ? 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white shadow-lg shadow-[#0EA5E9]/20'
-                                                        : 'bg-white text-[#334155] border border-[#E2E8F0] shadow-sm'
+                                                    ? 'bg-gradient-to-r from-[#0284C7] to-[#0EA5E9] text-white shadow-lg shadow-[#0EA5E9]/25'
+                                                        : 'bg-[#E5F2FF] text-[#1E3A5F] border border-[#93C5FD] shadow-sm'
                                                     }`}
                                             >
                                                 {message.type === 'ai' && (
@@ -395,7 +397,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                                                 )}
                                                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                                             </div>
-                                            <p className="text-xs text-[#94A3B8] mt-1 px-2 inline-flex items-center gap-1">
+                                            <p className="text-xs text-[#64748B] mt-1 px-2 inline-flex items-center gap-1">
                                                 <Clock3 className="w-3 h-3" />
                                                 {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </p>
@@ -411,20 +413,19 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                                     animate={{ opacity: 1, y: 0 }}
                                     className="flex justify-start"
                                 >
-                                    <div className="bg-white border border-[#E2E8F0] rounded-2xl px-4 py-3 shadow-sm">
+                                    <div className="bg-[#E5F2FF] border border-[#93C5FD] rounded-2xl px-4 py-3 shadow-sm">
                                         <div className="flex items-center gap-2">
                                             <Loader className="w-4 h-4 text-[#0EA5E9] animate-spin" />
-                                            <span className="text-sm text-[#6B7280]">{t('chatPage.message.aiTyping')}</span>
+                                            <span className="text-sm text-[#0369A1]">{t('chatPage.message.aiTyping')}</span>
                                         </div>
                                     </div>
                                 </motion.div>
                             )}
 
-                            <div ref={messagesEndRef} />
                         </div>
 
                         {/* Input Area */}
-                        <div className="border-t border-[#E2E8F0] p-4 md:p-5 bg-white">
+                        <div className="border-t border-[#93C5FD] p-4 md:p-5 bg-gradient-to-b from-[#EAF4FF] to-[#D4E9FF]">
                             {!isPremium && freeRemaining !== null && (
                                 <div className="mb-4">
                                     <QuotaAlertBanner
@@ -453,20 +454,90 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                                     placeholder={t('chatPage.inputPlaceholder')}
                                     disabled={chatLimitReached}
-                                    className="flex-1 px-4 py-3 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-xl 
+                                    className="flex-1 px-4 py-3 bg-white border-2 border-[#93C5FD] rounded-xl text-[#0F172A] placeholder:text-[#94A3B8]
                     focus:outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/20
                     transition-all duration-200"
                                 />
-                                <Button onClick={handleSend} disabled={!inputValue.trim() || isTyping || chatLimitReached}>
+                                <Button onClick={handleSend} disabled={!inputValue.trim() || isTyping || chatLimitReached} className="bg-gradient-to-r from-[#0284C7] to-[#0EA5E9] hover:from-[#0369A1] hover:to-[#0284C7] border border-[#7DD3FC]">
                                     <Send className="w-5 h-5" />
                                 </Button>
                             </div>
                         </div>
                     </Card>
+
+                    {/* Context Info */}
+                    <Card className="border-[#BFDBFE] bg-gradient-to-b from-white to-[#F8FAFC] shadow-md shadow-[#0EA5E9]/10">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-bold text-[#0F172A]">{t('chatPage.context.title')}</h3>
+                            <span className="text-[11px] px-2 py-1 rounded-full bg-[#E0F2FE] text-[#0369A1] font-semibold">{t('chatPage.context.live')}</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-sm">
+                            <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
+                                <span className="text-[#6B7280]">{t('chatPage.context.skinTypeLabel')}</span>
+                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.skinTypeValue')}</span>
+                            </div>
+                            <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
+                                <span className="text-[#6B7280]">{t('chatPage.context.ageLabel')}</span>
+                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.ageValue')}</span>
+                            </div>
+                            <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
+                                <span className="text-[#6B7280]">{t('chatPage.context.mainConcernsLabel')}</span>
+                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.mainConcernsValue')}</span>
+                            </div>
+                            <div className="rounded-lg border border-[#BAE6FD] bg-[#F0F9FF] px-3 py-2 sm:col-span-2 xl:col-span-1">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-[#0369A1] font-medium">{t('chatPage.context.currentScore')}</span>
+                                    <span className="font-bold text-[#0284C7]">87/100</span>
+                                </div>
+                                <div className="h-2 rounded-full bg-[#DBEAFE] overflow-hidden">
+                                    <div className="h-full w-[87%] bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] rounded-full" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-3 p-3 bg-[#0EA5E9]/10 rounded-xl border border-[#BAE6FD]">
+                            <p className="text-xs text-[#0369A1]">
+                                {t('chatPage.context.hint')}
+                            </p>
+                        </div>
+                    </Card>
+
+                    {/* Premium Features */}
+                    {!isPremium && (
+                        <Card className="border-2 border-[#FBBF24] bg-gradient-to-br from-[#FFFDF5] to-white p-3">
+                            <div className="text-center">
+                                <Crown className="w-7 h-7 mx-auto mb-1.5 text-[#FBBF24]" />
+                                <h3 className="text-sm font-bold mb-1.5">{t('chatPage.premium.title')}</h3>
+                                <ul className="text-[11px] leading-tight text-[#6B7280] grid grid-cols-2 gap-x-3 gap-y-1 mb-2 text-left">
+                                    <li className="flex items-center gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-[#FBBF24]" />
+                                        {t('chatPage.premium.featureUnlimited')}
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-[#FBBF24]" />
+                                        {t('chatPage.premium.featurePriority')}
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-[#FBBF24]" />
+                                        {t('chatPage.premium.featureInsights')}
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-[#FBBF24]" />
+                                        {t('chatPage.premium.featureProducts')}
+                                    </li>
+                                </ul>
+                                <Button size="sm" className={`w-full py-2 text-xs ${premiumButtonClass}`} onClick={onUpgrade}>
+                                    <Crown className="w-4 h-4 text-white" />
+                                    {t('chatPage.premium.upgradeNow')}
+                                </Button>
+                            </div>
+                        </Card>
+                    )}
                 </div>
 
                 {/* Sidebar */}
-                <div className="space-y-6 min-h-0 overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <div className="space-y-6 lg:sticky lg:top-24 self-start">
                     {/* Chat History */}
                     <Card className="border-[#DBEAFE] bg-gradient-to-b from-white to-[#F8FAFC]">
                         <div className="flex items-center justify-between mb-4">
@@ -542,74 +613,6 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                             ))}
                         </div>
                     </Card>
-
-                    {/* Context Info */}
-                    <Card className="border-[#BFDBFE] bg-gradient-to-b from-white to-[#F8FAFC] shadow-md shadow-[#0EA5E9]/10">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold text-[#0F172A]">{t('chatPage.context.title')}</h3>
-                            <span className="text-[11px] px-2 py-1 rounded-full bg-[#E0F2FE] text-[#0369A1] font-semibold">{t('chatPage.context.live')}</span>
-                        </div>
-                        <div className="space-y-2 text-sm">
-                            <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
-                                <span className="text-[#6B7280]">{t('chatPage.context.skinTypeLabel')}</span>
-                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.skinTypeValue')}</span>
-                            </div>
-                            <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
-                                <span className="text-[#6B7280]">{t('chatPage.context.ageLabel')}</span>
-                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.ageValue')}</span>
-                            </div>
-                            <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
-                                <span className="text-[#6B7280]">{t('chatPage.context.mainConcernsLabel')}</span>
-                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.mainConcernsValue')}</span>
-                            </div>
-                            <div className="rounded-lg border border-[#BAE6FD] bg-[#F0F9FF] px-3 py-2">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-[#0369A1] font-medium">{t('chatPage.context.currentScore')}</span>
-                                    <span className="font-bold text-[#0284C7]">87/100</span>
-                                </div>
-                                <div className="h-2 rounded-full bg-[#DBEAFE] overflow-hidden">
-                                    <div className="h-full w-[87%] bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] rounded-full" />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="mt-4 p-3 bg-[#0EA5E9]/10 rounded-xl border border-[#BAE6FD]">
-                            <p className="text-xs text-[#0369A1]">
-                                {t('chatPage.context.hint')}
-                            </p>
-                        </div>
-                    </Card>
-
-                    {/* Premium Features */}
-                    {!isPremium && (
-                        <Card className="border-2 border-[#FBBF24] bg-gradient-to-br from-[#FFFDF5] to-white">
-                            <div className="text-center">
-                                <Crown className="w-12 h-12 mx-auto mb-3 text-[#FBBF24]" />
-                                <h3 className="text-lg font-bold mb-2">{t('chatPage.premium.title')}</h3>
-                                <ul className="text-sm text-[#6B7280] space-y-2 mb-4 text-left">
-                                    <li className="flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-[#FBBF24]" />
-                                        {t('chatPage.premium.featureUnlimited')}
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-[#FBBF24]" />
-                                        {t('chatPage.premium.featurePriority')}
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-[#FBBF24]" />
-                                        {t('chatPage.premium.featureInsights')}
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-[#FBBF24]" />
-                                        {t('chatPage.premium.featureProducts')}
-                                    </li>
-                                </ul>
-                                <Button className={`w-full ${premiumButtonClass}`} onClick={onUpgrade}>
-                                    <Crown className="w-4 h-4 text-white" />
-                                    {t('chatPage.premium.upgradeNow')}
-                                </Button>
-                            </div>
-                        </Card>
-                    )}
                 </div>
             </div>
         </div>
