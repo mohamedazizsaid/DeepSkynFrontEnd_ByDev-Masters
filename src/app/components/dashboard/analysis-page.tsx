@@ -120,16 +120,37 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
     }
   };
 
+  const selectBestAnalysis = (
+    latest: Analysis | null,
+    list: Analysis[] | undefined,
+  ): Analysis | null => {
+    if (latest) return latest;
+    if (!list?.length) return null;
+
+    // Prefer a completed analysis for the main dashboard, fallback to most recent item.
+    const latestCompleted = list.find((item) => item.status === 'completed');
+    return latestCompleted ?? list[0] ?? null;
+  };
+
   // ─── Load latest analysis + stats + advice ───
   const loadData = async () => {
     setLoading(true);
     try {
-      const [latestRes, statsRes, usageRes] = await Promise.allSettled([
+      const [latestRes, statsRes, usageRes, historyRes] = await Promise.allSettled([
         analysisService.getLatest(),
         analysisService.getStats(),
         subscriptionService.getUsageSummary(),
+        analysisService.getAll(1, 10),
       ]);
-      if (latestRes.status === 'fulfilled') setAnalysis(latestRes.value);
+
+      const historyAnalyses =
+        historyRes.status === 'fulfilled' && Array.isArray(historyRes.value?.analyses)
+          ? historyRes.value.analyses
+          : [];
+
+      const latestAnalysis = latestRes.status === 'fulfilled' ? latestRes.value : null;
+      setAnalysis(selectBestAnalysis(latestAnalysis, historyAnalyses));
+
       if (statsRes.status === 'fulfilled') setStats(statsRes.value);
       if (usageRes.status === 'fulfilled') {
         setIsPremium(usageRes.value.isPremium);
@@ -139,7 +160,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
       }
 
       // Load advice separately (can be slower — Gemini call)
-      if (latestRes.status === 'fulfilled') {
+      if (latestAnalysis?.status === 'completed') {
         setAdviceLoading(true);
         try {
           const adv = await analysisService.getAdvice();
@@ -149,21 +170,20 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
       }
 
       // Load analysis history for chart
-      try {
-        const history = await analysisService.getAll(1, 10);
-        if (history && Array.isArray(history.analyses)) {
-          setAnalysisHistory(
-            history.analyses
-              .filter((a: Analysis) => a.status === 'completed')
-              .slice(0, 10)
-              .reverse()
-              .map((a: Analysis) => ({
-                date: new Date(a.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }),
-                score: a.healthScore || 0,
-              }))
-          );
-        }
-      } catch { /* non-blocking */ }
+      if (historyAnalyses.length > 0) {
+        setAnalysisHistory(
+          historyAnalyses
+            .filter((a: Analysis) => a.status === 'completed')
+            .slice(0, 10)
+            .reverse()
+            .map((a: Analysis) => ({
+              date: new Date(a.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }),
+              score: a.healthScore || 0,
+            }))
+        );
+      } else {
+        setAnalysisHistory([]);
+      }
     } catch {
       toast.error('Failed to load analysis data.');
     } finally {

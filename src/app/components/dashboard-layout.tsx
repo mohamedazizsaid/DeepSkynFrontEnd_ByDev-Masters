@@ -68,6 +68,36 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
   }, [user?.sub]);
 
   useEffect(() => {
+    if (!user?.sub) return;
+
+    let cancelled = false;
+
+    const syncUnreadCount = () => {
+      if (cancelled) return;
+      void fetchUnreadCount();
+    };
+
+    const interval = window.setInterval(syncUnreadCount, 15000);
+
+    const handleFocus = () => syncUnreadCount();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncUnreadCount();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user?.sub, fetchUnreadCount]);
+
+  useEffect(() => {
     if (!user?.sub && !user?.id) return;
 
     let cancelled = false;

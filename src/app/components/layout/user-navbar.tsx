@@ -110,7 +110,7 @@ function ToggleSwitch({
 }
 
 export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifications, user }: UserNavbarProps) {
-    const { unreadCount } = useNotificationStore();
+    const { unreadCount, fetchUnreadCount } = useNotificationStore();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [showAccessibility, setShowAccessibility] = useState(false);
@@ -195,6 +195,35 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
             window.removeEventListener('subscription-updated', handleSubscriptionUpdated);
         };
     }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const syncUnreadCount = () => {
+            if (cancelled) return;
+            void fetchUnreadCount();
+        };
+
+        syncUnreadCount();
+
+        const interval = window.setInterval(syncUnreadCount, 15000);
+        const handleFocus = () => syncUnreadCount();
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                syncUnreadCount();
+            }
+        };
+
+        window.addEventListener('focus', handleFocus);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            cancelled = true;
+            window.clearInterval(interval);
+            window.removeEventListener('focus', handleFocus);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [fetchUnreadCount]);
 
     const currentPlanLabel =
         currentPlan === 'premium_yearly'
@@ -349,7 +378,10 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                             >
                                 <Bell className="w-6 h-6" />
                                 {unreadCount > 0 && (
-                                    <span className="absolute top-2 right-2 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                                    <span className="absolute top-1.5 right-1.5 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#0f172a] shadow-sm" />
+                                )}
+                                {unreadCount > 0 && (
+                                    <span className="sr-only">{unreadCount} unread notifications</span>
                                 )}
                             </button>
                         )}

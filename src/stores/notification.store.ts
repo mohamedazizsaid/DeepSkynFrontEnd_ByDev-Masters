@@ -26,7 +26,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     notificationService.connect(userId, (notification) => {
       set((state) => ({
         notifications: [notification, ...state.notifications],
-        unreadCount: state.unreadCount + 1,
+        unreadCount: notification.isRead ? state.unreadCount : state.unreadCount + 1,
       }));
     });
     set({ isConnected: true });
@@ -101,6 +101,6 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   addNotification: (n) =>
     set((state) => ({
       notifications: [n, ...state.notifications],
-      unreadCount: state.unreadCount + 1,
+      unreadCount: n.isRead ? state.unreadCount : state.unreadCount + 1,
     })),
 }));
