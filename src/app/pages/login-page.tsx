@@ -11,6 +11,8 @@ import { FaceIDScanner } from '../components/face-id-scanner';
 import { useAccessibilityStore } from '../../stores/accessibility.store';
 import ReCAPTCHA from 'react-google-recaptcha';
 
+const ADMIN_ROLES = ['admin', 'ADMIN', 'realm-admin', 'super_admin', 'administrator'];
+
 type FieldInputProps = {
   id: string;
   label: string;
@@ -221,6 +223,23 @@ export function LoginPage() {
     setTouched((prev) => ({ ...prev, [field]: true }));
   }
 
+  const navigateAfterAuth = async () => {
+    const roles = useAuthStore.getState().roles;
+    const isAdmin = roles.some(role => ADMIN_ROLES.includes(role));
+
+    if (isAdmin) {
+      navigate('/dashboard');
+      return;
+    }
+
+    const status = await skinProfileService.checkOnboardingStatus();
+    if (!status.onboardingComplete) {
+      navigate('/onboarding');
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -237,12 +256,7 @@ export function LoginPage() {
         toast(t('auth.twoFactorReq'), { icon: '🔐' });
       } else if (result.success) {
         toast.success(t('auth.loginSuccess'));
-        const status = await skinProfileService.checkOnboardingStatus();
-        if (!status.onboardingComplete) {
-          navigate('/onboarding');
-        } else {
-          navigate('/dashboard');
-        }
+        await navigateAfterAuth();
       }
     } catch (error: any) {
       toast.error(error?.response?.data?.message || t('auth.invalidCredentials'));
@@ -259,12 +273,7 @@ export function LoginPage() {
       const result = await login(tempCredentials.username, tempCredentials.password, twoFactorCode, captchaValue || undefined);
       if (result.success) {
         toast.success(t('auth.loginSuccess'));
-        const status = await skinProfileService.checkOnboardingStatus();
-        if (!status.onboardingComplete) {
-          navigate('/onboarding');
-        } else {
-          navigate('/dashboard');
-        }
+        await navigateAfterAuth();
       }
     } catch (error: any) {
       toast.error(error?.response?.data?.message || t('auth.invalid2FA'));
@@ -304,12 +313,7 @@ export function LoginPage() {
       const result = await faceLogin(email);
       if (result.success) {
         toast.success(t('auth.loginSuccess'));
-        const status = await skinProfileService.checkOnboardingStatus();
-        if (!status.onboardingComplete) {
-          navigate('/onboarding');
-        } else {
-          navigate('/dashboard');
-        }
+        await navigateAfterAuth();
       }
     } catch (_error) {
       toast.error(t('auth.faceIdError'));
