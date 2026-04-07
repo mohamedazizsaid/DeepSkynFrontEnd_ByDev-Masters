@@ -22,40 +22,15 @@ import { useAccessibilityStore } from '../../stores/accessibility.store';
 import { useSearchParams } from 'react-router-dom';
 import { subscriptionService } from '../../lib/services/subscription.service';
 import type { Notification, Subscription } from '../../lib/types';
-import { AdminOverviewPage } from './admin/admin-overview-page';
-import { AdminUserManagementPage } from './admin/admin-user-management-page';
-import { AdminSkinAnalysisMonitorPage } from './admin/admin-skin-analysis-monitor-page';
-import { AdminSubscriptionManagementPage } from './admin/admin-subscription-management-page';
-import { AdminSocialFeedModerationPage } from './admin/admin-social-feed-moderation-page';
-import { AdminChurnRetentionPage } from './admin/admin-churn-retention-page';
-import { AdminAiChatMonitorPage } from './admin/admin-ai-chat-monitor-page';
-import { AdminProductCatalogPage } from './admin/admin-product-catalog-page';
-import { AdminNotificationsCenterPage } from './admin/admin-notifications-center-page';
 
 interface DashboardLayoutProps {
   onLogout: () => void;
 }
 
-export type DashboardPageType = 'dashboard' | 'analysis' | 'evolution' | 'routine' | 'chat' | 'subscription' | 'profile' | 'settings' | 'community' | 'meteo' | 'user-profile' | 'admin-overview' | 'admin-users' | 'admin-analysis' | 'admin-subscriptions' | 'admin-posts' | 'admin-churn' | 'admin-ai' | 'admin-products' | 'admin-notifications';
-
-const ADMIN_PAGES: DashboardPageType[] = [
-  'admin-overview',
-  'admin-users',
-  'admin-analysis',
-  'admin-subscriptions',
-  'admin-posts',
-  'admin-churn',
-  'admin-ai',
-  'admin-products',
-  'admin-notifications',
-];
+export type DashboardPageType = 'dashboard' | 'analysis' | 'evolution' | 'routine' | 'chat' | 'subscription' | 'profile' | 'settings' | 'community' | 'meteo' | 'user-profile';
 
 export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
-  const { user, roles } = useAuthStore();
-  const isAdminUser = roles.some(role =>
-    ['admin', 'ADMIN', 'realm-admin', 'super_admin', 'administrator'].includes(role)
-  );
-  const [currentPage, setCurrentPage] = useState<DashboardPageType>(isAdminUser ? 'admin-overview' : 'dashboard');
+  const [currentPage, setCurrentPage] = useState<DashboardPageType>('dashboard');
   const [viewedUserId, setViewedUserId] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showTour, setShowTour] = useState(false);
@@ -63,6 +38,7 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
   const [lastPaidPlan, setLastPaidPlan] = useState<Subscription['plan'] | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { connect, disconnect, fetchUnreadCount, addNotification } = useNotificationStore();
+  const { user, roles } = useAuthStore();
   const { t } = useAccessibilityStore();
 
   useEffect(() => {
@@ -76,23 +52,12 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
     const page = searchParams.get('page');
     if (!page) return;
 
-    const requestedPage = page as DashboardPageType;
-    if (isAdminUser) {
-      setCurrentPage(ADMIN_PAGES.includes(requestedPage) ? requestedPage : 'admin-overview');
-    } else {
-      setCurrentPage(requestedPage);
-    }
+    setCurrentPage(page as DashboardPageType);
 
     const next = new URLSearchParams(searchParams);
     next.delete('page');
     setSearchParams(next, { replace: true });
-  }, [searchParams, setSearchParams, isAdminUser]);
-
-  useEffect(() => {
-    if (isAdminUser && !ADMIN_PAGES.includes(currentPage)) {
-      setCurrentPage('admin-overview');
-    }
-  }, [isAdminUser, currentPage]);
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (user?.sub) {
@@ -209,34 +174,13 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
     setCurrentPage('user-profile');
   };
 
-  const isAdmin = isAdminUser;
+  // Check if user is admin
+  // We check for 'admin', 'ADMIN', 'realm-admin', or 'super_admin' to be safe
+  const isAdmin = roles.some(role =>
+    ['admin', 'ADMIN', 'realm-admin', 'super_admin', 'administrator'].includes(role)
+  );
 
   const renderPage = () => {
-    if (isAdmin) {
-      switch (currentPage) {
-        case 'admin-overview':
-          return <AdminOverviewPage />;
-        case 'admin-users':
-          return <AdminUserManagementPage />;
-        case 'admin-analysis':
-          return <AdminSkinAnalysisMonitorPage />;
-        case 'admin-subscriptions':
-          return <AdminSubscriptionManagementPage />;
-        case 'admin-posts':
-          return <AdminSocialFeedModerationPage />;
-        case 'admin-churn':
-          return <AdminChurnRetentionPage />;
-        case 'admin-ai':
-          return <AdminAiChatMonitorPage />;
-        case 'admin-products':
-          return <AdminProductCatalogPage />;
-        case 'admin-notifications':
-          return <AdminNotificationsCenterPage />;
-        default:
-          return <AdminOverviewPage />;
-      }
-    }
-
     const commonProps = { onBack: () => setCurrentPage('dashboard') };
     const premiumProps = { onUpgrade: () => setCurrentPage('subscription') };
     const settingsNavProps = { onNavigateToSettings: () => setCurrentPage('settings') };
@@ -364,7 +308,6 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
           onNavigate={handleNavigate}
           onLogout={onLogout}
           onToggleNotifications={() => setShowNotifications(!showNotifications)}
-          isAdmin={isAdmin}
         />
         <div className="flex-1 overflow-y-auto">
           {renderPage()}

@@ -12,31 +12,21 @@ import {
   Sparkles,
   LogOut,
   Users,
-  Bell,
-  ShieldCheck,
-  Activity,
-  Bot,
-  Package,
-  Megaphone
+  Bell
 } from 'lucide-react';
 import { useNotificationStore } from '../../../stores/notification.store';
-import { useAccessibilityStore } from '../../../stores/accessibility.store';
-import { getAdminLocale } from '../../../lib/i18n/admin-locale';
 
 interface SidebarProps {
   currentPage: string;
   onNavigate: (page: string) => void;
   onLogout?: () => void;
   onToggleNotifications?: () => void;
-  isAdmin?: boolean;
 }
 
-export function Sidebar({ currentPage, onNavigate, onLogout, onToggleNotifications, isAdmin }: SidebarProps) {
+export function Sidebar({ currentPage, onNavigate, onLogout, onToggleNotifications }: SidebarProps) {
   const { unreadCount } = useNotificationStore();
-  const { language } = useAccessibilityStore();
-  const adminLocale = getAdminLocale(language);
 
-  const userMenuItems = [
+  const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { id: 'analysis', label: 'Analysis', icon: <Scan className="w-5 h-5" /> },
     { id: 'evolution', label: 'Evolution', icon: <TrendingUp className="w-5 h-5" /> },
@@ -47,20 +37,6 @@ export function Sidebar({ currentPage, onNavigate, onLogout, onToggleNotificatio
     { id: 'profile', label: 'Profile', icon: <User className="w-5 h-5" /> },
     { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> }
   ];
-
-  const adminMenuItems = [
-    { id: 'admin-overview', label: adminLocale.sidebar.overview, icon: <LayoutDashboard className="w-5 h-5" /> },
-    { id: 'admin-users', label: adminLocale.sidebar.users, icon: <Users className="w-5 h-5" /> },
-    { id: 'admin-analysis', label: adminLocale.sidebar.skinAnalysis, icon: <Scan className="w-5 h-5" /> },
-    { id: 'admin-subscriptions', label: adminLocale.sidebar.subscriptions, icon: <CreditCard className="w-5 h-5" /> },
-    { id: 'admin-posts', label: adminLocale.sidebar.moderation, icon: <ShieldCheck className="w-5 h-5" /> },
-    { id: 'admin-churn', label: adminLocale.sidebar.churn, icon: <Activity className="w-5 h-5" /> },
-    { id: 'admin-ai', label: adminLocale.sidebar.aiChat, icon: <Bot className="w-5 h-5" /> },
-    { id: 'admin-products', label: adminLocale.sidebar.catalog, icon: <Package className="w-5 h-5" /> },
-    { id: 'admin-notifications', label: adminLocale.sidebar.notifications, icon: <Megaphone className="w-5 h-5" /> }
-  ];
-
-  const menuItems = isAdmin ? adminMenuItems : userMenuItems;
 
   return (
     <div className="w-64 h-screen bg-white border-r border-[#E5E7EB] flex flex-col">
@@ -108,7 +84,7 @@ export function Sidebar({ currentPage, onNavigate, onLogout, onToggleNotificatio
             className="w-full flex items-center gap-3 px-4 py-3 text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#0EA5E9] rounded-xl transition-all duration-200 relative"
           >
             <Bell className="w-5 h-5" />
-            <span className="font-medium">{isAdmin ? adminLocale.sidebar.notifications : 'Notifications'}</span>
+            <span className="font-medium">Notifications</span>
             {unreadCount > 0 && (
               <span className="ml-auto bg-[#EF4444] text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 {unreadCount > 9 ? '9+' : unreadCount}
@@ -126,7 +102,7 @@ export function Sidebar({ currentPage, onNavigate, onLogout, onToggleNotificatio
             className="w-full flex items-center gap-3 px-4 py-3 text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#EF4444] rounded-xl transition-all duration-200"
           >
             <LogOut className="w-5 h-5" />
-            <span className="font-medium">{isAdmin ? adminLocale.sidebar.logout : 'Logout'}</span>
+            <span className="font-medium">Logout</span>
           </button>
         </div>
       )}

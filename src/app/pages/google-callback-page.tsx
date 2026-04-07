@@ -7,8 +7,6 @@ import { Button } from '../components/button';
 import { authService } from '../../lib/services/auth.service';
 import toast from 'react-hot-toast';
 
-const ADMIN_ROLES = ['admin', 'ADMIN', 'realm-admin', 'super_admin', 'administrator'];
-
 export function GoogleCallbackPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -18,13 +16,6 @@ export function GoogleCallbackPage() {
   const [error, setError] = useState('');
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [isSubmitting2fa, setIsSubmitting2fa] = useState(false);
-
-  const resolvePostAuthPath = () => {
-    const roles = useAuthStore.getState().roles;
-    const isAdmin = roles.some(role => ADMIN_ROLES.includes(role));
-    const isNewUser = searchParams.get('isNewUser') === 'true';
-    return isAdmin ? '/dashboard' : (isNewUser ? '/onboarding' : '/dashboard');
-  };
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -56,9 +47,9 @@ export function GoogleCallbackPage() {
         await loadUser();
         setStatus('success');
 
-        const nextPath = resolvePostAuthPath();
+        const isNewUser = searchParams.get('isNewUser') === 'true';
         setTimeout(() => {
-          navigate(nextPath);
+          navigate(isNewUser ? '/onboarding' : '/dashboard');
         }, 1500);
       } catch {
         setStatus('error');
@@ -87,9 +78,9 @@ export function GoogleCallbackPage() {
       await loadUser();
       setStatus('success');
 
-      const nextPath = resolvePostAuthPath();
+      const isNewUser = searchParams.get('isNewUser') === 'true';
       setTimeout(() => {
-        navigate(nextPath);
+        navigate(isNewUser ? '/onboarding' : '/dashboard');
       }, 1500);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Code 2FA invalide');
