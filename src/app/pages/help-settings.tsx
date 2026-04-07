@@ -1,8 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, HelpCircle, Mail, MessageCircle, FileQuestion, ChevronDown, Sparkles } from 'lucide-react';
+import {
+  ArrowLeft,
+  HelpCircle,
+  Mail,
+  FileQuestion,
+  ChevronDown,
+  Sparkles,
+  MessageSquareWarning,
+  Send,
+  X,
+} from 'lucide-react';
 import { useAccessibilityStore } from '../../stores/accessibility.store';
+import { useAuthStore } from '../../stores/auth.store';
+import {
+  reclamationService,
+  type CreateReclamationPayload,
+} from '../../lib/services/reclamation.service';
+import toast from 'react-hot-toast';
 
 interface HelpSettingsProps {
   onBack: () => void;
@@ -10,8 +25,149 @@ interface HelpSettingsProps {
 
 export function HelpSettings({ onBack }: HelpSettingsProps) {
   const { t } = useAccessibilityStore();
-  const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [isReclamationModalOpen, setIsReclamationModalOpen] = useState(false);
+  const [isSubmittingReclamation, setIsSubmittingReclamation] = useState(false);
+
+  const [reclamationForm, setReclamationForm] = useState<CreateReclamationPayload>({
+    nom: user?.name || '',
+    email: user?.email || '',
+    type_reclamation: '',
+    description: '',
+  });
+
+  const [formErrors, setFormErrors] = useState<Partial<Record<keyof CreateReclamationPayload, string>>>({});
+
+  useEffect(() => {
+    if (!isReclamationModalOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const onEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isSubmittingReclamation) {
+        setIsReclamationModalOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', onEsc);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onEsc);
+    };
+  }, [isReclamationModalOpen, isSubmittingReclamation]);
+
+  useEffect(() => {
+    setReclamationForm((prev) => ({
+      ...prev,
+      nom: prev.nom || user?.name || '',
+      email: prev.email || user?.email || '',
+    }));
+  }, [user?.email, user?.name]);
+
+  const reclamationTypeOptions = [
+    'Problème abonnement',
+    'Problème paiement',
+    'Bug technique',
+    'Compte et connexion',
+    'Qualité de service',
+    'Autre',
+  ];
+
+  const descriptionLength = useMemo(
+    () => reclamationForm.description.trim().length,
+    [reclamationForm.description],
+  );
+
+  const validateReclamationForm = (): boolean => {
+    const errors: Partial<Record<keyof CreateReclamationPayload, string>> = {};
+
+    if (!reclamationForm.nom.trim()) {
+      errors.nom = 'Le nom est requis.';
+    }
+
+    if (!reclamationForm.email.trim()) {
+      errors.email = 'L\'email est requis.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(reclamationForm.email.trim())) {
+      errors.email = 'Adresse email invalide.';
+    }
+
+    if (!reclamationForm.type_reclamation.trim()) {
+      errors.type_reclamation = 'Veuillez choisir un type de réclamation.';
+    }
+
+    if (descriptionLength < 10) {
+      errors.description = 'La description doit contenir au moins 10 caractères.';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleReclamationFieldChange = (
+    field: keyof CreateReclamationPayload,
+    value: string,
+  ) => {
+    setReclamationForm((prev) => ({ ...prev, [field]: value }));
+    setFormErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  const resetReclamationForm = () => {
+    setReclamationForm({
+      nom: user?.name || '',
+      email: user?.email || '',
+      type_reclamation: '',
+      description: '',
+    });
+    setFormErrors({});
+  };
+
+  const closeReclamationModal = () => {
+    if (isSubmittingReclamation) {
+      return;
+    }
+    setIsReclamationModalOpen(false);
+  };
+
+  const handleReclamationSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+
+    if (!validateReclamationForm()) {
+      return;
+    }
+
+    setIsSubmittingReclamation(true);
+
+    try {
+      const response = await reclamationService.create({
+        nom: reclamationForm.nom.trim(),
+        email: reclamationForm.email.trim(),
+        type_reclamation: reclamationForm.type_reclamation,
+        description: reclamationForm.description.trim(),
+      });
+
+      toast.success(
+        response.id_reclamation
+          ? `Réclamation envoyée avec succès (#${response.id_reclamation}).`
+          : 'Réclamation envoyée avec succès.',
+      );
+
+      setIsReclamationModalOpen(false);
+      resetReclamationForm();
+    } catch {
+      toast.error(
+        'Impossible d\'envoyer votre réclamation pour le moment. Veuillez réessayer.',
+      );
+    } finally {
+      setIsSubmittingReclamation(false);
+    }
+  };
 
   const faqs = [
     {
@@ -105,26 +261,196 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
           </a>
         </motion.div>
 
-        {/* Coach IA */}
+        {/* Reclamation */}
         <motion.div 
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-3xl border border-[#E5E7EB] p-8 flex flex-col items-center text-center group transition-all hover:border-[#10B981]/30 hover:shadow-xl hover:shadow-emerald-500/5"
+          className="bg-white rounded-3xl border border-[#E5E7EB] p-8 flex flex-col items-center text-center group transition-all hover:border-[#F97316]/30 hover:shadow-xl hover:shadow-orange-500/5"
         >
-          <div className="w-20 h-20 rounded-2xl bg-[#10B981]/5 flex items-center justify-center mb-6 shadow-sm border border-[#10B981]/10 group-hover:scale-105 transition-transform duration-300">
-            <MessageCircle className="w-10 h-10 text-[#10B981]" />
+          <div className="w-20 h-20 rounded-2xl bg-[#F97316]/5 flex items-center justify-center mb-6 shadow-sm border border-[#F97316]/10 group-hover:scale-105 transition-transform duration-300">
+            <MessageSquareWarning className="w-10 h-10 text-[#F97316]" />
           </div>
-          <h3 className="text-lg font-bold text-[#111827] mb-2">Coach IA Personnel</h3>
-          <p className="text-sm text-[#6B7280] mb-8 leading-relaxed max-w-[200px]">Pour toute question sur votre routine, consultez notre IA spécialisée.</p>
+          <h3 className="text-lg font-bold text-[#111827] mb-2">Déposer une Réclamation</h3>
+          <p className="text-sm text-[#6B7280] mb-8 leading-relaxed max-w-[240px]">Signalez un problème lié à votre compte, paiement ou expérience. Notre équipe traite chaque demande rapidement.</p>
           <button
-            onClick={() => navigate('/dashboard')}
-            className="px-8 py-4 w-full bg-white border-2 border-[#E5E7EB] text-[#4B5563] font-bold rounded-2xl hover:bg-gray-50 hover:border-gray-300 transition-all text-sm uppercase tracking-widest shadow-sm"
+            onClick={() => setIsReclamationModalOpen(true)}
+            className="px-8 py-4 w-full bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white font-bold rounded-2xl hover:brightness-95 shadow-lg shadow-orange-500/25 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2"
           >
-            Aller vers Accueil
+            <Send className="w-4 h-4" />
+            Ouvrir le formulaire
           </button>
         </motion.div>
       </div>
+
+      {/* Reclamation Modal */}
+      <AnimatePresence>
+        {isReclamationModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
+            <button
+              type="button"
+              aria-label="Fermer le formulaire"
+              onClick={closeReclamationModal}
+              className="absolute inset-0 bg-[#0B1220]/55 backdrop-blur-sm"
+            />
+
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              initial={{ opacity: 0, y: 20, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.98 }}
+              transition={{ duration: 0.22 }}
+              className="relative z-10 w-full max-w-2xl rounded-3xl border border-[#E5E7EB] bg-white shadow-2xl overflow-hidden"
+            >
+              <div className="bg-gradient-to-r from-[#F97316] to-[#FB7185] px-6 sm:px-8 py-6 text-white">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">Formulaire de Réclamation</h3>
+                    <p className="text-sm text-white/85 mt-1">Décrivez votre problème, nous revenons vers vous dans les meilleurs délais.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeReclamationModal}
+                    className="w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 transition-colors flex items-center justify-center"
+                    aria-label="Fermer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              <form onSubmit={handleReclamationSubmit} className="p-6 sm:p-8 space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="reclamation-nom" className="block text-sm font-semibold text-[#111827] mb-1.5">
+                      Nom
+                    </label>
+                    <input
+                      id="reclamation-nom"
+                      type="text"
+                      value={reclamationForm.nom}
+                      onChange={(event) =>
+                        handleReclamationFieldChange('nom', event.target.value)
+                      }
+                      placeholder="Votre nom complet"
+                      className="w-full h-11 rounded-xl border border-[#D1D5DB] px-3.5 text-sm outline-none focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/15 transition-all"
+                    />
+                    {formErrors.nom && (
+                      <p className="mt-1.5 text-xs text-[#DC2626]">{formErrors.nom}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="reclamation-email" className="block text-sm font-semibold text-[#111827] mb-1.5">
+                      Email
+                    </label>
+                    <input
+                      id="reclamation-email"
+                      type="email"
+                      value={reclamationForm.email}
+                      onChange={(event) =>
+                        handleReclamationFieldChange('email', event.target.value)
+                      }
+                      placeholder="votre@email.com"
+                      className="w-full h-11 rounded-xl border border-[#D1D5DB] px-3.5 text-sm outline-none focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/15 transition-all"
+                    />
+                    {formErrors.email && (
+                      <p className="mt-1.5 text-xs text-[#DC2626]">{formErrors.email}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="reclamation-type" className="block text-sm font-semibold text-[#111827] mb-1.5">
+                    Type de réclamation
+                  </label>
+                  <select
+                    id="reclamation-type"
+                    value={reclamationForm.type_reclamation}
+                    onChange={(event) =>
+                      handleReclamationFieldChange(
+                        'type_reclamation',
+                        event.target.value,
+                      )
+                    }
+                    className="w-full h-11 rounded-xl border border-[#D1D5DB] px-3.5 text-sm outline-none focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/15 transition-all bg-white"
+                  >
+                    <option value="">Sélectionnez un type</option>
+                    {reclamationTypeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  {formErrors.type_reclamation && (
+                    <p className="mt-1.5 text-xs text-[#DC2626]">{formErrors.type_reclamation}</p>
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label htmlFor="reclamation-description" className="block text-sm font-semibold text-[#111827]">
+                      Description
+                    </label>
+                    <span className={`text-xs font-medium ${descriptionLength < 10 ? 'text-[#D97706]' : 'text-[#6B7280]'}`}>
+                      {descriptionLength}/2000
+                    </span>
+                  </div>
+                  <textarea
+                    id="reclamation-description"
+                    value={reclamationForm.description}
+                    onChange={(event) =>
+                      handleReclamationFieldChange(
+                        'description',
+                        event.target.value.slice(0, 2000),
+                      )
+                    }
+                    rows={6}
+                    placeholder="Expliquez clairement le problème rencontré (étapes, captures, contexte...)."
+                    className="w-full rounded-xl border border-[#D1D5DB] px-3.5 py-3 text-sm outline-none focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/15 transition-all resize-y min-h-[140px]"
+                  />
+                  {formErrors.description && (
+                    <p className="mt-1.5 text-xs text-[#DC2626]">{formErrors.description}</p>
+                  )}
+                </div>
+
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={closeReclamationModal}
+                    className="h-11 px-5 rounded-xl border border-[#D1D5DB] text-[#4B5563] hover:bg-[#F9FAFB] font-semibold transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingReclamation}
+                    className="h-11 px-5 rounded-xl bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white font-semibold shadow-lg shadow-orange-500/25 hover:brightness-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isSubmittingReclamation ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Envoyer la réclamation
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* FAQs */}
       <motion.div

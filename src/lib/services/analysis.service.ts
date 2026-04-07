@@ -1,4 +1,5 @@
 import apiClient from '../api-client';
+import { digitalTwinService } from './digital-twin.service';
 import type {
   Analysis,
   AnalysisStats,
@@ -23,12 +24,34 @@ export const analysisService = {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 120_000,
     });
+    
+    // Auto-capture pour Digital Twin
+    if (res.data?.id) {
+      try {
+        // Refresh Digital Twin data après auto-capture
+        await digitalTwinService.getSkinJourney();
+      } catch (error) {
+        console.warn('Failed to refresh twin after analysis:', error);
+        // N'interrompt pas le flow principal
+      }
+    }
+    
     return res.data;
   },
 
   /** Create analysis from existing image URLs */
   async createFromUrls(imageUrls: string[]): Promise<Analysis> {
     const res = await apiClient.post<Analysis>('/analyses', { images: imageUrls });
+    
+    // Auto-capture pour Digital Twin
+    if (res.data?.id) {
+      try {
+        await digitalTwinService.getSkinJourney();
+      } catch (error) {
+        console.warn('Failed to refresh twin after analysis:', error);
+      }
+    }
+    
     return res.data;
   },
 
@@ -37,6 +60,10 @@ export const analysisService = {
     const res = await apiClient.post<GeminiAnalysisResult>('/analyses/scan', dto, {
       timeout: 120_000,
     });
+    
+    // Note: L'auto-capture est déjà gérée côté backend pour le scan
+    // Le backend crée automatiquement un snapshot après chaque scan
+    
     return res.data;
   },
 
@@ -84,6 +111,16 @@ export const analysisService = {
   /** Retry a failed analysis */
   async retry(id: string): Promise<Analysis> {
     const res = await apiClient.post<Analysis>(`/analyses/${id}/retry`);
+    
+    // Auto-capture pour Digital Twin
+    if (res.data?.id) {
+      try {
+        await digitalTwinService.getSkinJourney();
+      } catch (error) {
+        console.warn('Failed to refresh twin after retry:', error);
+      }
+    }
+    
     return res.data;
   },
 

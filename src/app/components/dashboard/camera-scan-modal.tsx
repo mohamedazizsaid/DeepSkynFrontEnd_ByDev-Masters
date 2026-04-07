@@ -1,11 +1,33 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Camera, X, Loader2, RotateCcw, Save, Sparkles, AlertCircle, Lock, Crown, ShieldCheck, ShieldX, UserCheck } from 'lucide-react';
+import { Camera, X, Loader2, RotateCcw, Save, Sparkles, AlertCircle, Lock, Crown, ShieldCheck, ShieldX, UserCheck, Droplets, Sun, Wind, Scan, Activity, Eye, Zap, CircleDot, Frown, TrendingDown, Flame } from 'lucide-react';
 import { analysisService } from '../../../lib/services/analysis.service';
 import { extractDetailedScores } from '../../../lib/analysis-helpers';
 import { useFaceVerification } from '../../../lib/hooks/useFaceVerification';
 import type { GeminiAnalysisResult } from '../../../lib/types';
 import toast from 'react-hot-toast';
+
+// Types for real-time analysis annotations (scores)
+interface AnalysisAnnotation {
+  id: string;
+  label: string;
+  value: string;
+  position: { x: number; y: number };
+  icon: React.ReactNode;
+  color: string;
+}
+
+// Types for skin issue markers (problems detected)
+interface SkinIssueMarker {
+  id: string;
+  label: string;
+  severity: 'low' | 'medium' | 'high';
+  position: { x: number; y: number };
+  description: string;
+  recommendation?: string;
+  icon: React.ReactNode;
+  category: 'acne' | 'wrinkles' | 'pigmentation' | 'redness' | 'pores' | 'texture';
+}
 
 // Add global styles for hidden scrollbar
 const scrollbarHideStyle = `
@@ -37,7 +59,7 @@ interface CameraScanModalProps {
   onNavigateToSettings?: () => void;
 }
 
-type ScanPhase = 'camera' | 'verifying' | 'verification_failed' | 'scanning' | 'results';
+type ScanPhase = 'camera' | 'verifying' | 'verification_failed' | 'analyzing' | 'results';
 
 export function CameraScanModal({
   open,
@@ -58,6 +80,12 @@ export function CameraScanModal({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [verificationMessage, setVerificationMessage] = useState<string>('');
   const [localVerificationResult, setLocalVerificationResult] = useState<{ needsProfilePhoto: boolean } | null>(null);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [visibleAnnotations, setVisibleAnnotations] = useState<AnalysisAnnotation[]>([]);
+  const [visibleIssues, setVisibleIssues] = useState<SkinIssueMarker[]>([]);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [currentAnalysisText, setCurrentAnalysisText] = useState<string>('');
+  const [showFinalScore, setShowFinalScore] = useState(false);
 
   // Face verification hook
   const {
@@ -109,6 +137,268 @@ export function CameraScanModal({
     return () => stopCamera();
   }, [open, startCamera, stopCamera, resetVerification]);
 
+  // Generate annotations based on analysis result
+  const generateAnnotations = useCallback((result: GeminiAnalysisResult): AnalysisAnnotation[] => {
+    const annotations: AnalysisAnnotation[] = [];
+    const da = result.detailedAnalysis;
+    
+    // Hydration - cheeks area
+    if (da?.hydration?.score !== undefined) {
+      annotations.push({
+        id: 'hydration',
+        label: 'Hydratation',
+        value: `${da.hydration.score}%`,
+        position: { x: 15, y: 45 },
+        icon: <Droplets className="w-3 h-3" />,
+        color: da.hydration.score >= 70 ? '#10B981' : da.hydration.score >= 50 ? '#F59E0B' : '#EF4444',
+      });
+    }
+
+    // Elasticity - forehead
+    if (da?.elasticity?.score !== undefined) {
+      annotations.push({
+        id: 'elasticity',
+        label: 'Élasticité',
+        value: `${da.elasticity.score}%`,
+        position: { x: 50, y: 12 },
+        icon: <Zap className="w-3 h-3" />,
+        color: da.elasticity.score >= 70 ? '#10B981' : da.elasticity.score >= 50 ? '#F59E0B' : '#EF4444',
+      });
+    }
+
+    // Texture - side of face
+    if (da?.texture?.score !== undefined) {
+      annotations.push({
+        id: 'texture',
+        label: 'Texture',
+        value: `${da.texture.score}%`,
+        position: { x: 85, y: 35 },
+        icon: <Scan className="w-3 h-3" />,
+        color: da.texture.score >= 70 ? '#10B981' : da.texture.score >= 50 ? '#F59E0B' : '#EF4444',
+      });
+    }
+
+    // Pores - nose area
+    if (da?.pores?.score !== undefined) {
+      annotations.push({
+        id: 'pores',
+        label: 'Pores',
+        value: `${da.pores.score}%`,
+        position: { x: 50, y: 48 },
+        icon: <Eye className="w-3 h-3" />,
+        color: da.pores.score >= 70 ? '#10B981' : da.pores.score >= 50 ? '#F59E0B' : '#EF4444',
+      });
+    }
+
+    // Pigmentation - other cheek
+    if (da?.pigmentation?.score !== undefined) {
+      annotations.push({
+        id: 'pigmentation',
+        label: 'Pigmentation',
+        value: `${da.pigmentation.score}%`,
+        position: { x: 82, y: 55 },
+        icon: <Sun className="w-3 h-3" />,
+        color: da.pigmentation.score >= 70 ? '#10B981' : da.pigmentation.score >= 50 ? '#F59E0B' : '#EF4444',
+      });
+    }
+
+    // Redness - lower cheeks
+    if (da?.redness?.score !== undefined) {
+      annotations.push({
+        id: 'redness',
+        label: 'Rougeurs',
+        value: `${da.redness.score}%`,
+        position: { x: 18, y: 60 },
+        icon: <Wind className="w-3 h-3" />,
+        color: da.redness.score >= 70 ? '#10B981' : da.redness.score >= 50 ? '#F59E0B' : '#EF4444',
+      });
+    }
+
+    // Health Score - center bottom
+    annotations.push({
+      id: 'healthScore',
+      label: 'Score Santé',
+      value: `${result.healthScore}/100`,
+      position: { x: 50, y: 88 },
+      icon: <Activity className="w-3 h-3" />,
+      color: result.healthScore >= 70 ? '#10B981' : result.healthScore >= 50 ? '#F59E0B' : '#EF4444',
+    });
+
+    return annotations;
+  }, []);
+
+  // Generate skin issue markers based on analysis result
+  const generateIssueMarkers = useCallback((result: GeminiAnalysisResult): SkinIssueMarker[] => {
+    const issues: SkinIssueMarker[] = [];
+    const da = result.detailedAnalysis;
+
+    // Acne detection - multiple spots if severe
+    if (da?.acne && da.acne.score < 70) {
+      const severity = da.acne.score < 40 ? 'high' : da.acne.score < 60 ? 'medium' : 'low';
+      const recommendations = {
+        high: 'Consultez un dermatologue. Utilisez des soins anti-acnéiques quotidiens.',
+        medium: 'Nettoyage doux matin/soir. Évitez les produits comédogènes.',
+        low: 'Maintenez une routine douce. Hydratation légère non-comédogène.'
+      };
+      
+      issues.push({
+        id: 'acne-left',
+        label: 'Acné',
+        severity,
+        category: 'acne',
+        position: { x: 25, y: 52 },
+        description: da.acne.description || 'Lésions inflammatoires localisées',
+        recommendation: recommendations[severity],
+        icon: <CircleDot className="w-3 h-3" />,
+      });
+      
+      if (da.acne.score < 50) {
+        issues.push({
+          id: 'acne-right',
+          label: 'Acné',
+          severity,
+          category: 'acne',
+          position: { x: 75, y: 48 },
+          description: 'Extension bilatérale des lésions',
+          recommendation: 'Zone nécessitant une attention particulière',
+          icon: <CircleDot className="w-3 h-3" />,
+        });
+      }
+    }
+
+    // Wrinkles detection - forehead and eye area
+    if (da?.wrinkles && da.wrinkles.score < 70) {
+      const severity = da.wrinkles.score < 40 ? 'high' : da.wrinkles.score < 60 ? 'medium' : 'low';
+      const recommendations = {
+        high: 'Soins anti-âge intensifs. Rétinol et peptides recommandés.',
+        medium: 'Crème anti-rides quotidienne. Protection solaire essentielle.',
+        low: 'Prévention avec hydratation et protection UV.'
+      };
+
+      issues.push({
+        id: 'wrinkles-forehead',
+        label: 'Rides d\'expression',
+        severity,
+        category: 'wrinkles',
+        position: { x: 50, y: 20 },
+        description: da.wrinkles.description || 'Sillons marqués du front',
+        recommendation: recommendations[severity],
+        icon: <TrendingDown className="w-3 h-3" />,
+      });
+      
+      if (da.wrinkles.score < 50) {
+        issues.push({
+          id: 'wrinkles-eyes',
+          label: 'Ridules péri-oculaires',
+          severity,
+          category: 'wrinkles',
+          position: { x: 78, y: 42 },
+          description: 'Pattes d\'oie marquées',
+          recommendation: 'Contour des yeux spécialisé recommandé',
+          icon: <TrendingDown className="w-3 h-3" />,
+        });
+      }
+    }
+
+    // Redness/Rosacea detection
+    if (da?.redness && da.redness.score < 60) {
+      const severity = da.redness.score < 30 ? 'high' : da.redness.score < 50 ? 'medium' : 'low';
+      const recommendations = {
+        high: 'Consultez pour exclure rosacée. Soins apaisants stricts.',
+        medium: 'Produits hypoallergéniques. Évitez les irritants.',
+        low: 'Nettoyage doux. Eau thermale apaisante.'
+      };
+
+      issues.push({
+        id: 'redness-cheeks',
+        label: 'Érythème facial',
+        severity,
+        category: 'redness',
+        position: { x: 30, y: 58 },
+        description: da.redness.description || 'Rougeurs diffuses des joues',
+        recommendation: recommendations[severity],
+        icon: <Flame className="w-3 h-3" />,
+      });
+    }
+
+    // Pores - nose and cheeks
+    if (da?.pores && da.pores.score < 50) {
+      const severity = da.pores.score < 30 ? 'high' : da.pores.score < 45 ? 'medium' : 'low';
+      const recommendations = {
+        high: 'Nettoyage profond hebdomadaire. Acide salicylique.',
+        medium: 'Exfoliation douce 2x/semaine. Niacinamide.',
+        low: 'Nettoyage quotidien adapté. Hydratation équilibrée.'
+      };
+
+      issues.push({
+        id: 'pores-nose',
+        label: 'Pores dilatés',
+        severity,
+        category: 'pores',
+        position: { x: 52, y: 55 },
+        description: da.pores.description || 'Pores visibles zone médiane',
+        recommendation: recommendations[severity],
+        icon: <Eye className="w-3 h-3" />,
+      });
+    }
+
+    // Pigmentation issues
+    if (da?.pigmentation && da.pigmentation.score < 60) {
+      const severity = da.pigmentation.score < 35 ? 'high' : da.pigmentation.score < 50 ? 'medium' : 'low';
+      const recommendations = {
+        high: 'Soins dépigmentants. Protection solaire maximale SPF 50+.',
+        medium: 'Vitamine C + protection UV quotidienne.',
+        low: 'Prévention UV. Antioxydants recommandés.'
+      };
+
+      issues.push({
+        id: 'pigmentation-cheek',
+        label: 'Hyperpigmentation',
+        severity,
+        category: 'pigmentation',
+        position: { x: 70, y: 55 },
+        description: da.pigmentation.description || 'Taches pigmentaires localisées',
+        recommendation: recommendations[severity],
+        icon: <Sun className="w-3 h-3" />,
+      });
+    }
+
+    // Texture irregularities
+    if (da?.texture && da.texture.score < 50) {
+      const severity = da.texture.score < 30 ? 'high' : da.texture.score < 45 ? 'medium' : 'low';
+      const recommendations = {
+        high: 'Peeling professionnel. Soins restructurants.',
+        medium: 'Exfoliation chimique douce. Sérums lissants.',
+        low: 'Hydratation optimale. Soins texturisants.'
+      };
+
+      issues.push({
+        id: 'texture-skin',
+        label: 'Irrégularités texture',
+        severity,
+        category: 'texture',
+        position: { x: 85, y: 45 },
+        description: 'Surface cutanée irrégulière',
+        recommendation: recommendations[severity],
+        icon: <Scan className="w-3 h-3" />,
+      });
+    }
+
+    return issues;
+  }, []);
+
+  // Analysis text messages that appear during analysis
+  const analysisMessages = [
+    "Analyse de l'hydratation en cours...",
+    "Détection de la texture de peau...",
+    "Évaluation des pores...",
+    "Analyse de l'élasticité...",
+    "Mesure de l'éclat cutané...",
+    "Vérification des dommages UV...",
+    "Calcul du score de santé global...",
+    "Finalisation de l'analyse...",
+  ];
+
   // ─── Face Verification + Capture + Scan ───
   const captureAndScan = async () => {
     const video = videoRef.current;
@@ -121,6 +411,10 @@ export function CameraScanModal({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.drawImage(video, 0, 0);
+
+    // Capture the image for display during analysis
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    setCapturedImage(dataUrl);
 
     // Step 1: Face Verification
     if (isModelLoaded) {
@@ -149,23 +443,77 @@ export function CameraScanModal({
     }
 
     // Step 2: Proceed with skin analysis
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
     const base64 = dataUrl.split(',')[1];
 
     stopCamera();
-    setPhase('scanning');
+    setPhase('analyzing');
+    setVisibleAnnotations([]);
+    setVisibleIssues([]);
+    setShowFinalScore(false);
+    setAnalysisProgress(0);
+    setCurrentAnalysisText(analysisMessages[0]);
 
+    // Start the analysis
     try {
+      // Start progressive text animation
+      let messageIndex = 0;
+      const textInterval = setInterval(() => {
+        messageIndex = (messageIndex + 1) % analysisMessages.length;
+        setCurrentAnalysisText(analysisMessages[messageIndex]);
+        setAnalysisProgress(prev => Math.min(prev + 12, 95));
+      }, 800);
+
       const scanResult = await analysisService.scan({
         image: base64,
         mimeType: 'image/jpeg',
         saveAnalysis: false,
       });
+
+      clearInterval(textInterval);
       setResult(scanResult);
+
+      // Phase 1: Show score annotations progressively
+      const annotations = generateAnnotations(scanResult);
+      setAnalysisProgress(100);
+      setCurrentAnalysisText("Détection des métriques...");
+
+      // Show score annotations one by one (excluding healthScore for now)
+      const scoreAnnotations = annotations.filter(a => a.id !== 'healthScore');
+      for (let i = 0; i < scoreAnnotations.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 350));
+        setVisibleAnnotations(prev => [...prev, scoreAnnotations[i]]);
+      }
+
+      // Phase 2: Show skin issues/problems
+      await new Promise(resolve => setTimeout(resolve, 600));
+      setCurrentAnalysisText("Détection des problèmes cutanés...");
+      
+      const issues = generateIssueMarkers(scanResult);
+      for (let i = 0; i < issues.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 450));
+        setVisibleIssues(prev => [...prev, issues[i]]);
+      }
+
+      // Phase 3: Show final health score with emphasis
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setCurrentAnalysisText("Calcul du score final...");
+      
+      const healthScoreAnnotation = annotations.find(a => a.id === 'healthScore');
+      if (healthScoreAnnotation) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setVisibleAnnotations(prev => [...prev, healthScoreAnnotation]);
+        setShowFinalScore(true);
+      }
+
+      setCurrentAnalysisText("Analyse terminée !");
+
+      // Delay before showing full results
+      await new Promise(resolve => setTimeout(resolve, 1500));
       setPhase('results');
     } catch {
       toast.error('Scan failed. Please try again.');
       setPhase('camera');
+      setCapturedImage(null);
       startCamera();
     }
   };
@@ -200,6 +548,10 @@ export function CameraScanModal({
   // ─── Retake ───
   const retake = () => {
     setResult(null);
+    setCapturedImage(null);
+    setVisibleAnnotations([]);
+    setAnalysisProgress(0);
+    setCurrentAnalysisText('');
     setPhase('camera');
     startCamera();
   };
@@ -272,7 +624,7 @@ export function CameraScanModal({
 
           <div className="p-8">
             {/* Header */}
-            {(phase === 'camera' || phase === 'scanning' || phase === 'verifying') && (
+            {(phase === 'camera' || phase === 'verifying') && (
               <div className="flex items-center gap-3 mb-8">
                 <div
                   className="p-2.5 rounded-2xl flex-shrink-0"
@@ -290,7 +642,6 @@ export function CameraScanModal({
                   <p className="text-gray-500 text-xs mt-0.5">
                     {phase === 'camera' && 'Position your face in the frame'}
                     {phase === 'verifying' && 'Vérification de votre identité...'}
-                    {phase === 'scanning' && 'AI is analyzing your skin...'}
                   </p>
                 </div>
               </div>
@@ -358,53 +709,328 @@ export function CameraScanModal({
               </motion.div>
             )}
 
-            {/* Scanning */}
-            {phase === 'scanning' && (
+            {/* Real-time Analysis with Annotations on Face */}
+            {phase === 'analyzing' && capturedImage && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center py-20"
+                className="space-y-4"
               >
-                <motion.div
-                  className="relative w-20 h-20 mx-auto mb-5"
-                >
-                  {/* Spinning outer ring */}
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-                    className="absolute inset-0 rounded-full"
+                {/* Header for analyzing phase */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div
+                    className="p-2.5 rounded-2xl flex-shrink-0"
                     style={{
-                      border: '3px solid transparent',
-                      borderTopColor: '#0EA5E9',
-                      borderRightColor: '#8B5CF6',
+                      background: 'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(236,72,153,0.1))',
+                      border: '1px solid rgba(139,92,246,0.2)',
+                    }}
+                  >
+                    <Sparkles className="w-6 h-6 text-[#8B5CF6]" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-gray-900 font-bold text-xl leading-tight">
+                      Analyse en cours
+                    </h3>
+                    <p className="text-gray-500 text-xs mt-0.5">
+                      {currentAnalysisText}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-4">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-[#0EA5E9] via-[#8B5CF6] to-[#EC4899]"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${analysisProgress}%` }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+
+                {/* Image with annotations overlay */}
+                <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-video bg-black">
+                  <img
+                    src={capturedImage}
+                    alt="Captured face"
+                    className="w-full h-full object-cover"
+                    style={{ transform: 'scaleX(-1)' }}
+                  />
+                  
+                  {/* Scanning effect overlay */}
+                  <motion.div
+                    className="absolute inset-0 pointer-events-none"
+                    initial={{ opacity: 0.3 }}
+                    animate={{ opacity: [0.1, 0.3, 0.1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    style={{
+                      background: 'linear-gradient(180deg, transparent 0%, rgba(14,165,233,0.1) 50%, transparent 100%)',
                     }}
                   />
-                  {/* Inner icon */}
-                  <div className="absolute inset-0 flex items-center justify-center">
+                  
+                  {/* Scanning line effect */}
+                  <motion.div
+                    className="absolute left-0 right-0 h-1 pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(90deg, transparent, #0EA5E9, #8B5CF6, transparent)',
+                      boxShadow: '0 0 20px rgba(14,165,233,0.5)',
+                    }}
+                    animate={{ top: ['0%', '100%', '0%'] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                  />
+
+                  {/* Annotations */}
+                  <AnimatePresence>
+                    {visibleAnnotations.map((annotation) => (
+                      <motion.div
+                        key={annotation.id}
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                        className="absolute z-10"
+                        style={{
+                          left: `${annotation.position.x}%`,
+                          top: `${annotation.position.y}%`,
+                          transform: 'translate(-50%, -50%)',
+                        }}
+                      >
+                        {/* Connector line */}
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: 30 }}
+                          className="absolute top-1/2 -translate-y-1/2 h-px"
+                          style={{
+                            right: '100%',
+                            background: `linear-gradient(90deg, transparent, ${annotation.color})`,
+                          }}
+                        />
+                        
+                        {/* Annotation badge */}
+                        <motion.div
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-lg shadow-lg whitespace-nowrap"
+                          style={{
+                            backgroundColor: 'rgba(255,255,255,0.95)',
+                            backdropFilter: 'blur(8px)',
+                            border: `1px solid ${annotation.color}30`,
+                          }}
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          <div
+                            className="p-1 rounded"
+                            style={{ backgroundColor: `${annotation.color}20` }}
+                          >
+                            <span style={{ color: annotation.color }}>{annotation.icon}</span>
+                          </div>
+                          <div className="text-left">
+                            <p className="text-[9px] text-gray-500 leading-tight">{annotation.label}</p>
+                            <p className="text-xs font-bold" style={{ color: annotation.color }}>
+                              {annotation.value}
+                            </p>
+                          </div>
+                        </motion.div>
+
+                        {/* Pulsing dot at annotation point */}
+                        <motion.div
+                          className="absolute w-3 h-3 rounded-full"
+                          style={{
+                            backgroundColor: annotation.color,
+                            left: -35,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                          }}
+                          animate={{
+                            scale: [1, 1.5, 1],
+                            opacity: [1, 0.5, 1],
+                          }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+
+                  {/* Skin Issue Markers (Acne, Wrinkles, etc.) */}
+                  <AnimatePresence>
+                    {visibleIssues.map((issue) => {
+                      const severityColors = {
+                        low: { bg: '#FEF3C7', border: '#F59E0B', text: '#D97706', dot: '#F59E0B' },
+                        medium: { bg: '#FED7AA', border: '#EA580C', text: '#C2410C', dot: '#EA580C' },
+                        high: { bg: '#FECACA', border: '#DC2626', text: '#B91C1C', dot: '#DC2626' },
+                      };
+                      const colors = severityColors[issue.severity];
+                      
+                      return (
+                        <motion.div
+                          key={issue.id}
+                          initial={{ opacity: 0, scale: 0, rotate: -10 }}
+                          animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                          exit={{ opacity: 0, scale: 0 }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                          className="absolute z-20"
+                          style={{
+                            left: `${issue.position.x}%`,
+                            top: `${issue.position.y}%`,
+                            transform: 'translate(-50%, -50%)',
+                          }}
+                        >
+                          {/* Pulsing ring effect for issues */}
+                          <motion.div
+                            className="absolute inset-0 rounded-full"
+                            style={{
+                              backgroundColor: `${colors.dot}20`,
+                              width: 40,
+                              height: 40,
+                              left: -20,
+                              top: -20,
+                            }}
+                            animate={{
+                              scale: [1, 1.8, 1],
+                              opacity: [0.6, 0, 0.6],
+                            }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          />
+                          
+                          {/* Issue marker dot */}
+                          <motion.div
+                            className="relative flex items-center justify-center"
+                            style={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: '50%',
+                              backgroundColor: colors.bg,
+                              border: `2px solid ${colors.border}`,
+                              boxShadow: `0 0 12px ${colors.dot}60`,
+                            }}
+                            whileHover={{ scale: 1.2 }}
+                          >
+                            <span style={{ color: colors.text }}>{issue.icon}</span>
+                          </motion.div>
+                          
+                          {/* Issue label tooltip */}
+                          <motion.div
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="absolute top-full left-1/2 -translate-x-1/2 mt-1 whitespace-nowrap"
+                          >
+                            <div
+                              className="px-2 py-1 rounded-md text-[10px] font-semibold shadow-lg"
+                              style={{
+                                backgroundColor: 'rgba(0,0,0,0.85)',
+                                color: 'white',
+                                backdropFilter: 'blur(4px)',
+                              }}
+                            >
+                              {issue.label}
+                              <span 
+                                className="ml-1 px-1 rounded text-[8px]"
+                                style={{ 
+                                  backgroundColor: colors.dot,
+                                  color: 'white',
+                                }}
+                              >
+                                {issue.severity === 'high' ? '!!!' : issue.severity === 'medium' ? '!!' : '!'}
+                              </span>
+                            </div>
+                            {/* Tooltip arrow */}
+                            <div
+                              className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45"
+                              style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+                            />
+                          </motion.div>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+
+                  {/* Final Score Highlight Effect */}
+                  {showFinalScore && result && (
                     <motion.div
-                      animate={{ scale: [1, 1.15, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30"
                     >
-                      <Sparkles className="w-8 h-8 text-[#0EA5E9]" />
+                      <motion.div
+                        className="px-6 py-3 rounded-2xl shadow-2xl"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(255,255,255,0.98), rgba(255,255,255,0.95))',
+                          backdropFilter: 'blur(12px)',
+                          border: result.healthScore >= 70 
+                            ? '2px solid rgba(16,185,129,0.5)' 
+                            : result.healthScore >= 50 
+                              ? '2px solid rgba(245,158,11,0.5)' 
+                              : '2px solid rgba(239,68,68,0.5)',
+                        }}
+                        animate={{
+                          boxShadow: [
+                            '0 10px 40px rgba(139,92,246,0.3)',
+                            '0 10px 60px rgba(14,165,233,0.4)',
+                            '0 10px 40px rgba(139,92,246,0.3)',
+                          ],
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <motion.div
+                            animate={{ rotate: [0, 10, -10, 0] }}
+                            transition={{ duration: 0.5, delay: 0.3 }}
+                          >
+                            <Activity 
+                              className="w-6 h-6" 
+                              style={{ 
+                                color: result.healthScore >= 70 ? '#10B981' : result.healthScore >= 50 ? '#F59E0B' : '#EF4444' 
+                              }} 
+                            />
+                          </motion.div>
+                          <div className="text-center">
+                            <p className="text-xs text-gray-500 font-medium">Score de Santé</p>
+                            <motion.p
+                              className="text-2xl font-black"
+                              style={{
+                                color: result.healthScore >= 70 ? '#10B981' : result.healthScore >= 50 ? '#F59E0B' : '#EF4444',
+                              }}
+                              initial={{ scale: 0 }}
+                              animate={{ scale: [0, 1.2, 1] }}
+                              transition={{ delay: 0.2, duration: 0.5 }}
+                            >
+                              {result.healthScore}/100
+                            </motion.p>
+                          </div>
+                          <Sparkles 
+                            className="w-5 h-5 text-[#8B5CF6]" 
+                            style={{ opacity: result.healthScore >= 70 ? 1 : 0.3 }} 
+                          />
+                        </div>
+                      </motion.div>
                     </motion.div>
-                  </div>
-                </motion.div>
-                <p className="text-gray-900 font-semibold text-lg mb-1">
-                  Analyzing your skin...
-                </p>
-                <p className="text-gray-500 text-sm">
-                  Our AI is examining hydration, texture, pores, and more
-                </p>
-                <div className="flex justify-center gap-1.5 mt-5">
-                  {[0, 1, 2, 3, 4].map((i) => (
+                  )}
+
+                  {/* Center face guide (subtle) */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <motion.div
-                      key={i}
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: '#0EA5E9' }}
-                      animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }}
-                      transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.15 }}
+                      className="w-40 h-56 border border-white/20 rounded-full"
+                      animate={{ opacity: [0.2, 0.4, 0.2] }}
+                      transition={{ duration: 2, repeat: Infinity }}
                     />
-                  ))}
+                  </div>
+                </div>
+
+                {/* Analysis status text */}
+                <div className="text-center">
+                  <div className="flex justify-center gap-1.5 mt-2">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <motion.div
+                        key={i}
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: '#8B5CF6' }}
+                        animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }}
+                        transition={{ duration: 1, repeat: Infinity, delay: i * 0.1 }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {visibleAnnotations.length > 0 
+                      ? `${visibleAnnotations.length} zones analysées`
+                      : 'Initialisation de l\'analyse...'}
+                  </p>
                 </div>
               </motion.div>
             )}
