@@ -5,11 +5,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../ui/dialog';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Separator } from '../ui/separator';
+} from '../app/components/ui/dialog';
+import { Button } from '../app/components/ui/button';
+import { Badge } from '../app/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../app/components/ui/tabs';
+import { Separator } from '../app/components/ui/separator';
 import { RoutineResultsPreview } from './RoutineResultsPreview';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -60,9 +60,9 @@ export const PredictiveRoutineModal: React.FC<PredictiveRoutineModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden px-4 sm:px-6">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <DialogTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-blue-600" />
               Votre Routine 7 Jours Personnalisée
@@ -82,8 +82,8 @@ export const PredictiveRoutineModal: React.FC<PredictiveRoutineModalProps> = ({
           </div>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full overflow-x-hidden">
+          <TabsList className="grid w-full grid-cols-3 gap-2">
             <TabsTrigger value="preview" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Résultats Attendus
@@ -98,7 +98,7 @@ export const PredictiveRoutineModal: React.FC<PredictiveRoutineModalProps> = ({
             </TabsTrigger>
           </TabsList>
 
-          <div className="mt-6">
+          <div className="mt-6 overflow-x-hidden">
             <AnimatePresence mode="wait">
               <TabsContent value="preview" className="mt-0">
                 <motion.div
@@ -116,15 +116,15 @@ export const PredictiveRoutineModal: React.FC<PredictiveRoutineModalProps> = ({
                 </motion.div>
               </TabsContent>
 
-              <TabsContent value="routine" className="mt-0">
+              <TabsContent value="routine" className="mt-0 overflow-x-hidden">
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="space-y-6"
+                  className="space-y-6 overflow-x-hidden"
                 >
                   {/* Global Advice */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
                     <h3 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
                       <Sparkles className="h-4 w-4" />
                       Conseil Global
@@ -133,32 +133,32 @@ export const PredictiveRoutineModal: React.FC<PredictiveRoutineModalProps> = ({
                   </div>
 
                   {/* Days */}
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     {routine.days.map((day, index) => (
                       <motion.div
                         key={day.day}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="border rounded-lg p-4"
+                        className="rounded-xl border p-5 shadow-sm"
                       >
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-3 mb-4">
                           <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
                             {index + 1}
                           </div>
-                          <h3 className="font-medium">{day.day}</h3>
+                          <h3 className="font-medium min-w-0 break-words">{day.day}</h3>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                           {/* Morning */}
-                          <div>
+                          <div className="min-w-0">
                             <h4 className="font-medium text-amber-700 flex items-center gap-1 mb-2">
                               <Sun className="h-4 w-4" />
                               Matin
                             </h4>
-                            <ul className="space-y-1">
+                            <ul className="space-y-2">
                               {day.morning.map((step, stepIndex) => (
-                                <li key={stepIndex} className="text-sm flex items-start gap-2">
+                                <li key={stepIndex} className="text-sm flex items-start gap-2 min-w-0 break-words">
                                   <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
                                   <span>{step}</span>
                                 </li>
@@ -167,14 +167,14 @@ export const PredictiveRoutineModal: React.FC<PredictiveRoutineModalProps> = ({
                           </div>
 
                           {/* Evening */}
-                          <div>
+                          <div className="min-w-0">
                             <h4 className="font-medium text-indigo-700 flex items-center gap-1 mb-2">
                               <Moon className="h-4 w-4" />
                               Soir
                             </h4>
-                            <ul className="space-y-1">
+                            <ul className="space-y-2">
                               {day.evening.map((step, stepIndex) => (
-                                <li key={stepIndex} className="text-sm flex items-start gap-2">
+                                <li key={stepIndex} className="text-sm flex items-start gap-2 min-w-0 break-words">
                                   <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full mt-2 flex-shrink-0"></div>
                                   <span>{step}</span>
                                 </li>
@@ -185,14 +185,14 @@ export const PredictiveRoutineModal: React.FC<PredictiveRoutineModalProps> = ({
 
                         {/* Tip */}
                         {day.tip && (
-                          <div className="mt-3 p-2 bg-emerald-50 border border-emerald-200 rounded text-sm text-emerald-700">
+                          <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 break-words">
                             💡 <strong>Astuce:</strong> {day.tip}
                           </div>
                         )}
 
                         {/* Warning */}
                         {day.warning && (
-                          <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700 flex items-start gap-2">
+                          <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 break-words">
                             <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                             <span><strong>Attention:</strong> {day.warning}</span>
                           </div>
@@ -203,19 +203,19 @@ export const PredictiveRoutineModal: React.FC<PredictiveRoutineModalProps> = ({
                 </motion.div>
               </TabsContent>
 
-              <TabsContent value="timeline" className="mt-0">
+              <TabsContent value="timeline" className="mt-0 overflow-x-hidden">
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="space-y-4"
+                  className="space-y-5 overflow-x-hidden"
                 >
                   {/* Timeline visualization */}
-                  <div className="relative">
+                  <div className="relative overflow-x-hidden">
                     <div className="absolute left-6 top-8 bottom-0 w-px bg-gradient-to-b from-blue-500 to-emerald-500"></div>
                     
                     {routine.days.map((day, index) => (
-                      <div key={day.day} className="relative flex items-start gap-4 pb-6">
+                      <div key={day.day} className="relative flex items-start gap-4 pb-6 min-w-0">
                         <div className="relative">
                           <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-emerald-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
                             J{index + 1}
@@ -228,8 +228,8 @@ export const PredictiveRoutineModal: React.FC<PredictiveRoutineModalProps> = ({
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-gray-800 mb-1">{day.day}</h3>
-                          <div className="text-sm text-gray-600 space-y-1">
+                          <h3 className="font-medium text-gray-800 mb-1 break-words">{day.day}</h3>
+                          <div className="text-sm text-gray-600 space-y-2 break-words">
                             <div>
                               <span className="text-amber-600">Matin:</span> {day.morning.slice(0, 2).join(', ')}
                               {day.morning.length > 2 && '...'}
@@ -245,14 +245,14 @@ export const PredictiveRoutineModal: React.FC<PredictiveRoutineModalProps> = ({
                   </div>
 
                   {/* Progress Tracking */}
-                  <div className="bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 rounded-lg p-4 mt-6">
+                  <div className="mt-6 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-blue-50 p-5">
                     <h3 className="font-medium text-emerald-800 mb-2">Suivi de Progression</h3>
                     <p className="text-sm text-emerald-700 mb-3">
                       Suivez vos progrès jour après jour et voyez votre peau s'améliorer !
                     </p>
-                    <div className="grid grid-cols-7 gap-1">
+                    <div className="grid grid-cols-7 gap-2 overflow-x-hidden">
                       {routine.days.map((_, index) => (
-                        <div key={index} className="aspect-square bg-emerald-200 rounded text-xs flex items-center justify-center text-emerald-700 font-medium">
+                        <div key={index} className="aspect-square min-w-0 bg-emerald-200 rounded text-xs flex items-center justify-center text-emerald-700 font-medium">
                           {index + 1}
                         </div>
                       ))}

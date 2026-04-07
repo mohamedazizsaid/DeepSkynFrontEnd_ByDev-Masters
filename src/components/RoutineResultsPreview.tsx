@@ -47,9 +47,9 @@ export const RoutineResultsPreview: React.FC<RoutinePreviewProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
+    <Card className="w-full max-w-2xl mx-auto overflow-x-hidden">
+      <CardHeader className="pb-5 sm:pb-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5 text-blue-600" />
             Résultats Attendus
@@ -68,16 +68,16 @@ export const RoutineResultsPreview: React.FC<RoutinePreviewProps> = ({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 overflow-x-hidden">
         {/* Before/After Comparison */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Current State */}
-          <div className="space-y-3">
+          <div className="space-y-4 min-w-0">
             <h3 className="font-medium text-gray-600 flex items-center gap-2">
               <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
               État Actuel
             </h3>
-            <div className="space-y-2">
+            <div className="space-y-3 min-w-0">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Health Score</span>
                 <span className="font-semibold">{current.healthScore}/100</span>
@@ -90,7 +90,7 @@ export const RoutineResultsPreview: React.FC<RoutinePreviewProps> = ({
               </div>
               
               {current.conditions.length > 0 && (
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-500 break-words">
                   Conditions: {current.conditions.slice(0, 2).join(', ')}
                 </div>
               )}
@@ -98,12 +98,12 @@ export const RoutineResultsPreview: React.FC<RoutinePreviewProps> = ({
           </div>
 
           {/* Predicted State */}
-          <div className="space-y-3">
+          <div className="space-y-4 min-w-0">
             <h3 className="font-medium text-emerald-600 flex items-center gap-2">
               <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
               Après {timeline}
             </h3>
-            <div className="space-y-2">
+            <div className="space-y-3 min-w-0">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Health Score</span>
                 <div className="flex items-center gap-1">
@@ -121,7 +121,7 @@ export const RoutineResultsPreview: React.FC<RoutinePreviewProps> = ({
               <motion.div 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="bg-emerald-50 border border-emerald-200 rounded-lg p-2"
+                className="bg-emerald-50 border border-emerald-200 rounded-lg p-3"
               >
                 <div className="text-emerald-700 font-medium text-sm flex items-center gap-1">
                   <Sparkles className="h-4 w-4" />
@@ -135,19 +135,19 @@ export const RoutineResultsPreview: React.FC<RoutinePreviewProps> = ({
         <Separator />
 
         {/* Benefits */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <h3 className="font-medium flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-amber-500" />
             Bénéfices Attendus
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {benefits.map((benefit, index) => (
               <motion.div
                 key={benefit}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex items-center gap-2 text-sm"
+                className="flex items-start gap-2 text-sm min-w-0 break-words"
               >
                 <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
                 <span>{benefit}</span>
@@ -158,10 +158,10 @@ export const RoutineResultsPreview: React.FC<RoutinePreviewProps> = ({
 
         {/* Tips */}
         {tips.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <div className="space-y-2">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 overflow-x-hidden">
+            <div className="space-y-3">
               {tips.map((tip, index) => (
-                <div key={index} className="text-blue-700 text-sm flex items-start gap-2">
+                <div key={index} className="text-blue-700 text-sm flex items-start gap-2 min-w-0 break-words">
                   <div className="w-1 h-1 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
                   <span>{tip}</span>
                 </div>
