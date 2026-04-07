@@ -146,6 +146,138 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     boxShadow: isDark ? '0 12px 24px rgba(2,6,23,0.45)' : '0 12px 24px rgba(15,23,42,0.12)',
   };
 
+  const topStats = [
+    {
+      label: t('dashboard.skinHealth'),
+      value: `${skinHealthScore}`,
+      icon: <Shield className="w-5 h-5" />,
+      color: '#0EA5E9',
+      suffix: `/${100}`,
+      tint: isDark
+        ? 'bg-gradient-to-br from-[#102337] via-[#0f172a] to-[#0f1f2d] border-[#1d4e74]'
+        : 'bg-gradient-to-br from-[#ECFEFF] via-[#F0F9FF] to-[#FFFFFF] border-[#BAE6FD]',
+    },
+    {
+      label: t('dashboard.skinAge'),
+      value: skinAge ? `${skinAge}` : '—',
+      icon: <Zap className="w-5 h-5" />,
+      color: '#8B5CF6',
+      suffix: ` ${t('common.years')}`,
+      tint: isDark
+        ? 'bg-gradient-to-br from-[#22183b] via-[#111827] to-[#1a1531] border-[#4c1d95]'
+        : 'bg-gradient-to-br from-[#F5F3FF] via-[#FAF5FF] to-[#FFFFFF] border-[#DDD6FE]',
+    },
+    {
+      label: t('dashboard.analyses'),
+      value: `${stats?.totalAnalyses ?? 0}`,
+      icon: <Eye className="w-5 h-5" />,
+      color: '#10B981',
+      suffix: '',
+      tint: isDark
+        ? 'bg-gradient-to-br from-[#122b29] via-[#0f172a] to-[#13201d] border-[#065f46]'
+        : 'bg-gradient-to-br from-[#ECFDF5] via-[#F0FDF4] to-[#FFFFFF] border-[#A7F3D0]',
+    },
+    {
+      label: t('dashboard.averageScore'),
+      value: `${stats?.averageHealthScore ?? 0}`,
+      icon: <Star className="w-5 h-5" />,
+      color: '#F59E0B',
+      suffix: '%',
+      tint: isDark
+        ? 'bg-gradient-to-br from-[#2f2414] via-[#0f172a] to-[#241d12] border-[#92400e]'
+        : 'bg-gradient-to-br from-[#FFFBEB] via-[#FEF9C3] to-[#FFFFFF] border-[#FCD34D]',
+    },
+  ];
+
+  const scoreCardClass = isHcHigh
+    ? `rounded-2xl border p-6 ${panelClass}`
+    : isDark
+      ? 'rounded-2xl border p-6 relative overflow-hidden border-[#38BDF8] bg-gradient-to-br from-[#08263d] via-[#0b3451] to-[#0f172a] shadow-[0_24px_50px_rgba(14,165,233,0.30)]'
+      : 'rounded-2xl border p-6 relative overflow-hidden border-[#7DD3FC] bg-gradient-to-br from-[#E0F2FE] via-[#F0F9FF] to-[#ECFEFF] shadow-[0_22px_44px_rgba(14,165,233,0.24)]';
+  const scoreTitleClass = isHcHigh ? textPrimary : isDark ? 'text-white' : 'text-[#0F172A]';
+  const scoreInfoClass = isHcHigh ? textSecondary : isDark ? 'text-white/80' : 'text-[#0F172A]/65';
+  const scoreIconShellClass = isHcHigh ? 'bg-yellow-400 text-black' : isDark ? 'bg-white/20 text-white' : 'bg-[#0EA5E9]/15 text-[#0284C7]';
+  const scoreValueClass = isHcHigh ? 'text-cyan-400' : isDark ? 'text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.35)]' : 'bg-gradient-to-r from-[#0284C7] to-[#06B6D4] bg-clip-text text-transparent';
+  const scoreOutOfClass = isHcHigh ? textSecondary : isDark ? 'text-white/85' : 'text-[#334155]';
+  const scoreDividerClass = isHcHigh ? 'bg-gradient-to-r from-transparent via-[#0EA5E9]/30 to-transparent' : isDark ? 'bg-gradient-to-r from-transparent via-white/40 to-transparent' : 'bg-gradient-to-r from-transparent via-[#0EA5E9]/35 to-transparent';
+
+  const analysisButtonClass = isHcHigh
+    ? 'gap-2 bg-yellow-400 text-black hover:bg-yellow-300'
+    : 'gap-2 text-white border-0 bg-gradient-to-r from-[#0284C7] via-[#0EA5E9] to-[#06B6D4] shadow-[0_12px_26px_rgba(14,165,233,0.35)] hover:shadow-[0_16px_30px_rgba(14,165,233,0.45)]';
+
+  const ageCardClass = isHcHigh
+    ? `rounded-2xl border p-6 ${panelClass}`
+    : isDark
+      ? 'rounded-2xl border p-6 border-[#334155] bg-gradient-to-br from-[#141b2e] via-[#111827] to-[#1b2235] shadow-[0_14px_30px_rgba(15,23,42,0.38)]'
+      : 'rounded-2xl border p-6 border-[#DBEAFE] bg-gradient-to-br from-[#F8FAFC] via-[#FFFFFF] to-[#EFF6FF] shadow-[0_12px_28px_rgba(59,130,246,0.10)]';
+
+  const metricsCardClass = isHcHigh
+    ? `rounded-2xl border p-6 ${panelClass}`
+    : isDark
+      ? 'rounded-2xl border p-6 border-[#334155] bg-gradient-to-br from-[#10222f] via-[#111827] to-[#1a2432] shadow-[0_14px_30px_rgba(6,182,212,0.20)]'
+      : 'rounded-2xl border p-6 border-[#BAE6FD] bg-gradient-to-br from-[#F0FDFF] via-[#FFFFFF] to-[#F5FBFF] shadow-[0_12px_28px_rgba(14,165,233,0.12)]';
+
+  const evolutionCardClass = isHcHigh
+    ? `rounded-2xl border p-6 mb-6 ${panelClass}`
+    : isDark
+      ? 'rounded-2xl border p-6 mb-6 border-[#2b8bb8] bg-gradient-to-br from-[#1176A6] via-[#1495C2] to-[#14A9CE] shadow-[0_18px_36px_rgba(20,169,206,0.30)]'
+      : 'rounded-2xl border p-6 mb-6 border-[#52C7EA] bg-gradient-to-br from-[#1FA7D8] via-[#21B8DE] to-[#19C1D9] shadow-[0_16px_34px_rgba(25,193,217,0.26)]';
+
+  const evolutionChartLineColor = isHcHigh ? '#111827' : '#FFFFFF';
+  const evolutionChartGridColor = isHcHigh ? (isDark ? '#334155' : '#E5E7EB') : 'rgba(255,255,255,0.28)';
+  const evolutionChartAxisColor = isHcHigh ? (isDark ? '#E2E8F0' : '#374151') : 'rgba(255,255,255,0.88)';
+  const evolutionTitleClass = isHcHigh ? textPrimary : 'text-white';
+  const evolutionSubtitleClass = isHcHigh ? textSecondary : 'text-white/80';
+  const evolutionButtonClass = isHcHigh
+    ? ''
+    : 'text-white hover:text-white hover:bg-white/15 border border-white/20';
+
+  const quickActionsCardClass = isHcHigh
+    ? `rounded-2xl border p-6 ${panelClass}`
+    : isDark
+      ? 'rounded-2xl border p-6 border-[#334155] bg-gradient-to-br from-[#132334] via-[#0f172a] to-[#1a2236] shadow-[0_14px_30px_rgba(14,165,233,0.16)]'
+      : 'rounded-2xl border p-6 border-[#CFFAFE] bg-gradient-to-br from-[#F0FDFF] via-[#FFFFFF] to-[#F5FBFF] shadow-[0_12px_28px_rgba(8,145,178,0.12)]';
+  const quickActionsHeroClass = isHcHigh
+    ? 'w-full p-4 sm:p-5 rounded-2xl border border-yellow-400 transition-all duration-200 hover:shadow-md group text-left hover:bg-yellow-400/10'
+    : isDark
+      ? 'w-full p-4 sm:p-5 rounded-2xl border border-[#334155] transition-all duration-200 hover:shadow-md group text-left hover:border-[#22D3EE] bg-gradient-to-r from-[#0f172a]/90 to-[#12283a]/70'
+      : 'w-full p-4 sm:p-5 rounded-2xl border border-[#BAE6FD] transition-all duration-200 hover:shadow-md group text-left bg-gradient-to-r from-[#F0FDFF] to-white hover:border-[#22D3EE]';
+  const quickActionsCompactClass = isHcHigh
+    ? 'flex flex-col items-center gap-3 p-4 rounded-xl border border-yellow-400 transition-all duration-200 hover:shadow-md group hover:bg-yellow-400/10'
+    : isDark
+      ? 'flex flex-col items-center gap-3 p-4 rounded-xl border border-[#334155] transition-all duration-200 hover:shadow-md group hover:border-[#22D3EE] bg-gradient-to-b from-[#0f172a]/90 to-[#13293b]/70'
+      : 'flex flex-col items-center gap-3 p-4 rounded-xl border border-[#BAE6FD] transition-all duration-200 hover:shadow-md group bg-gradient-to-b from-[#F0FDFF] to-white hover:border-[#22D3EE]';
+
+  const activityCardClass = isHcHigh
+    ? `rounded-2xl border p-6 ${panelClass}`
+    : isDark
+      ? 'rounded-2xl border p-6 border-[#334155] bg-gradient-to-br from-[#251f13] via-[#111827] to-[#1f2433] shadow-[0_14px_30px_rgba(251,191,36,0.14)]'
+      : 'rounded-2xl border p-6 border-[#FDE68A] bg-gradient-to-br from-[#FFFBEB] via-[#FFFFFF] to-[#FFF7ED] shadow-[0_12px_28px_rgba(245,158,11,0.12)]';
+
+  const activityItemClass = isHcHigh
+    ? 'flex items-start gap-3 p-3 rounded-xl border border-yellow-400/50'
+    : isDark
+      ? 'flex items-start gap-3 p-3 rounded-xl border border-[#334155] bg-gradient-to-r from-[#0f172a]/85 to-[#172033]/70'
+      : 'flex items-start gap-3 p-3 rounded-xl border border-white/80 bg-gradient-to-r from-white to-[#F8FAFC] shadow-[0_8px_18px_rgba(15,23,42,0.06)]';
+
+  const detailSurfaceClass = isHcHigh
+    ? 'rounded-xl p-4 text-center border border-yellow-400/50'
+    : isDark
+      ? 'rounded-xl p-4 text-center border border-[#334155] bg-gradient-to-r from-[#111827] to-[#1a2233]'
+      : 'rounded-xl p-4 text-center border border-[#E5E7EB] bg-gradient-to-r from-white to-[#F8FAFC]';
+
+  const ageRowClass = isHcHigh
+    ? 'rounded-xl p-3 border border-yellow-400/50'
+    : isDark
+      ? 'rounded-xl p-3 border border-[#334155] bg-gradient-to-r from-[#0f172a]/80 to-[#172033]/65'
+      : 'rounded-xl p-3 border border-[#E5E7EB] bg-gradient-to-r from-white to-[#F8FAFC]';
+
+  const metricsRowClass = isHcHigh
+    ? 'rounded-xl p-3 border border-yellow-400/50'
+    : isDark
+      ? 'rounded-xl p-3 border border-[#334155] bg-gradient-to-r from-[#0f172a]/80 to-[#152436]/60'
+      : 'rounded-xl p-3 border border-[#E5E7EB] bg-gradient-to-r from-white to-[#F0FDFF]';
+
   const quickActions = [
     {
       id: 'analysis',
@@ -266,7 +398,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
             </div>
           </div>
           <motion.div whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }} whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}>
-            <Button onClick={() => onNavigate('analysis')} className="gap-2">
+            <Button onClick={() => onNavigate('analysis')} className={analysisButtonClass}>
               <Scan className="w-4 h-4" />
               {t('dashboard.newAnalysis')}
             </Button>
@@ -276,20 +408,21 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
 
       {/* ═══ Top Stats Row ═══ */}
       <div data-tour="dashboard-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: t('dashboard.skinHealth'), value: `${skinHealthScore}`, icon: <Shield className="w-5 h-5" />, color: '#0EA5E9', suffix: `/${100}` },
-          { label: t('dashboard.skinAge'), value: skinAge ? `${skinAge}` : '—', icon: <Zap className="w-5 h-5" />, color: '#8B5CF6', suffix: ` ${t('common.years')}` },
-          { label: t('dashboard.analyses'), value: `${stats?.totalAnalyses ?? 0}`, icon: <Eye className="w-5 h-5" />, color: '#10B981', suffix: '' },
-          { label: t('dashboard.averageScore'), value: `${stats?.averageHealthScore ?? 0}`, icon: <Star className="w-5 h-5" />, color: '#F59E0B', suffix: '%' },
-        ].map((stat, i) => (
+        {topStats.map((stat, i) => (
           <motion.div
             key={i}
             initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.05 * i, duration: 0.35, ease: 'easeOut' }}
             whileHover={shouldReduceMotion ? undefined : { y: -3 }}
-            className={`rounded-2xl border p-4 shadow-sm transition-all hover:shadow-lg ${cardBg}`}
+            className={`relative overflow-hidden rounded-2xl border p-4 shadow-sm transition-all hover:shadow-lg ${isHcHigh ? cardBg : stat.tint}`}
           >
+            {!isHcHigh && (
+              <div
+                className="absolute inset-x-0 top-0 h-1.5"
+                style={{ background: `linear-gradient(90deg, ${stat.color}, ${stat.color}99)` }}
+              />
+            )}
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-xl" style={{ backgroundColor: stat.color + '15' }}>
                 <div style={{ color: stat.color }}>{stat.icon}</div>
@@ -311,11 +444,23 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.1, duration: 0.4, ease: 'easeOut' }}
-          className={`rounded-2xl border p-6 ${panelClass}`}
+          className={scoreCardClass}
           data-tour="dashboard-score"
         >
-          <div className="flex items-center justify-between mb-2">
-            <h3 className={`text-base font-bold ${textPrimary}`}>{t('dashboard.globalScore')}</h3>
+          {!isHcHigh && (
+            <>
+              <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#38BDF8] via-[#22D3EE] to-[#0EA5E9]" />
+              <div className="pointer-events-none absolute -top-14 -right-10 w-40 h-40 rounded-full bg-[#0EA5E9]/15 blur-2xl" />
+              <div className="pointer-events-none absolute -bottom-20 -left-12 w-48 h-48 rounded-full bg-[#06B6D4]/10 blur-3xl" />
+            </>
+          )}
+          <div className="relative z-10 flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${scoreIconShellClass}`}>
+                <Shield className="w-4 h-4" />
+              </div>
+              <h3 className={`text-base font-bold ${scoreTitleClass}`}>{t('dashboard.globalScore')}</h3>
+            </div>
             <div className="flex flex-col items-end gap-1.5">
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: scoreLevel.color + '15', color: scoreLevel.color }}>
                 {scoreLevel.emoji} {scoreLevel.label}
@@ -328,7 +473,11 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
               )}
             </div>
           </div>
-          <div className="relative w-44 h-44 mx-auto my-2">
+          {!isHcHigh && (
+            <p className={`relative z-10 text-[11px] font-medium mb-2 ${scoreInfoClass}`}>Indicateur principal de votre progression cutanee</p>
+          )}
+          <div className="relative z-10 w-44 h-44 mx-auto my-2">
+            {!isHcHigh && <div className="absolute inset-2 rounded-full border border-white/30 shadow-[inset_0_0_30px_rgba(255,255,255,0.12)]" />}
             <ResponsiveContainer width="100%" height="100%">
               <RadialBarChart cx="50%" cy="50%" innerRadius="72%" outerRadius="100%" data={gaugeData} startAngle={180} endAngle={0}>
                 <defs>
@@ -341,12 +490,13 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
               </RadialBarChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex items-center justify-center flex-col">
-              <div className={`text-4xl font-bold bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent`}>{skinHealthScore}</div>
-              <div className={`text-xs ${textSecondary}`}>{t('common.outOf100')}</div>
+              <div className={`text-4xl font-bold ${scoreValueClass}`}>{skinHealthScore}</div>
+              <div className={`text-xs ${scoreOutOfClass}`}>{t('common.outOf100')}</div>
             </div>
           </div>
+          <div className={`relative z-10 h-px w-full my-3 ${scoreDividerClass}`} />
           {scoreChange !== 0 ? (
-            <div className="text-center">
+            <div className="relative z-10 text-center">
               <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
                 scoreChange > 0 ? 'bg-[#10B981]/10 text-[#10B981]' : 'bg-[#EF4444]/10 text-[#EF4444]'
               }`}>
@@ -355,7 +505,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
               </span>
             </div>
           ) : stats && stats.totalAnalyses > 0 ? (
-            <div className="text-center"><span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium ${isDark ? 'bg-gray-700 text-gray-300' : 'bg-[#F3F4F6] text-[#6B7280]'}`}>→ {t('common.stable')}</span></div>
+            <div className="relative z-10 text-center"><span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium ${isDark ? 'bg-gray-700 text-gray-300' : 'bg-[#F3F4F6] text-[#6B7280]'}`}>→ {t('common.stable')}</span></div>
           ) : null}
         </motion.div>
 
@@ -364,11 +514,20 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.2, duration: 0.4, ease: 'easeOut' }}
-          className={`rounded-2xl border p-6 ${panelClass}`}
+          className={`relative overflow-hidden ${ageCardClass}`}
         >
-          <h3 className={`text-base font-bold mb-5 ${textPrimary}`}>{t('dashboard.ageComparison')}</h3>
+          {!isHcHigh && <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#64748B] via-[#0EA5E9] to-[#06B6D4]" />}
+          <div className="flex items-center justify-between mb-5 pt-1">
+            <h3 className={`text-base font-bold ${textPrimary} flex items-center gap-2`}>
+              <Clock className="w-4 h-4 text-[#0EA5E9]" />
+              {t('dashboard.ageComparison')}
+            </h3>
+            <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${isDark ? 'bg-[#0EA5E9]/15 text-[#7DD3FC]' : 'bg-[#E0F2FE] text-[#0369A1]'}`}>
+              Age Insight
+            </span>
+          </div>
           <div className="space-y-5">
-            <div>
+            <div className={ageRowClass}>
               <div className="flex items-center justify-between mb-2">
                 <span className={`text-sm ${textSecondary} flex items-center gap-2`}><Clock className="w-3.5 h-3.5" /> {t('dashboard.realAge')}</span>
                 <span className={`text-xl font-bold ${textPrimary}`}>{realAge}</span>
@@ -377,7 +536,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                 <motion.div className="h-full bg-gradient-to-r from-[#6B7280] to-[#9CA3AF] rounded-full" initial={{ width: 0 }} animate={{ width: `${Math.min(realAge, 100)}%` }} transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.9, delay: 0.2 }} />
               </div>
             </div>
-            <div>
+            <div className={ageRowClass}>
               <div className="flex items-center justify-between mb-2">
                 <span className={`text-sm ${textSecondary} flex items-center gap-2`}><Sparkles className="w-3.5 h-3.5 text-[#0EA5E9]" /> {t('dashboard.skinAge')}</span>
                 <span className="text-xl font-bold text-[#0EA5E9]">{skinAge ?? '—'}</span>
@@ -398,7 +557,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                 </p>
               </motion.div>
             ) : (
-              <div className={`rounded-xl p-4 text-center ${isDark ? 'bg-gray-700' : 'bg-[#F3F4F6]'}`}>
+              <div className={detailSurfaceClass}>
                 <p className={`text-sm ${textSecondary}`}>{t('dashboard.doAnalysis')}</p>
               </div>
             )}
@@ -410,12 +569,21 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.3, duration: 0.4, ease: 'easeOut' }}
-          className={`rounded-2xl border p-6 ${panelClass}`}
+          className={`relative overflow-hidden ${metricsCardClass}`}
         >
-          <h3 className={`text-base font-bold mb-5 ${textPrimary}`}>{t('dashboard.skinMetrics')}</h3>
+          {!isHcHigh && <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#06B6D4] via-[#0EA5E9] to-[#F9A8D4]" />}
+          <div className="flex items-center justify-between mb-5 pt-1">
+            <h3 className={`text-base font-bold ${textPrimary} flex items-center gap-2`}>
+              <Activity className="w-4 h-4 text-[#06B6D4]" />
+              {t('dashboard.skinMetrics')}
+            </h3>
+            <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${isDark ? 'bg-[#06B6D4]/15 text-[#67E8F9]' : 'bg-[#ECFEFF] text-[#0E7490]'}`}>
+              Live Metrics
+            </span>
+          </div>
           <div className="space-y-4">
             {skinMetrics.map((metric, index) => (
-              <div key={index}>
+              <div key={index} className={metricsRowClass}>
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-sm ${textSecondary} flex items-center gap-2`}>
                     <span style={{ color: metric.color }}>{metric.icon}</span>
@@ -453,15 +621,15 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
         initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.4, duration: 0.4, ease: 'easeOut' }}
-        className={`rounded-2xl border p-6 mb-6 ${panelClass}`}
+        className={evolutionCardClass}
         data-tour="dashboard-evolution"
       >
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className={`text-base font-bold ${textPrimary}`}>{t('dashboard.healthEvolution')}</h3>
-            <p className={`text-xs ${textSecondary} mt-0.5`}>{t('dashboard.progressionOverTime')}</p>
+            <h3 className={`text-base font-bold ${evolutionTitleClass}`}>{t('dashboard.healthEvolution')}</h3>
+            <p className={`text-xs ${evolutionSubtitleClass} mt-0.5`}>{t('dashboard.progressionOverTime')}</p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => onNavigate('evolution')}>
+          <Button variant="ghost" size="sm" className={evolutionButtonClass} onClick={() => onNavigate('evolution')}>
             {t('dashboard.viewAll')} <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
@@ -471,20 +639,20 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
               <AreaChart data={evolutionData}>
                 <defs>
                   <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0EA5E9" stopOpacity={0.25} />
-                    <stop offset="100%" stopColor="#0EA5E9" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor={evolutionChartLineColor} stopOpacity={0.3} />
+                    <stop offset="100%" stopColor={evolutionChartLineColor} stopOpacity={0.04} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#334155' : '#E5E7EB'} />
-                <XAxis dataKey="date" stroke={isDark ? '#64748b' : '#6B7280'} fontSize={12} />
-                <YAxis stroke={isDark ? '#64748b' : '#6B7280'} domain={[0, 100]} fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke={evolutionChartGridColor} />
+                <XAxis dataKey="date" stroke={evolutionChartAxisColor} fontSize={12} />
+                <YAxis stroke={evolutionChartAxisColor} domain={[0, 100]} fontSize={12} />
                 <Tooltip
                   contentStyle={tooltipStyle}
                   labelStyle={{ fontWeight: 700, marginBottom: 4 }}
                   formatter={(value) => [`${value}/100`, t('dashboard.globalScore')]}
                   labelFormatter={(label) => `${t('common.date')}: ${label}`}
                 />
-                <Area type="monotone" dataKey="score" stroke="#0EA5E9" strokeWidth={3} fill="url(#areaFill)" dot={{ fill: '#0EA5E9', r: 5, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
+                <Area type="monotone" dataKey="score" stroke={evolutionChartLineColor} strokeWidth={3} fill="url(#areaFill)" dot={{ fill: evolutionChartLineColor, r: 5, strokeWidth: 2, stroke: isHcHigh ? '#111827' : '#0E7490' }} activeDot={{ r: 7, fill: evolutionChartLineColor, stroke: isHcHigh ? '#111827' : '#0E7490' }} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -503,16 +671,23 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.5, duration: 0.4, ease: 'easeOut' }}
-          className={`rounded-2xl border p-6 ${panelClass}`}
+          className={`relative overflow-hidden ${quickActionsCardClass}`}
           data-tour="dashboard-quick-actions"
         >
-          <h3 className={`text-base font-bold mb-4 ${textPrimary}`}>{t('dashboard.quickActions')}</h3>
+          {!isHcHigh && <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#06B6D4] via-[#22D3EE] to-[#0EA5E9]" />}
+          <div className="flex items-center justify-between mb-4 pt-1">
+            <h3 className={`text-base font-bold ${textPrimary} flex items-center gap-2`}>
+              <Zap className="w-4 h-4 text-[#06B6D4]" />
+              {t('dashboard.quickActions')}
+            </h3>
+            <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${isDark ? 'bg-[#06B6D4]/15 text-[#67E8F9]' : 'bg-[#ECFEFF] text-[#0E7490]'}`}>
+              Smart Flow
+            </span>
+          </div>
           <div className="space-y-3">
             <motion.button
               onClick={heroAction.onClick}
-              className={`w-full p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:shadow-md group text-left ${
-                isHcHigh ? 'border-yellow-400 hover:bg-yellow-400/10' : isDark ? 'border-[#334155] hover:border-[#0EA5E9] hover:bg-[#0EA5E9]/5' : 'border-[#E5E7EB] hover:border-[#0EA5E9] hover:bg-[#F0F9FF]'
-              }`}
+              className={quickActionsHeroClass}
               whileHover={shouldReduceMotion ? undefined : { y: -2 }}
               whileTap={shouldReduceMotion ? undefined : { scale: 0.99 }}
             >
@@ -523,7 +698,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                   </div>
                   <div>
                     <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide mb-1.5 ${isDark ? 'bg-[#0EA5E9]/15 text-[#7DD3FC]' : 'bg-[#E0F2FE] text-[#0369A1]'}`}>
-                      Recommande
+                      Recommandé
                     </div>
                     <div className={`text-sm font-bold ${textPrimary} group-hover:text-[#0EA5E9] transition-colors`}>{heroAction.title}</div>
                     <div className={`text-xs ${textSecondary} mt-0.5`}>{heroAction.description}</div>
@@ -538,9 +713,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
               <motion.button
                 key={index + 1}
                 onClick={action.onClick}
-                className={`flex flex-col items-center gap-3 p-4 rounded-xl border transition-all duration-200 hover:shadow-md group ${
-                  isHcHigh ? 'border-yellow-400 hover:bg-yellow-400/10' : isDark ? 'border-[#334155] hover:border-[#0EA5E9] hover:bg-[#0EA5E9]/5' : 'border-[#E5E7EB] hover:border-[#0EA5E9] hover:bg-[#F0F9FF]'
-                }`}
+                className={quickActionsCompactClass}
                 whileHover={shouldReduceMotion ? undefined : { y: -2 }}
                 whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
               >
@@ -562,14 +735,14 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.6, duration: 0.4, ease: 'easeOut' }}
-          className={`rounded-2xl border p-6 ${panelClass}`}
+          className={activityCardClass}
         >
           <h3 className={`text-base font-bold mb-4 ${textPrimary}`}>{t('dashboard.recentActivity')}</h3>
           <div className="space-y-3">
             {latestAnalysis ? (
               <>
                 <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.65 }}
-                  className={`flex items-start gap-3 p-3 rounded-xl ${isDark ? 'bg-[#0f172a]/50' : 'bg-[#F9FAFB]'}`}>
+                  className={activityItemClass}>
                   <div className="w-9 h-9 rounded-lg bg-[#0EA5E9]/10 flex items-center justify-center flex-shrink-0">
                     <Scan className="w-4 h-4 text-[#0EA5E9]" />
                   </div>
@@ -585,7 +758,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                 </motion.div>
                 {stats && stats.totalAnalyses > 1 && (
                   <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.7 }}
-                    className={`flex items-start gap-3 p-3 rounded-xl ${isDark ? 'bg-[#0f172a]/50' : 'bg-[#F9FAFB]'}`}>
+                    className={activityItemClass}>
                     <div className="w-9 h-9 rounded-lg bg-[#FBBF24]/10 flex items-center justify-center flex-shrink-0">
                       <TrendingUp className="w-4 h-4 text-[#FBBF24]" />
                     </div>
@@ -597,7 +770,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                 )}
                 {latestAnalysis.conditions?.length > 0 && (
                   <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.75 }}
-                    className={`flex items-start gap-3 p-3 rounded-xl ${isDark ? 'bg-[#0f172a]/50' : 'bg-[#F9FAFB]'}`}>
+                    className={activityItemClass}>
                     <div className="w-9 h-9 rounded-lg bg-[#F9A8D4]/10 flex items-center justify-center flex-shrink-0">
                       <Sparkles className="w-4 h-4 text-[#F9A8D4]" />
                     </div>
@@ -629,9 +802,9 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
         >
           <div className="flex items-center gap-2 mb-4">
             <Brain className="w-5 h-5 text-purple-500" />
-            <h2 className={`text-lg font-bold ${textPrimary}`}>Digital Twin</h2>
+            <h2 className={`text-lg font-bold ${textPrimary}`}>Jumeau Numérique</h2>
             <span className={`text-xs px-2 py-0.5 rounded-full ${isDark ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-100 text-purple-600'}`}>
-              Jumeau Numérique
+              IA Prédictive
             </span>
           </div>
           <DigitalTwinDashboard

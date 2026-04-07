@@ -23,7 +23,7 @@ export const postsService = {
   },
 
   async getCommunityFeed(page = 1, limit = 20): Promise<PaginatedResponse<Post>> {
-    const res = await apiClient.get<PaginatedResponse<Post>>('/posts/feed/all', {
+    const res = await apiClient.get<PaginatedResponse<Post>>('/posts', {
       params: { page, limit },
     });
     return res.data;
@@ -86,7 +86,7 @@ export const postsService = {
     limit = 50,
   ): Promise<PaginatedResponse<PostReaction>> {
     const res = await apiClient.get<any>(
-      `/likes/post/${postId}/reactions`,
+      `/likes/post/${postId}`,
       {
         params: { page, limit },
       },
