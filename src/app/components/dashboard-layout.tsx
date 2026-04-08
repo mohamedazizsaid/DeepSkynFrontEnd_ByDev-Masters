@@ -22,15 +22,48 @@ import { useAccessibilityStore } from '../../stores/accessibility.store';
 import { useSearchParams } from 'react-router-dom';
 import { subscriptionService } from '../../lib/services/subscription.service';
 import type { Notification, Subscription } from '../../lib/types';
+import { AdminUserManagementPage } from './admin/admin-user-management-page';
+import { AdminSkinAnalysisMonitorPage } from './admin/admin-skin-analysis-monitor-page';
+import { AdminSubscriptionManagementPage } from './admin/admin-subscription-management-page';
+import { AdminSocialFeedModerationPage } from './admin/admin-social-feed-moderation-page';
+import { AdminChurnRetentionPage } from './admin/admin-churn-retention-page';
+import { AdminAiChatMonitorPage } from './admin/admin-ai-chat-monitor-page';
+import { AdminProductCatalogPage } from './admin/admin-product-catalog-page';
+import { AdminNotificationsCenterPage } from './admin/admin-notifications-center-page';
+import { AdminReclamationsPage } from './admin/admin-reclamations-page';
+import { AdminBiDashboardPage } from './admin/admin-bi-dashboard-page';
+import { AdminOverviewPage } from './admin/admin-overview-page';
+import { AdminCouponsPage } from './admin/admin-coupons-page';
+import { AdminSubscriptionPlansPage } from './admin/admin-subscription-plans-page';
 
 interface DashboardLayoutProps {
   onLogout: () => void;
 }
 
-export type DashboardPageType = 'dashboard' | 'analysis' | 'evolution' | 'routine' | 'chat' | 'subscription' | 'profile' | 'settings' | 'community' | 'meteo' | 'user-profile';
+export type DashboardPageType = 'dashboard' | 'analysis' | 'evolution' | 'routine' | 'chat' | 'subscription' | 'profile' | 'settings' | 'community' | 'meteo' | 'user-profile' | 'admin-overview' | 'admin-bi' | 'admin-users' | 'admin-analysis' | 'admin-subscriptions' | 'admin-plans' | 'admin-coupons' | 'admin-posts' | 'admin-churn' | 'admin-ai' | 'admin-products' | 'admin-notifications' | 'admin-reclamations';
+
+const ADMIN_PAGES: DashboardPageType[] = [
+  'admin-overview',
+  'admin-bi',
+  'admin-users',
+  'admin-analysis',
+  'admin-subscriptions',
+  'admin-plans',
+  'admin-coupons',
+  'admin-posts',
+  'admin-churn',
+  'admin-ai',
+  'admin-products',
+  'admin-notifications',
+  'admin-reclamations',
+];
 
 export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
-  const [currentPage, setCurrentPage] = useState<DashboardPageType>('dashboard');
+  const { user, roles } = useAuthStore();
+  const isAdminUser = roles.some(role =>
+    ['admin', 'ADMIN', 'realm-admin', 'super_admin', 'administrator'].includes(role)
+  );
+  const [currentPage, setCurrentPage] = useState<DashboardPageType>(isAdminUser ? 'admin-overview' : 'dashboard');
   const [viewedUserId, setViewedUserId] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showTour, setShowTour] = useState(false);
@@ -38,7 +71,6 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
   const [lastPaidPlan, setLastPaidPlan] = useState<Subscription['plan'] | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { connect, disconnect, fetchUnreadCount, addNotification } = useNotificationStore();
-  const { user, roles } = useAuthStore();
   const { t } = useAccessibilityStore();
 
   useEffect(() => {
@@ -52,12 +84,23 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
     const page = searchParams.get('page');
     if (!page) return;
 
-    setCurrentPage(page as DashboardPageType);
+    const requestedPage = page as DashboardPageType;
+    if (isAdminUser) {
+      setCurrentPage(ADMIN_PAGES.includes(requestedPage) ? requestedPage : 'admin-overview');
+    } else {
+      setCurrentPage(requestedPage);
+    }
 
     const next = new URLSearchParams(searchParams);
     next.delete('page');
     setSearchParams(next, { replace: true });
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, isAdminUser]);
+
+  useEffect(() => {
+    if (isAdminUser && !ADMIN_PAGES.includes(currentPage)) {
+      setCurrentPage('admin-overview');
+    }
+  }, [isAdminUser, currentPage]);
 
   useEffect(() => {
     if (user?.sub) {
@@ -66,36 +109,6 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
       return () => disconnect();
     }
   }, [user?.sub]);
-
-  useEffect(() => {
-    if (!user?.sub) return;
-
-    let cancelled = false;
-
-    const syncUnreadCount = () => {
-      if (cancelled) return;
-      void fetchUnreadCount();
-    };
-
-    const interval = window.setInterval(syncUnreadCount, 15000);
-
-    const handleFocus = () => syncUnreadCount();
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        syncUnreadCount();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [user?.sub, fetchUnreadCount]);
 
   useEffect(() => {
     if (!user?.sub && !user?.id) return;
@@ -130,6 +143,9 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
     };
 
     const checkSubscriptionExpiry = async () => {
+      const token = localStorage.getItem('access_token') || localStorage.getItem('accessToken');
+      if (!token) return;
+
       try {
         const sub = await subscriptionService.getMySubscription();
         if (cancelled || !sub) return;
@@ -204,13 +220,42 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
     setCurrentPage('user-profile');
   };
 
-  // Check if user is admin
-  // We check for 'admin', 'ADMIN', 'realm-admin', or 'super_admin' to be safe
-  const isAdmin = roles.some(role =>
-    ['admin', 'ADMIN', 'realm-admin', 'super_admin', 'administrator'].includes(role)
-  );
+  const isAdmin = isAdminUser;
 
   const renderPage = () => {
+    if (isAdmin) {
+      switch (currentPage) {
+        case 'admin-overview':
+          return <AdminBiDashboardPage />;
+        case 'admin-bi':
+          return <AdminBiDashboardPage />;
+        case 'admin-users':
+          return <AdminUserManagementPage />;
+        case 'admin-analysis':
+          return <AdminSkinAnalysisMonitorPage />;
+        case 'admin-subscriptions':
+          return <AdminSubscriptionManagementPage />;
+        case 'admin-plans':
+          return <AdminSubscriptionPlansPage />;
+        case 'admin-coupons':
+          return <AdminCouponsPage />;
+        case 'admin-posts':
+          return <AdminSocialFeedModerationPage />;
+        case 'admin-churn':
+          return <AdminChurnRetentionPage />;
+        case 'admin-ai':
+          return <AdminAiChatMonitorPage />;
+        case 'admin-products':
+          return <AdminProductCatalogPage />;
+        case 'admin-notifications':
+          return <AdminNotificationsCenterPage />;
+        case 'admin-reclamations':
+          return <AdminReclamationsPage />;
+        default:
+          return <AdminOverviewPage />;
+      }
+    }
+
     const commonProps = { onBack: () => setCurrentPage('dashboard') };
     const premiumProps = { onUpgrade: () => setCurrentPage('subscription') };
     const settingsNavProps = { onNavigateToSettings: () => setCurrentPage('settings') };
@@ -332,14 +377,32 @@ export function DashboardLayout({ onLogout }: DashboardLayoutProps) {
   // Admin Layout (Sidebar)
   if (isAdmin) {
     return (
-      <div className="flex h-screen relative" style={{ zIndex: 1 }}>
+      <div className="flex h-screen relative bg-[#F1F5F9] dark:bg-[#020617]" style={{ zIndex: 1 }}>
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <motion.div
+            className="absolute -top-28 -left-20 h-80 w-80 rounded-full bg-[#0EA5E9]/20 dark:bg-[#0EA5E9]/14 blur-3xl"
+            animate={{ x: [0, 28, 0], y: [0, 22, 0], scale: [1, 1.08, 1] }}
+            transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.div
+            className="absolute top-1/3 right-[-8rem] h-[24rem] w-[24rem] rounded-full bg-[#F9A8D4]/16 dark:bg-[#A855F7]/16 blur-3xl"
+            animate={{ x: [0, -30, 0], y: [0, -20, 0], scale: [1.05, 1, 1.05] }}
+            transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.div
+            className="absolute -bottom-28 left-1/3 h-96 w-96 rounded-full bg-[#06B6D4]/16 dark:bg-[#22D3EE]/10 blur-3xl"
+            animate={{ x: [0, 18, 0], y: [0, -24, 0], scale: [1, 1.06, 1] }}
+            transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </div>
         <Sidebar
           currentPage={currentPage}
           onNavigate={handleNavigate}
           onLogout={onLogout}
           onToggleNotifications={() => setShowNotifications(!showNotifications)}
+          isAdmin={isAdmin}
         />
-        <div className="flex-1 overflow-y-auto">
+        <div className="relative z-10 flex-1 overflow-y-auto bg-transparent">
           {renderPage()}
         </div>
         <NotificationPanel

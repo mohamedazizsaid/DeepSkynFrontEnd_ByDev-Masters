@@ -22,8 +22,8 @@ export function Button({
   const variants = {
     primary: 'bg-[#0EA5E9] text-white hover:bg-[#0284C7] focus:ring-[#0EA5E9] shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0',
     secondary: 'bg-gradient-to-r from-[#F9A8D4] to-[#FED7AA] text-[#111827] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 focus:ring-[#F9A8D4]',
-    outline: 'border-2 border-[#E5E7EB] bg-white text-[#111827] hover:border-[#0EA5E9] hover:bg-[#F9FAFB] hover:-translate-y-0.5 active:translate-y-0 focus:ring-[#0EA5E9]',
-    ghost: 'text-[#4B5563] hover:bg-[#F3F4F6] hover:text-[#111827] focus:ring-[#0EA5E9]'
+    outline: 'border-2 border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-slate-900 text-[#111827] dark:text-slate-100 hover:border-[#0EA5E9] hover:bg-[#F9FAFB] dark:hover:bg-slate-800 hover:-translate-y-0.5 active:translate-y-0 focus:ring-[#0EA5E9]',
+    ghost: 'text-[#4B5563] dark:text-slate-300 hover:bg-[#F3F4F6] dark:hover:bg-slate-800 hover:text-[#111827] dark:hover:text-slate-100 focus:ring-[#0EA5E9]'
   };
   
   const sizes = {
@@ -35,7 +35,7 @@ export function Button({
   return (
     <motion.button
       whileTap={{ scale: disabled ? 1 : 0.98 }}
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`ds-btn ${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
       disabled={disabled || loading}
       {...props}
     >

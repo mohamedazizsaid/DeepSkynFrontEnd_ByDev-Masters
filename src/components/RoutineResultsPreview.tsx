@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Progress } from '../ui/progress';
-import { Separator } from '../ui/separator';
+import { Badge } from '@/app/components/ui/badge';
+import { Button } from '@/app/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { Progress } from '@/app/components/ui/progress';
+import { Separator } from '@/app/components/ui/separator';
 import { Sparkles, TrendingUp, Clock, Target, Brain } from 'lucide-react';
 
 interface RoutinePreviewProps {

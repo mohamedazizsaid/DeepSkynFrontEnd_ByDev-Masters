@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
+
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
@@ -9,6 +11,288 @@ html {
 body {
 	-webkit-font-smoothing: antialiased;
 	text-rendering: optimizeLegibility;
+}
+
+:root {
+	--admin-primary: #0ea5e9;
+	--admin-secondary: #06b6d4;
+	--admin-accent: #f59e0b;
+	--admin-accent-2: #f97316;
+	--admin-accent-3: #10b981;
+	--admin-accent-4: #ec4899;
+	--admin-accent-5: #8b5cf6;
+	--admin-ink: #0f172a;
+	--admin-muted: #64748b;
+	--admin-surface: #ffffff;
+	--admin-border: rgba(14, 165, 233, 0.18);
+}
+
+@keyframes adminFadeUp {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.admin-panel {
+	position: relative;
+	background:
+		radial-gradient(1100px 380px at -8% -12%, rgba(14, 165, 233, 0.14), transparent 55%),
+		radial-gradient(900px 360px at 108% -22%, rgba(6, 182, 212, 0.12), transparent 60%),
+		radial-gradient(760px 300px at 42% 120%, rgba(236, 72, 153, 0.08), transparent 60%),
+		linear-gradient(180deg, #f7fbff 0%, #f8fafc 100%);
+	border: 1px solid rgba(14, 165, 233, 0.14);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+	overflow: hidden;
+	animation: adminFadeUp 260ms ease-out;
+}
+
+.admin-panel > * {
+	opacity: 0;
+	animation: adminFadeUp 420ms ease-out forwards;
+}
+
+.admin-panel > *:nth-child(1) {
+	animation-delay: 40ms;
+}
+
+.admin-panel > *:nth-child(2) {
+	animation-delay: 100ms;
+}
+
+.admin-panel > *:nth-child(3) {
+	animation-delay: 160ms;
+}
+
+.admin-panel > *:nth-child(4) {
+	animation-delay: 220ms;
+}
+
+.admin-panel > *:nth-child(5),
+.admin-panel > *:nth-child(n + 6) {
+	animation-delay: 280ms;
+}
+
+.admin-panel .ds-card {
+	position: relative;
+	background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.9));
+	border: 1px solid var(--admin-border);
+	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+	transition: transform 200ms ease, box-shadow 220ms ease, border-color 180ms ease;
+	backdrop-filter: blur(8px);
+	overflow: hidden;
+}
+
+.admin-panel .ds-card::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 3px;
+	width: 100%;
+	background: linear-gradient(90deg, var(--admin-primary), var(--admin-secondary), var(--admin-accent));
+	opacity: 0.8;
+}
+
+.admin-panel .ds-card:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 14px 32px rgba(14, 165, 233, 0.13);
+	border-color: rgba(14, 165, 233, 0.32);
+}
+
+.admin-panel .grid .ds-card:nth-child(4n + 1)::before {
+	background: linear-gradient(90deg, #0ea5e9, #06b6d4, #10b981);
+}
+
+.admin-panel .grid .ds-card:nth-child(4n + 2)::before {
+	background: linear-gradient(90deg, #f59e0b, #f97316, #ef4444);
+}
+
+.admin-panel .grid .ds-card:nth-child(4n + 3)::before {
+	background: linear-gradient(90deg, #8b5cf6, #6366f1, #0ea5e9);
+}
+
+.admin-panel .grid .ds-card:nth-child(4n + 4)::before {
+	background: linear-gradient(90deg, #ec4899, #f43f5e, #f59e0b);
+}
+
+.admin-panel h1 {
+	color: var(--admin-ink);
+	letter-spacing: -0.02em;
+	background: linear-gradient(90deg, #0b2545, #0ea5e9 45%, #06b6d4 80%);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+.admin-panel h3 {
+	color: #0b2545;
+}
+
+.admin-panel input,
+.admin-panel select,
+.admin-panel textarea {
+	background: rgba(255, 255, 255, 0.95);
+	transition: border-color 160ms ease, box-shadow 180ms ease, transform 150ms ease;
+}
+
+.admin-panel input:focus,
+.admin-panel select:focus,
+.admin-panel textarea:focus {
+	outline: none;
+	border-color: rgba(14, 165, 233, 0.45) !important;
+	box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.14);
+	transform: translateY(-1px);
+}
+
+.admin-panel table thead tr {
+	background: linear-gradient(90deg, rgba(14, 165, 233, 0.07), rgba(6, 182, 212, 0.06));
+	border-bottom-color: rgba(14, 165, 233, 0.2) !important;
+}
+
+.admin-panel table tbody tr {
+	transition: background-color 160ms ease, transform 180ms ease;
+}
+
+.admin-panel table tbody tr:hover {
+	background: rgba(14, 165, 233, 0.05);
+	transform: translateX(2px);
+}
+
+.admin-panel .ds-btn {
+	transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.admin-panel .ds-btn[class*='bg-[#0EA5E9]'] {
+	background: linear-gradient(90deg, #0ea5e9, #06b6d4);
+	border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+.admin-panel .ds-btn[class*='border-2'] {
+	border-color: rgba(14, 165, 233, 0.28);
+	background: linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.admin-panel .ds-btn:hover {
+	transform: translateY(-1px);
+	filter: saturate(1.08);
+	box-shadow: 0 10px 20px rgba(14, 165, 233, 0.16);
+}
+
+.admin-panel .ds-btn:active {
+	transform: translateY(0);
+	box-shadow: 0 4px 10px rgba(14, 165, 233, 0.12);
+}
+
+.admin-panel :where(button, [href], input, select, textarea, [tabindex]):focus-visible {
+	outline: 3px solid rgba(14, 165, 233, 0.75);
+	outline-offset: 2px;
+	border-radius: 0.75rem;
+}
+
+.admin-panel a.inline-flex:focus-visible,
+.admin-panel a.underline:focus-visible {
+	color: #0369a1;
+	text-decoration: underline;
+}
+
+.admin-panel [aria-busy='true'] {
+	cursor: progress;
+}
+
+.admin-panel a.inline-flex,
+.admin-panel a.underline {
+	transition: color 160ms ease, text-shadow 180ms ease;
+}
+
+.admin-panel a.inline-flex:hover,
+.admin-panel a.underline:hover {
+	color: #0369a1;
+	text-shadow: 0 0 12px rgba(14, 165, 233, 0.22);
+}
+
+.dark .admin-panel {
+	background:
+		radial-gradient(1100px 380px at -8% -12%, rgba(14, 165, 233, 0.22), transparent 55%),
+		radial-gradient(900px 360px at 108% -22%, rgba(6, 182, 212, 0.2), transparent 60%),
+		radial-gradient(760px 300px at 42% 120%, rgba(236, 72, 153, 0.12), transparent 60%),
+		linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+	border-color: rgba(56, 189, 248, 0.24);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.dark .admin-panel .ds-card {
+	background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.85));
+	border-color: rgba(56, 189, 248, 0.22);
+	box-shadow: 0 10px 28px rgba(2, 6, 23, 0.5);
+}
+
+.dark .admin-panel .ds-btn[class*='border-2'] {
+	background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.82));
+	border-color: rgba(56, 189, 248, 0.35);
+	color: #e2e8f0;
+}
+
+.dark .admin-panel .ds-btn[class*='border-2']:hover {
+	background: rgba(30, 41, 59, 0.95);
+}
+
+.dark .admin-panel a.inline-flex {
+	background: rgba(15, 23, 42, 0.85);
+	border-color: rgba(71, 85, 105, 0.65) !important;
+	color: #e2e8f0;
+}
+
+.dark .admin-panel a.inline-flex:hover {
+	background: rgba(30, 41, 59, 0.95);
+}
+
+.dark .admin-panel h3 {
+	color: #e2e8f0;
+}
+
+.dark .admin-panel input,
+.dark .admin-panel select,
+.dark .admin-panel textarea {
+	background: rgba(15, 23, 42, 0.85);
+	border-color: rgba(71, 85, 105, 0.65) !important;
+	color: #e2e8f0;
+}
+
+.dark .admin-panel input::placeholder,
+.dark .admin-panel textarea::placeholder {
+	color: #94a3b8;
+}
+
+.dark .admin-panel table thead tr {
+	background: linear-gradient(90deg, rgba(14, 165, 233, 0.2), rgba(6, 182, 212, 0.16));
+	border-bottom-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+.dark .admin-panel table tbody tr {
+	border-bottom-color: rgba(51, 65, 85, 0.65) !important;
+	color: #e2e8f0;
+}
+
+.dark .admin-panel table tbody tr:hover {
+	background: rgba(14, 165, 233, 0.12);
+}
+
+.dark .admin-panel .text-\[\#6B7280\] {
+	color: #94a3b8 !important;
+}
+
+.dark .admin-panel .text-\[\#1B3A5C\],
+.dark .admin-panel .text-\[\#0F172A\] {
+	color: #e2e8f0 !important;
+}
+
+.dark .admin-panel :where(button, [href], input, select, textarea, [tabindex]):focus-visible {
+	outline-color: rgba(56, 189, 248, 0.9);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -23,5 +307,9 @@ body {
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
 		scroll-behavior: auto !important;
+	}
+
+	.admin-panel > * {
+		opacity: 1 !important;
 	}
 }
