@@ -151,14 +151,15 @@ export const SkinSimulationCanvas: React.FC<SkinSimulationCanvasProps> = ({
     const data = imageData.data;
     
     // Amplify filter values for more visible effects
-    const amplifiedFilters = {
-      smoothness: f.smoothness * 1.5,
-      brightness: f.brightness * 2,
-      redness: f.redness * 1.8,
-      saturation: f.saturation * 1.5,
-      acneReduction: f.acneReduction * 1.5,
-      hydration: f.hydration * 1.5,
-      evenness: f.evenness * 1.5,
+    // Keep effects subtle to avoid over-processed/"dirty" skin rendering.
+    const safe = {
+      smoothness: Math.min(38, Math.max(0, f.smoothness)),
+      brightness: Math.min(14, Math.max(-8, f.brightness)),
+      redness: Math.min(0, Math.max(-20, f.redness)),
+      saturation: Math.min(10, Math.max(-10, f.saturation)),
+      acneReduction: Math.min(34, Math.max(0, f.acneReduction)),
+      hydration: Math.min(36, Math.max(0, f.hydration)),
+      evenness: Math.min(32, Math.max(0, f.evenness)),
     };
     
     // First pass: collect skin pixel statistics for better processing
@@ -202,8 +203,8 @@ export const SkinSimulationCanvas: React.FC<SkinSimulationCanvasProps> = ({
         const intensity = skinConfidence;
         
         // 1. REDNESS REDUCTION - Very visible effect
-        if (amplifiedFilters.redness < 0) {
-          const rednessStrength = Math.abs(amplifiedFilters.redness) / 100;
+        if (safe.redness < 0) {
+          const rednessStrength = Math.abs(safe.redness) / 100;
           const excessRed = r - Math.max(g, b);
           
           if (excessRed > 10) {
@@ -216,16 +217,16 @@ export const SkinSimulationCanvas: React.FC<SkinSimulationCanvasProps> = ({
         }
         
         // 2. EVENNESS - Blend towards average skin tone
-        if (amplifiedFilters.evenness > 0) {
-          const evennessStrength = amplifiedFilters.evenness / 100 * intensity * 0.5;
+        if (safe.evenness > 0) {
+          const evennessStrength = safe.evenness / 100 * intensity * 0.38;
           r = r + (targetR - r) * evennessStrength;
           g = g + (targetG - g) * evennessStrength;
           b = b + (targetB - b) * evennessStrength;
         }
         
         // 3. HYDRATION - Add warm, healthy glow
-        if (amplifiedFilters.hydration > 0) {
-          const hydrationStrength = amplifiedFilters.hydration / 100 * intensity;
+        if (safe.hydration > 0) {
+          const hydrationStrength = safe.hydration / 100 * intensity;
           // Add warmth and slight luminosity
           r = Math.min(255, r + hydrationStrength * 15);
           g = Math.min(255, g + hydrationStrength * 8);
@@ -233,8 +234,8 @@ export const SkinSimulationCanvas: React.FC<SkinSimulationCanvasProps> = ({
         }
         
         // 4. ACNE REDUCTION - Reduce dark spots and blemishes
-        if (amplifiedFilters.acneReduction > 0) {
-          const acneStrength = amplifiedFilters.acneReduction / 100 * intensity;
+        if (safe.acneReduction > 0) {
+          const acneStrength = safe.acneReduction / 100 * intensity;
           // Detect potential blemishes (darker than average skin)
           const brightness = (r + g + b) / 3;
           const avgBrightness = (avgSkinR + avgSkinG + avgSkinB) / 3;
@@ -256,17 +257,17 @@ export const SkinSimulationCanvas: React.FC<SkinSimulationCanvasProps> = ({
       }
       
       // 5. BRIGHTNESS - Apply to all pixels
-      if (amplifiedFilters.brightness !== 0) {
-        const brightAmount = amplifiedFilters.brightness * 1.2;
+      if (safe.brightness !== 0) {
+        const brightAmount = safe.brightness * 1.0;
         r = Math.max(0, Math.min(255, r + brightAmount));
         g = Math.max(0, Math.min(255, g + brightAmount));
         b = Math.max(0, Math.min(255, b + brightAmount));
       }
       
       // 6. SATURATION - Enhance or reduce color intensity
-      if (amplifiedFilters.saturation !== 0) {
+      if (safe.saturation !== 0) {
         const gray = 0.2989 * r + 0.5870 * g + 0.1140 * b;
-        const satAmount = 1 + (amplifiedFilters.saturation / 100);
+        const satAmount = 1 + (safe.saturation / 100);
         r = Math.max(0, Math.min(255, gray + satAmount * (r - gray)));
         g = Math.max(0, Math.min(255, gray + satAmount * (g - gray)));
         b = Math.max(0, Math.min(255, gray + satAmount * (b - gray)));
@@ -280,10 +281,10 @@ export const SkinSimulationCanvas: React.FC<SkinSimulationCanvasProps> = ({
     ctx.putImageData(imageData, 0, 0);
     
     // 7. SMOOTHNESS - Apply blur for skin smoothing effect
-    if (amplifiedFilters.smoothness > 0) {
+    if (safe.smoothness > 0) {
       // Create a blurred version and blend it
-      const blurAmount = Math.min(3, amplifiedFilters.smoothness / 100 * 2.5);
-      const blendAlpha = Math.min(0.5, amplifiedFilters.smoothness / 100 * 0.4);
+      const blurAmount = Math.min(1.6, safe.smoothness / 100 * 1.4);
+      const blendAlpha = Math.min(0.26, safe.smoothness / 100 * 0.22);
       
       // Save current state
       const currentData = ctx.getImageData(0, 0, width, height);
@@ -313,9 +314,9 @@ export const SkinSimulationCanvas: React.FC<SkinSimulationCanvasProps> = ({
     }
     
     // 8. Final glow effect for hydration
-    if (amplifiedFilters.hydration > 30) {
+    if (safe.hydration > 22) {
       ctx.globalCompositeOperation = 'soft-light';
-      const glowIntensity = amplifiedFilters.hydration / 100 * 0.15;
+      const glowIntensity = safe.hydration / 100 * 0.08;
       ctx.fillStyle = `rgba(255, 248, 235, ${glowIntensity})`;
       ctx.fillRect(0, 0, width, height);
       ctx.globalCompositeOperation = 'source-over';

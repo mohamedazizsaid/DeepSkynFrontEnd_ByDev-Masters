@@ -30,6 +30,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
 
   const [skinProfile, setSkinProfile] = useState<SkinProfile | null>(null);
   const [latestAnalysis, setLatestAnalysis] = useState<Analysis | null>(null);
+  const [recentAnalyses, setRecentAnalyses] = useState<Analysis[]>([]);
   const [stats, setStats] = useState<AnalysisStats | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   
@@ -38,33 +39,30 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     journey, 
     isLoading: twinLoading, 
     createPrediction,
-    simulateProduct,
     isCreatingPrediction,
-    isSimulatingProduct,
   } = useSkinJourney();
   
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [currentPrediction, setCurrentPrediction] = useState<any>(null);
-  const [showSimulationModal, setShowSimulationModal] = useState(false);
-  const [currentSimulation, setCurrentSimulation] = useState<any>(null);
-  const [simulationForm, setSimulationForm] = useState({
-    productName: '',
-    productCategory: 'serum',
-    ingredients: '',
-    simulationPeriod: 14,
-  });
+  const [selectedTimelineAnalysisIndex, setSelectedTimelineAnalysisIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [profile, analysis, statsRes] = await Promise.allSettled([
+        const [profile, analysis, statsRes, allAnalysesRes] = await Promise.allSettled([
           skinProfileService.getMyProfile(),
           analysisService.getLatest(),
           analysisService.getStats(),
+          analysisService.getAll(1, 8),
         ]);
         if (profile.status === 'fulfilled') setSkinProfile(profile.value);
         if (analysis.status === 'fulfilled') setLatestAnalysis(analysis.value);
         if (statsRes.status === 'fulfilled') setStats(statsRes.value);
+        if (allAnalysesRes.status === 'fulfilled') {
+          setRecentAnalyses(
+            allAnalysesRes.value.analyses.filter((a) => a.status === 'completed').slice(0, 6),
+          );
+        }
       } catch { /* fallback */ } finally { setDataLoading(false); }
     };
     loadData();
@@ -145,6 +143,47 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     color: isDark ? '#e2e8f0' : '#111827',
     boxShadow: isDark ? '0 12px 24px rgba(2,6,23,0.45)' : '0 12px 24px rgba(15,23,42,0.12)',
   };
+
+  const normalizedPredictionState = useMemo(() => {
+    const predictedState = currentPrediction?.predictedState;
+    if (!predictedState) return null;
+
+    const toNumber = (value: unknown): number | null => {
+      if (value === null || value === undefined || value === '') return null;
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
+    const baseScore = toNumber(predictedState.healthScore);
+    const baseAge = toNumber(predictedState.skinAge);
+    const baseRadiance = toNumber(predictedState.radianceScore);
+
+    return {
+      healthScore: baseScore !== null ? Math.max(0, Math.min(100, Math.round(baseScore))) : null,
+      skinAge: baseAge !== null ? Math.max(14, Math.min(90, Math.round(baseAge))) : null,
+      radianceScore:
+        baseRadiance !== null ? Math.max(0, Math.min(100, Math.round(baseRadiance))) : null,
+    };
+  }, [currentPrediction]);
+
+  const predictionVisualFilters = useMemo(() => {
+    if (!normalizedPredictionState) return null;
+
+    const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+    const predictedHealth = normalizedPredictionState.healthScore ?? skinHealthScore;
+    const predictedRadiance = normalizedPredictionState.radianceScore ?? predictedHealth;
+    const scoreBoost = predictedHealth - skinHealthScore;
+
+    return {
+      smoothness: clamp(20 + scoreBoost * 1.2, 8, 38),
+      brightness: clamp((predictedRadiance - 70) / 2.8, -6, 14),
+      redness: clamp(-10 - scoreBoost * 0.7, -20, 0),
+      saturation: clamp((predictedRadiance - 60) / 10, -6, 8),
+      acneReduction: clamp(14 + scoreBoost * 1.4, 6, 34),
+      hydration: clamp(18 + (predictedRadiance - 55) * 0.45, 8, 36),
+      evenness: clamp(14 + scoreBoost * 0.9, 6, 32),
+    };
+  }, [normalizedPredictionState, skinHealthScore]);
 
   const topStats = [
     {
@@ -344,6 +383,46 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
   }, [latestAnalysis, stats, skinHealthScore, scoreChange, quickActions]);
 
   const compactActions = quickActions.filter((action) => action.id !== heroAction.id);
+
+  const selectedTimelineAnalysis =
+    selectedTimelineAnalysisIndex !== null ? recentAnalyses[selectedTimelineAnalysisIndex] : null;
+  const previousTimelineAnalysis =
+    selectedTimelineAnalysisIndex !== null ? recentAnalyses[selectedTimelineAnalysisIndex + 1] : null;
+  const timelineEvolution = useMemo(() => {
+    if (!selectedTimelineAnalysis || !previousTimelineAnalysis) {
+      return {
+        hasPrevious: false,
+        hasEvolution: false,
+        healthScoreChange: 0,
+        skinAgeChange: 0,
+        newConditions: [] as string[],
+        resolvedConditions: [] as string[],
+      };
+    }
+
+    const healthScoreChange =
+      (selectedTimelineAnalysis.healthScore ?? 0) - (previousTimelineAnalysis.healthScore ?? 0);
+    const skinAgeChange =
+      (selectedTimelineAnalysis.skinAge ?? 0) - (previousTimelineAnalysis.skinAge ?? 0);
+    const currentConditions = new Set(selectedTimelineAnalysis.conditions || []);
+    const prevConditions = new Set(previousTimelineAnalysis.conditions || []);
+    const newConditions = [...currentConditions].filter((c) => !prevConditions.has(c));
+    const resolvedConditions = [...prevConditions].filter((c) => !currentConditions.has(c));
+    const hasEvolution =
+      healthScoreChange !== 0 ||
+      skinAgeChange !== 0 ||
+      newConditions.length > 0 ||
+      resolvedConditions.length > 0;
+
+    return {
+      hasPrevious: true,
+      hasEvolution,
+      healthScoreChange,
+      skinAgeChange,
+      newConditions,
+      resolvedConditions,
+    };
+  }, [selectedTimelineAnalysis, previousTimelineAnalysis]);
 
   if (dataLoading) {
     return (
@@ -739,48 +818,48 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
         >
           <h3 className={`text-base font-bold mb-4 ${textPrimary}`}>{t('dashboard.recentActivity')}</h3>
           <div className="space-y-3">
-            {latestAnalysis ? (
-              <>
-                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.65 }}
-                  className={activityItemClass}>
-                  <div className="w-9 h-9 rounded-lg bg-[#0EA5E9]/10 flex items-center justify-center flex-shrink-0">
-                    <Scan className="w-4 h-4 text-[#0EA5E9]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium ${textPrimary}`}>
-                      {latestAnalysis.status === 'completed' ? t('dashboard.analysisCompleted') : latestAnalysis.status === 'processing' ? t('dashboard.analysisInProgress') : latestAnalysis.status}
-                    </p>
-                    <p className={`text-xs ${textSecondary}`}>{formatAnalysisDate(latestAnalysis.createdAt)}</p>
-                    {latestAnalysis.status === 'completed' && (
-                      <p className="text-xs text-[#0EA5E9] font-semibold mt-0.5">Score : {latestAnalysis.healthScore}/100</p>
-                    )}
-                  </div>
-                </motion.div>
-                {stats && stats.totalAnalyses > 1 && (
-                  <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.7 }}
-                    className={activityItemClass}>
-                    <div className="w-9 h-9 rounded-lg bg-[#FBBF24]/10 flex items-center justify-center flex-shrink-0">
-                      <TrendingUp className="w-4 h-4 text-[#FBBF24]" />
-                    </div>
-                    <div className="flex-1">
-                      <p className={`text-sm font-medium ${textPrimary}`}>{t('dashboard.totalAnalyses').replace('{count}', stats.totalAnalyses.toString())}</p>
-                      <p className={`text-xs ${textSecondary}`}>{t('dashboard.avgScore').replace('{score}', stats.averageHealthScore.toString())}</p>
-                    </div>
-                  </motion.div>
-                )}
-                {latestAnalysis.conditions?.length > 0 && (
-                  <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.75 }}
-                    className={activityItemClass}>
-                    <div className="w-9 h-9 rounded-lg bg-[#F9A8D4]/10 flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="w-4 h-4 text-[#F9A8D4]" />
-                    </div>
-                    <div className="flex-1">
-                      <p className={`text-sm font-medium ${textPrimary}`}>{t('dashboard.detectedConditions')}</p>
-                      <p className={`text-xs ${textSecondary}`}>{latestAnalysis.conditions.slice(0, 3).join(', ')}</p>
-                    </div>
-                  </motion.div>
-                )}
-              </>
+            {recentAnalyses.length > 0 ? (
+              <div className="relative ml-2">
+                <div className={`absolute left-[18px] top-2 bottom-2 w-px ${isDark ? 'bg-gradient-to-b from-[#475569] via-[#0EA5E9]/60 to-[#475569]' : 'bg-gradient-to-b from-[#E2E8F0] via-[#0EA5E9]/45 to-[#E2E8F0]'}`} />
+                <div className="space-y-3">
+                  {recentAnalyses.map((item, index) => (
+                    <motion.button
+                      type="button"
+                      key={item.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.64 + index * 0.05 }}
+                      onClick={() => setSelectedTimelineAnalysisIndex(index)}
+                      className={`${activityItemClass} relative ml-3 w-full text-left border shadow-[0_8px_18px_rgba(14,165,233,0.10)] hover:shadow-[0_10px_24px_rgba(14,165,233,0.16)] transition-shadow`}
+                    >
+                      <div className="absolute -left-5 top-5 w-2.5 h-2.5 rounded-full bg-[#0EA5E9] ring-4 ring-[#0EA5E9]/20 shadow-[0_0_0_2px_rgba(14,165,233,0.15)]" />
+                      <div className="w-11 h-11 rounded-xl overflow-hidden border border-white/40 bg-white/70 flex-shrink-0 shadow-sm">
+                        {item.images?.[0] ? (
+                          <img src={item.images[0]} alt="analysis" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Scan className="w-4 h-4 text-[#0EA5E9]" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`text-sm font-semibold ${textPrimary}`}>Analyse cutanée</p>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gradient-to-r from-[#0EA5E9]/15 to-[#8B5CF6]/10 text-[#0EA5E9] border border-[#0EA5E9]/20">
+                            {item.healthScore ?? 0}/100
+                          </span>
+                        </div>
+                        <p className={`text-xs ${textSecondary}`}>{formatAnalysisDate(item.createdAt)}</p>
+                        {!!item.conditions?.length && (
+                          <p className={`text-[11px] ${textSecondary} mt-0.5 truncate`}>
+                            {item.conditions.slice(0, 2).join(' • ')}
+                          </p>
+                        )}
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
             ) : (
               <div className={`text-center py-8 ${textSecondary}`}>
                 <Scan className="w-10 h-10 mx-auto mb-3 opacity-30" />
@@ -823,9 +902,6 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                 console.error('Prediction failed:', error);
               }
             }}
-            onSimulateProduct={() => {
-              setShowSimulationModal(true);
-            }}
           />
         </motion.div>
       )}
@@ -850,12 +926,95 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       )}
 
       {/* Prediction Modal */}
+      {selectedTimelineAnalysis && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`relative w-full max-w-xl rounded-2xl border p-6 ${isDark ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-gray-200'} shadow-2xl`}
+          >
+            <button
+              onClick={() => setSelectedTimelineAnalysisIndex(null)}
+              className={`absolute top-4 right-4 px-2 py-1 rounded-lg text-sm ${isDark ? 'hover:bg-white/10 text-gray-300' : 'hover:bg-gray-100 text-gray-600'}`}
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/50 bg-white/70 flex-shrink-0">
+                {selectedTimelineAnalysis.images?.[0] ? (
+                  <img src={selectedTimelineAnalysis.images[0]} alt="analysis" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Scan className="w-4 h-4 text-[#0EA5E9]" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <h3 className={`text-lg font-bold ${textPrimary}`}>Récap IA de l’analyse</h3>
+                <p className={`text-xs ${textSecondary}`}>{formatAnalysisDate(selectedTimelineAnalysis.createdAt)}</p>
+              </div>
+            </div>
+
+            <div className={`rounded-xl p-4 mb-4 ${isDark ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
+              <p className={`text-sm font-semibold mb-1 ${textPrimary}`}>Résumé IA</p>
+              <p className={`text-sm leading-relaxed ${textSecondary}`}>
+                {selectedTimelineAnalysis.results?.summary ||
+                  'Aucun résumé détaillé disponible pour cette analyse.'}
+              </p>
+            </div>
+
+            <div
+              className={`rounded-xl p-4 mb-4 ${
+                timelineEvolution.hasPrevious
+                  ? timelineEvolution.hasEvolution
+                    ? isDark
+                      ? 'bg-emerald-500/10'
+                      : 'bg-emerald-50'
+                    : isDark
+                      ? 'bg-sky-500/10'
+                      : 'bg-sky-50'
+                  : isDark
+                    ? 'bg-gray-700/40'
+                    : 'bg-gray-100'
+              }`}
+            >
+              <p className={`text-sm font-semibold mb-1 ${textPrimary}`}>
+                Évolution détectée : {timelineEvolution.hasPrevious ? (timelineEvolution.hasEvolution ? 'Oui' : 'Non') : 'N/A'}
+              </p>
+              {timelineEvolution.hasPrevious ? (
+                <div className={`text-xs ${textSecondary} space-y-1`}>
+                  <p>Score santé: {timelineEvolution.healthScoreChange > 0 ? '+' : ''}{timelineEvolution.healthScoreChange}</p>
+                  <p>Âge cutané: {timelineEvolution.skinAgeChange > 0 ? '+' : ''}{timelineEvolution.skinAgeChange}</p>
+                  {!!timelineEvolution.newConditions.length && <p>Nouvelles conditions: {timelineEvolution.newConditions.join(', ')}</p>}
+                  {!!timelineEvolution.resolvedConditions.length && <p>Conditions améliorées: {timelineEvolution.resolvedConditions.join(', ')}</p>}
+                </div>
+              ) : (
+                <p className={`text-xs ${textSecondary}`}>Pas d’analyse antérieure pour comparer.</p>
+              )}
+            </div>
+
+            {selectedTimelineAnalysis.results?.recommendations && (
+              <div className={`rounded-xl p-4 ${isDark ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
+                <p className={`text-sm font-semibold mb-2 ${textPrimary}`}>Conseil IA recommandé</p>
+                <p className={`text-xs ${textSecondary}`}>
+                  {(selectedTimelineAnalysis.results.recommendations.lifestyle?.[0] ||
+                    selectedTimelineAnalysis.results.recommendations.products?.[0] ||
+                    selectedTimelineAnalysis.results.recommendations.ingredients?.[0] ||
+                    'Continuez une routine régulière pour suivre votre évolution.')}
+                </p>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
+
       {showPredictionModal && currentPrediction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 backdrop-blur-sm p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={`relative w-full max-w-lg mx-4 rounded-2xl border p-6 ${isDark ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-gray-200'} shadow-2xl`}
+            className={`relative my-auto flex w-full max-w-2xl flex-col rounded-2xl border p-6 max-h-[calc(100vh-2rem)] ${isDark ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-gray-200'} shadow-2xl`}
           >
             <button
               onClick={() => setShowPredictionModal(false)}
@@ -869,38 +1028,56 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                 <Target className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className={`text-xl font-bold ${textPrimary}`}>Prédiction 7 Jours</h3>
-                <p className={`text-sm ${textSecondary}`}>Confiance: {Math.round((currentPrediction.confidence || 0.1) * 100)}%</p>
+                <h3 className={`text-xl font-bold ${textPrimary}`}>Projection du Jumeau Après Routine</h3>
+                <p className={`text-sm ${textSecondary}`}>{currentPrediction?.basedOnDays || 7} jours • Confiance: {Math.round((currentPrediction.confidence || 0.1) * 100)}%</p>
               </div>
             </div>
             
-            <div className="space-y-4">
-              {currentPrediction.predictedState && (
+            <div className="space-y-4 overflow-y-auto pr-1">
+              {latestAnalysis?.images?.[0] && predictionVisualFilters && (
+                <div className={`p-3 rounded-xl ${isDark ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
+                  <SkinSimulationCanvas
+                    imageUrl={latestAnalysis.images[0]}
+                    filters={predictionVisualFilters}
+                    productName="Routine recommandée"
+                    simulationPeriod={currentPrediction?.basedOnDays || 7}
+                  />
+                </div>
+              )}
+
+              {normalizedPredictionState && (
                 <>
-                  <div className={`p-4 rounded-xl ${isDark ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
-                    <p className={`text-sm font-medium ${textSecondary} mb-2`}>Score Santé Prédit</p>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold text-emerald-500">
-                        {currentPrediction.predictedState.healthScore || '—'}
+                    <div className={`p-4 rounded-xl ${isDark ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
+                      <p className={`text-sm font-medium ${textSecondary} mb-2`}>Score Visage Amélioré</p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-emerald-500">
+                          {normalizedPredictionState.healthScore ?? '—'}
                       </span>
                       <span className={textSecondary}>/100</span>
                     </div>
-                  </div>
-                  
-                  {currentPrediction.predictedState.conditions && (
-                    <div className={`p-4 rounded-xl ${isDark ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
-                      <p className={`text-sm font-medium ${textSecondary} mb-2`}>Conditions Prédites</p>
-                      <div className="flex flex-wrap gap-2">
-                        {Object.entries(currentPrediction.predictedState.conditions).map(([condition, data]: [string, any]) => (
-                          <span key={condition} className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700">
-                            {condition}: {data?.severity || 'normal'}
-                          </span>
-                        ))}
-                      </div>
                     </div>
-                  )}
-                </>
-              )}
+
+                    {(normalizedPredictionState.radianceScore !== null || normalizedPredictionState.skinAge !== null) && (
+                      <div className={`p-4 rounded-xl ${isDark ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
+                        <p className={`text-sm font-medium ${textSecondary} mb-2`}>Projection esthétique</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <p className={`text-xs ${textSecondary}`}>Éclat projeté</p>
+                            <p className="text-xl font-semibold text-sky-500">
+                              {normalizedPredictionState.radianceScore ?? '—'}/100
+                            </p>
+                          </div>
+                          <div>
+                            <p className={`text-xs ${textSecondary}`}>Âge cutané projeté</p>
+                            <p className="text-xl font-semibold text-purple-500">
+                              {normalizedPredictionState.skinAge ?? '—'} ans
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                 </>
+               )}
               
               {currentPrediction.preventiveTips && currentPrediction.preventiveTips.length > 0 && (
                 <div className={`p-4 rounded-xl ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
@@ -912,20 +1089,19 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                   </ul>
                 </div>
               )}
-              
-              {currentPrediction.warnings && currentPrediction.warnings.length > 0 && (
+
+              {!latestAnalysis?.images?.[0] && (
                 <div className={`p-4 rounded-xl ${isDark ? 'bg-amber-500/10' : 'bg-amber-50'}`}>
-                  <p className={`text-sm font-medium text-amber-600 mb-2`}>⚠️ Alertes</p>
-                  <ul className="space-y-1">
-                    {currentPrediction.warnings.map((warning: string, i: number) => (
-                      <li key={i} className={`text-sm ${textSecondary}`}>• {warning}</li>
-                    ))}
-                  </ul>
+                  <p className="text-sm font-medium text-amber-600 mb-1">Image de projection indisponible</p>
+                  <p className={`text-xs ${textSecondary}`}>
+                    Faites une nouvelle analyse photo pour afficher le rendu visuel avant/après routine.
+                  </p>
                 </div>
               )}
+               
             </div>
             
-            <div className="mt-6 flex gap-3">
+            <div className="mt-4 flex gap-3 pt-2 border-t border-black/5 dark:border-white/10">
               <Button 
                 onClick={() => setShowPredictionModal(false)} 
                 variant="outline"
@@ -944,282 +1120,14 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
         </div>
       )}
 
-      {/* Product Simulation Modal */}
-      {showSimulationModal && !currentSimulation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className={`relative w-full max-w-lg mx-4 rounded-2xl border p-6 ${isDark ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-gray-200'} shadow-2xl`}
-          >
-            <button
-              onClick={() => setShowSimulationModal(false)}
-              className={`absolute top-4 right-4 p-2 rounded-full ${isDark ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
-            >
-              ✕
-            </button>
-            
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-pink-500 to-purple-500">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className={`text-xl font-bold ${textPrimary}`}>Simuler un Produit</h3>
-                <p className={`text-sm ${textSecondary}`}>Testez l'effet d'un produit sur votre peau</p>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className={`block text-sm font-medium ${textSecondary} mb-1`}>Nom du produit</label>
-                <input
-                  type="text"
-                  value={simulationForm.productName}
-                  onChange={(e) => setSimulationForm(prev => ({ ...prev, productName: e.target.value }))}
-                  placeholder="Ex: Sérum Vitamine C"
-                  className={`w-full px-4 py-2 rounded-lg border ${isDark ? 'bg-[#0f172a] border-[#334155] text-white' : 'bg-white border-gray-300'}`}
-                />
-              </div>
-              
-              <div>
-                <label className={`block text-sm font-medium ${textSecondary} mb-1`}>Catégorie</label>
-                <select
-                  value={simulationForm.productCategory}
-                  onChange={(e) => setSimulationForm(prev => ({ ...prev, productCategory: e.target.value }))}
-                  className={`w-full px-4 py-2 rounded-lg border ${isDark ? 'bg-[#0f172a] border-[#334155] text-white' : 'bg-white border-gray-300'}`}
-                >
-                  <option value="cleanser">Nettoyant</option>
-                  <option value="toner">Tonique</option>
-                  <option value="serum">Sérum</option>
-                  <option value="moisturizer">Crème hydratante</option>
-                  <option value="sunscreen">Protection solaire</option>
-                  <option value="mask">Masque</option>
-                  <option value="exfoliant">Exfoliant</option>
-                  <option value="oil">Huile</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className={`block text-sm font-medium ${textSecondary} mb-1`}>Ingrédients principaux</label>
-                <input
-                  type="text"
-                  value={simulationForm.ingredients}
-                  onChange={(e) => setSimulationForm(prev => ({ ...prev, ingredients: e.target.value }))}
-                  placeholder="Ex: vitamine C, acide hyaluronique, niacinamide"
-                  className={`w-full px-4 py-2 rounded-lg border ${isDark ? 'bg-[#0f172a] border-[#334155] text-white' : 'bg-white border-gray-300'}`}
-                />
-                <p className={`text-xs ${textSecondary} mt-1`}>Séparez les ingrédients par des virgules</p>
-              </div>
-              
-              <div>
-                <label className={`block text-sm font-medium ${textSecondary} mb-1`}>Période de simulation</label>
-                <select
-                  value={simulationForm.simulationPeriod}
-                  onChange={(e) => setSimulationForm(prev => ({ ...prev, simulationPeriod: Number(e.target.value) }))}
-                  className={`w-full px-4 py-2 rounded-lg border ${isDark ? 'bg-[#0f172a] border-[#334155] text-white' : 'bg-white border-gray-300'}`}
-                >
-                  <option value={7}>7 jours</option>
-                  <option value={14}>14 jours</option>
-                  <option value={30}>30 jours</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="mt-6 flex gap-3">
-              <Button 
-                onClick={() => setShowSimulationModal(false)} 
-                variant="outline"
-                className="flex-1"
-              >
-                Annuler
-              </Button>
-              <Button 
-                onClick={async () => {
-                  if (!simulationForm.productName) return;
-                  try {
-                    const result = await simulateProduct({
-                      productName: simulationForm.productName,
-                      productCategory: simulationForm.productCategory,
-                      productIngredients: simulationForm.ingredients.split(',').map(i => i.trim()).filter(Boolean),
-                      simulationPeriod: simulationForm.simulationPeriod,
-                    });
-                    setCurrentSimulation(result);
-                  } catch (error) {
-                    console.error('Simulation failed:', error);
-                  }
-                }}
-                disabled={!simulationForm.productName || isSimulatingProduct}
-                className="flex-1"
-              >
-                {isSimulatingProduct ? 'Simulation...' : 'Simuler'}
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Simulation Results Modal */}
-      {showSimulationModal && currentSimulation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto py-8">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className={`relative w-full max-w-2xl mx-4 rounded-2xl border p-6 ${isDark ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-gray-200'} shadow-2xl`}
-          >
-            <button
-              onClick={() => { setShowSimulationModal(false); setCurrentSimulation(null); }}
-              className={`absolute top-4 right-4 p-2 rounded-full z-10 ${isDark ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
-            >
-              ✕
-            </button>
-            
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-blue-500">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className={`text-xl font-bold ${textPrimary}`}>{currentSimulation.productName}</h3>
-                <p className={`text-sm ${textSecondary}`}>Simulation visuelle - {currentSimulation.simulationPeriod} jours</p>
-              </div>
-            </div>
-            
-            {/* Visual Simulation Canvas */}
-            {latestAnalysis?.images?.[0] && currentSimulation.expectedChanges?.visualFilters && (
-              <div className="mb-6">
-                <SkinSimulationCanvas
-                  imageUrl={latestAnalysis.images[0]}
-                  filters={currentSimulation.expectedChanges.visualFilters}
-                  productName={currentSimulation.productName}
-                  simulationPeriod={currentSimulation.simulationPeriod}
-                />
-              </div>
-            )}
-            
-            {/* Fallback if no image */}
-            {!latestAnalysis?.images?.[0] && (
-              <div className={`mb-6 p-8 rounded-xl text-center ${isDark ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
-                <Scan className={`w-12 h-12 mx-auto mb-3 ${textSecondary} opacity-50`} />
-                <p className={`text-sm ${textSecondary}`}>
-                  Aucune photo d'analyse disponible. Faites une analyse pour voir la simulation visuelle.
-                </p>
-                <Button onClick={() => { setShowSimulationModal(false); onNavigate('analysis'); }} className="mt-4">
-                  Faire une analyse
-                </Button>
-              </div>
-            )}
-            
-            <div className="space-y-4">
-              {/* Success Probability */}
-              <div className={`p-4 rounded-xl ${isDark ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
-                <p className={`text-sm font-medium ${textSecondary} mb-2`}>Probabilité de succès</p>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full"
-                      style={{ width: `${(currentSimulation.successProbability || 0) * 100}%` }}
-                    />
-                  </div>
-                  <span className={`text-lg font-bold ${textPrimary}`}>
-                    {Math.round((currentSimulation.successProbability || 0) * 100)}%
-                  </span>
-                </div>
-              </div>
-              
-              {/* Predicted Changes */}
-              {currentSimulation.expectedChanges && (
-                <>
-                  {currentSimulation.expectedChanges.positive?.length > 0 && (
-                    <div className={`p-4 rounded-xl ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
-                      <p className="text-sm font-medium text-emerald-600 mb-2">✅ Effets positifs attendus</p>
-                      <ul className="space-y-1">
-                        {currentSimulation.expectedChanges.positive.map((change: string, i: number) => (
-                          <li key={i} className={`text-sm ${textSecondary}`}>• {change}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  
-                  {currentSimulation.expectedChanges.negative?.length > 0 && (
-                    <div className={`p-4 rounded-xl ${isDark ? 'bg-red-500/10' : 'bg-red-50'}`}>
-                      <p className="text-sm font-medium text-red-600 mb-2">⚠️ Risques potentiels</p>
-                      <ul className="space-y-1">
-                        {currentSimulation.expectedChanges.negative.map((change: string, i: number) => (
-                          <li key={i} className={`text-sm ${textSecondary}`}>• {change}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </>
-              )}
-              
-              {/* Risk Factors */}
-              {currentSimulation.riskFactors?.length > 0 && (
-                <div className={`p-4 rounded-xl ${isDark ? 'bg-amber-500/10' : 'bg-amber-50'}`}>
-                  <p className="text-sm font-medium text-amber-600 mb-2">🔍 Facteurs de risque</p>
-                  <ul className="space-y-1">
-                    {currentSimulation.riskFactors.map((risk: string, i: number) => (
-                      <li key={i} className={`text-sm ${textSecondary}`}>• {risk}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              
-              {/* Recommendations */}
-              {currentSimulation.recommendations?.length > 0 && (
-                <div className={`p-4 rounded-xl ${isDark ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
-                  <p className="text-sm font-medium text-blue-600 mb-2">💡 Recommandations</p>
-                  <ul className="space-y-1">
-                    {currentSimulation.recommendations.map((rec: string, i: number) => (
-                      <li key={i} className={`text-sm ${textSecondary}`}>• {rec}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-            
-            <div className="mt-6 flex gap-3">
-              <Button 
-                onClick={() => { 
-                  setCurrentSimulation(null);
-                  setSimulationForm({ productName: '', productCategory: 'serum', ingredients: '', simulationPeriod: 14 });
-                }} 
-                variant="outline"
-                className="flex-1"
-              >
-                Nouvelle simulation
-              </Button>
-              <Button 
-                onClick={() => { setShowSimulationModal(false); setCurrentSimulation(null); }}
-                className="flex-1"
-              >
-                Fermer
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
       {/* Creating Prediction Loading */}
       {isCreatingPrediction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className={`p-8 rounded-2xl ${isDark ? 'bg-[#1e293b]' : 'bg-white'} shadow-xl`}>
             <div className="flex flex-col items-center gap-4">
               <div className="w-12 h-12 rounded-full border-4 border-purple-500 border-t-transparent animate-spin" />
-              <p className={`text-lg font-medium ${textPrimary}`}>Génération de la prédiction...</p>
-              <p className={`text-sm ${textSecondary}`}>L'IA analyse votre peau du futur</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Simulating Product Loading */}
-      {isSimulatingProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className={`p-8 rounded-2xl ${isDark ? 'bg-[#1e293b]' : 'bg-white'} shadow-xl`}>
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-12 h-12 rounded-full border-4 border-pink-500 border-t-transparent animate-spin" />
-              <p className={`text-lg font-medium ${textPrimary}`}>Simulation en cours...</p>
-              <p className={`text-sm ${textSecondary}`}>L'IA analyse l'effet du produit sur votre peau</p>
+              <p className={`text-lg font-medium ${textPrimary}`}>Projection du jumeau amélioré...</p>
+              <p className={`text-sm ${textSecondary}`}>L'IA simule le résultat après votre routine</p>
             </div>
           </div>
         </div>

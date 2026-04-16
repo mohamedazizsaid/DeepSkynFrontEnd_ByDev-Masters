@@ -103,7 +103,7 @@ export function PreocupentSelectorModal({
 
   return createPortal(
     <AnimatePresence>
-      <style>{hiddenScrollbarStyle}</style>
+      <style key="preocupent-scrollbar-style">{hiddenScrollbarStyle}</style>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

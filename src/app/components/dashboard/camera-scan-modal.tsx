@@ -1,11 +1,12 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import * as faceapi from 'face-api.js';
 import { Camera, X, Loader2, RotateCcw, Save, Sparkles, AlertCircle, Lock, Crown, ShieldCheck, ShieldX, UserCheck, Droplets, Sun, Wind, Scan, Activity, Eye, Zap, CircleDot, Frown, TrendingDown, Flame } from 'lucide-react';
 import { analysisService } from '../../../lib/services/analysis.service';
 import { extractDetailedScores } from '../../../lib/analysis-helpers';
 import { useFaceVerification } from '../../../lib/hooks/useFaceVerification';
-import type { GeminiAnalysisResult } from '../../../lib/types';
+import type { GeminiAnalysisResult, AnalysisEvolutionRemark } from '../../../lib/types';
 import {
   PreocupentSelectorModal,
   type PreocupentZoneKey,
@@ -66,6 +67,8 @@ interface CameraScanModalProps {
 
 type ScanPhase = 'camera' | 'verifying' | 'verification_failed' | 'analyzing' | 'results';
 type PendingPreocupentAction = { mode: 'scan' | 'save'; base64: string };
+type ScanAngle = 'front' | 'left' | 'right';
+type PoseLabel = 'front' | 'left' | 'right' | 'unknown';
 
 export function CameraScanModal({
   open,
@@ -82,11 +85,17 @@ export function CameraScanModal({
 
   const [phase, setPhase] = useState<ScanPhase>('camera');
   const [result, setResult] = useState<GeminiAnalysisResult | null>(null);
+  const [evolutionRemark, setEvolutionRemark] = useState<AnalysisEvolutionRemark | null>(null);
   const [saving, setSaving] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [verificationMessage, setVerificationMessage] = useState<string>('');
   const [localVerificationResult, setLocalVerificationResult] = useState<{ needsProfilePhoto: boolean } | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [capturedImagesByAngle, setCapturedImagesByAngle] = useState<Partial<Record<ScanAngle, string>>>({});
+  const [captureSequence, setCaptureSequence] = useState<ScanAngle[]>([]);
+  const [loadingCapturedImages, setLoadingCapturedImages] = useState<Partial<Record<ScanAngle, string>>>({});
+  const [isAutoCapturing, setIsAutoCapturing] = useState(false);
+  const [autoCaptureHint, setAutoCaptureHint] = useState<string>('');
   const [visibleAnnotations, setVisibleAnnotations] = useState<AnalysisAnnotation[]>([]);
   const [visibleIssues, setVisibleIssues] = useState<SkinIssueMarker[]>([]);
   const [analysisProgress, setAnalysisProgress] = useState(0);
@@ -137,12 +146,18 @@ export function CameraScanModal({
     if (open) {
       setPhase('camera');
       setResult(null);
+      setEvolutionRemark(null);
       setVerificationMessage('');
       setLocalVerificationResult(null);
       setSelectedPreocupent([]);
       setPendingPreocupentAction(null);
       setPreocupentModalOpen(false);
       setPreocupentConfirming(false);
+      setCapturedImagesByAngle({});
+      setCaptureSequence([]);
+      setLoadingCapturedImages({});
+      setIsAutoCapturing(false);
+      setAutoCaptureHint('');
       resetVerification();
       startCamera();
     } else {
@@ -416,6 +431,7 @@ export function CameraScanModal({
   const runScanAnalysis = async (
     base64: string,
     preocupent: PreocupentZoneKey[],
+    forcedCaptureSequence?: ScanAngle[],
   ) => {
     stopCamera();
     setPhase('analyzing');
@@ -424,6 +440,19 @@ export function CameraScanModal({
     setShowFinalScore(false);
     setAnalysisProgress(0);
     setCurrentAnalysisText(analysisMessages[0]);
+    const sequence = (forcedCaptureSequence && forcedCaptureSequence.length === 3)
+      ? forcedCaptureSequence
+      : (captureSequence.length === 3 ? captureSequence : ['front', 'left', 'right']);
+    const imageByAngle: Record<ScanAngle, string> = {
+      [sequence[0]]: capturedImagesByAngle[sequence[0]] || capturedImage || '',
+      [sequence[1]]: capturedImagesByAngle[sequence[1]] || capturedImage || '',
+      [sequence[2]]: capturedImagesByAngle[sequence[2]] || capturedImage || '',
+    };
+    setLoadingCapturedImages({
+      front: imageByAngle.front,
+      left: imageByAngle.left,
+      right: imageByAngle.right,
+    });
 
     try {
       let messageIndex = 0;
@@ -434,16 +463,24 @@ export function CameraScanModal({
       }, 800);
 
       const scanResult = await analysisService.scan({
-        image: base64,
+        frontImage: imageByAngle.front.split(',')[1] || base64,
+        leftImage: imageByAngle.left.split(',')[1] || base64,
+        rightImage: imageByAngle.right.split(',')[1] || base64,
         mimeType: 'image/jpeg',
         saveAnalysis: false,
         preocupent,
       });
 
       clearInterval(textInterval);
-      setResult(scanResult);
+      setResult(scanResult.analysis);
+      setEvolutionRemark(scanResult.evolution ?? null);
+      setLoadingCapturedImages({
+        front: scanResult.capturedImages?.front?.imageUrl || imageByAngle.front,
+        left: scanResult.capturedImages?.left?.imageUrl || imageByAngle.left,
+        right: scanResult.capturedImages?.right?.imageUrl || imageByAngle.right,
+      });
 
-      const annotations = generateAnnotations(scanResult);
+      const annotations = generateAnnotations(scanResult.analysis);
       setAnalysisProgress(100);
       setCurrentAnalysisText('Detection des metriques...');
 
@@ -456,7 +493,7 @@ export function CameraScanModal({
       await new Promise(resolve => setTimeout(resolve, 600));
       setCurrentAnalysisText('Detection des problemes cutanes...');
 
-      const issues = generateIssueMarkers(scanResult);
+      const issues = generateIssueMarkers(scanResult.analysis);
       for (let i = 0; i < issues.length; i++) {
         await new Promise(resolve => setTimeout(resolve, 450));
         setVisibleIssues(prev => [...prev, issues[i]]);
@@ -486,6 +523,7 @@ export function CameraScanModal({
   const saveAnalysisWithPreocupent = async (
     base64: string,
     preocupent: PreocupentZoneKey[],
+    forcedCaptureSequence?: ScanAngle[],
   ) => {
     if (!canSaveAnalysis) {
       toast.error(analysisBlockedMessage || 'Analysis limit reached for your plan.');
@@ -494,8 +532,19 @@ export function CameraScanModal({
 
     setSaving(true);
     try {
+      const sequence = (forcedCaptureSequence && forcedCaptureSequence.length === 3)
+        ? forcedCaptureSequence
+        : (captureSequence.length === 3 ? captureSequence : ['front', 'left', 'right']);
+      const imageByAngle: Record<ScanAngle, string> = {
+        [sequence[0]]: capturedImagesByAngle[sequence[0]] || capturedImage || '',
+        [sequence[1]]: capturedImagesByAngle[sequence[1]] || capturedImage || '',
+        [sequence[2]]: capturedImagesByAngle[sequence[2]] || capturedImage || '',
+      };
+
       await analysisService.scan({
-        image: base64,
+        frontImage: imageByAngle.front.split(',')[1] || base64,
+        leftImage: imageByAngle.left.split(',')[1] || base64,
+        rightImage: imageByAngle.right.split(',')[1] || base64,
         mimeType: 'image/jpeg',
         saveImage: true,
         saveAnalysis: true,
@@ -522,9 +571,9 @@ export function CameraScanModal({
       if (!pendingAction) return;
 
       if (pendingAction.mode === 'scan') {
-        await runScanAnalysis(pendingAction.base64, zones);
+        await runScanAnalysis(pendingAction.base64, zones, ['front', 'left', 'right']);
       } else {
-        await saveAnalysisWithPreocupent(pendingAction.base64, zones);
+        await saveAnalysisWithPreocupent(pendingAction.base64, zones, ['front', 'left', 'right']);
       }
     } finally {
       setPreocupentConfirming(false);
@@ -537,55 +586,237 @@ export function CameraScanModal({
     setPendingPreocupentAction(null);
   };
 
-  // Face Verification + Capture + Scan
-  const captureAndScan = async () => {
+  const wait = (ms: number) =>
+    new Promise<void>((resolve) => {
+      setTimeout(resolve, ms);
+    });
+
+  const captureFrameFromVideo = (): string | null => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas) return;
+    if (!video || !canvas) return null;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const width = video.videoWidth || 1280;
+    const height = video.videoHeight || 720;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) return null;
     ctx.drawImage(video, 0, 0);
+    return canvas.toDataURL('image/jpeg', 0.9);
+  };
 
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    setCapturedImage(dataUrl);
+  const waitForVideoReady = async (timeoutMs = 4000): Promise<boolean> => {
+    const video = videoRef.current;
+    if (!video) return false;
+
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+      if (
+        video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+        video.videoWidth > 0 &&
+        video.videoHeight > 0
+      ) {
+        return true;
+      }
+      await wait(120);
+    }
+
+    return false;
+  };
+
+  const detectPoseFromVideo = async (): Promise<{ pose: PoseLabel; yaw: number } | null> => {
+    const video = videoRef.current;
+    if (!video) return null;
+
+    const detection = await faceapi.detectSingleFace(video).withFaceLandmarks();
+    if (!detection) return null;
+
+    const leftEye = detection.landmarks.getLeftEye();
+    const rightEye = detection.landmarks.getRightEye();
+    const nose = detection.landmarks.getNose();
+    if (!leftEye.length || !rightEye.length || !nose.length) return null;
+
+    const avgX = (points: faceapi.Point[]) => points.reduce((sum, p) => sum + p.x, 0) / points.length;
+    const leftEyeX = avgX(leftEye);
+    const rightEyeX = avgX(rightEye);
+    const eyeDistance = Math.max(1, Math.abs(rightEyeX - leftEyeX));
+    const noseTipX = nose[Math.min(3, nose.length - 1)].x;
+    const yaw = (noseTipX - (leftEyeX + rightEyeX) / 2) / eyeDistance;
+
+    if (Math.abs(yaw) <= 0.09) return { pose: 'front', yaw };
+    return { pose: yaw > 0 ? 'right' : 'left', yaw };
+  };
+
+  const waitForExpectedPose = async (
+    expected: ScanAngle,
+    previousSideSign?: number,
+    timeoutMs = 9000,
+  ): Promise<{ matched: boolean; sideSign?: number }> => {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+      const pose = await detectPoseFromVideo();
+      if (!pose) {
+        await wait(220);
+        continue;
+      }
+
+      if (expected === 'front') {
+        if (pose.pose === 'front') return { matched: true };
+      } else {
+        const sideSign = Math.sign(pose.yaw);
+        if (Math.abs(pose.yaw) >= 0.12) {
+          if (expected === 'left') return { matched: true, sideSign };
+          if (expected === 'right' && previousSideSign && sideSign === -previousSideSign) {
+            return { matched: true, sideSign };
+          }
+        }
+      }
+
+      await wait(220);
+    }
+
+    return { matched: false };
+  };
+
+  // Face Verification + Capture + Scan (3 captures: front, left, right)
+  const captureAndScan = async () => {
+    const video = videoRef.current;
+    if (!video || isAutoCapturing) return;
+    setIsAutoCapturing(true);
+    setAutoCaptureHint('Démarrage de la capture automatique...');
+    setCapturedImagesByAngle({});
+    setCaptureSequence([]);
+    setCapturedImage(null);
 
     if (isModelLoaded) {
       setPhase('verifying');
 
       const verification = await verifyFromVideo(video);
 
-      if (!verification) {
-        setVerificationMessage('Erreur lors de la verification faciale. Veuillez reessayer.');
-        setLocalVerificationResult({ needsProfilePhoto: false });
-        setPhase('verification_failed');
-        return;
-      }
+        if (!verification) {
+          setVerificationMessage('Erreur lors de la verification faciale. Veuillez reessayer.');
+          setLocalVerificationResult({ needsProfilePhoto: false });
+          setPhase('verification_failed');
+          setIsAutoCapturing(false);
+          setAutoCaptureHint('');
+          return;
+        }
 
-      if (!verification.verified) {
-        setVerificationMessage(verification.message);
-        setLocalVerificationResult({ needsProfilePhoto: verification.needsProfilePhoto });
-        setPhase('verification_failed');
-        stopCamera();
-        return;
-      }
+        if (!verification.verified) {
+          setVerificationMessage(verification.message);
+          setLocalVerificationResult({ needsProfilePhoto: verification.needsProfilePhoto });
+          setPhase('verification_failed');
+          stopCamera();
+          setIsAutoCapturing(false);
+          setAutoCaptureHint('');
+          return;
+        }
 
       setVerificationMessage(verification.message);
       toast.success(verification.message, { duration: 2000 });
     }
-
-    const base64 = dataUrl.split(',')[1];
-
-    if (!selectedPreocupent.length) {
-      setPendingPreocupentAction({ mode: 'scan', base64 });
-      setPreocupentModalOpen(true);
+    try {
       setPhase('camera');
-      return;
-    }
+      await wait(120);
+      if (videoRef.current && streamRef.current && videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+      const readyAfterVerify = await waitForVideoReady(6000);
+      if (!readyAfterVerify) {
+        await startCamera();
+        await wait(400);
+      }
+      const angleOrder: ScanAngle[] = ['front', 'left', 'right'];
+      const instructions: Record<ScanAngle, string> = {
+        front: 'Étape 1/3: restez bien face caméra.',
+        left: 'Étape 2/3: tournez vers un profil latéral.',
+        right: 'Étape 3/3: tournez vers l’autre profil.',
+      };
 
-    await runScanAnalysis(base64, selectedPreocupent);
+      let nextCapturedByAngle: Partial<Record<ScanAngle, string>> = {};
+      let nextSequence: ScanAngle[] = [];
+      let firstSideSign: number | undefined;
+
+      for (const angle of angleOrder) {
+        setAutoCaptureHint(instructions[angle]);
+        await wait(350);
+
+        const poseCheck = await waitForExpectedPose(angle, firstSideSign);
+        if (!poseCheck.matched) {
+          throw new Error(
+            angle === 'front'
+              ? 'Face frontale non détectée. Regardez la caméra.'
+              : angle === 'left'
+                ? 'Profil latéral non détecté. Tournez davantage votre tête.'
+                : 'Profil opposé non détecté. Tournez la tête de l’autre côté.',
+          );
+        }
+        if (angle === 'left' && poseCheck.sideSign) {
+          firstSideSign = poseCheck.sideSign;
+        }
+
+        const identityStepCheck = await verifyFromVideo(videoRef.current as HTMLVideoElement);
+        if (!identityStepCheck?.verified) {
+          throw new Error(
+            identityStepCheck?.message || 'Vérification faciale échouée pendant la capture.',
+          );
+        }
+        await wait(450);
+
+        const videoReady = await waitForVideoReady(4000);
+        if (!videoReady) {
+          // silently continue with fallback capture path
+        }
+
+        // Tolérant: on retente quelques fois même si readyState tarde.
+        let dataUrl: string | null = null;
+        for (let attempt = 0; attempt < 5; attempt++) {
+          dataUrl = captureFrameFromVideo();
+          if (dataUrl) break;
+          await wait(220);
+        }
+        if (!dataUrl) {
+          throw new Error('Impossible de capturer la vidéo en direct.');
+        }
+
+        nextCapturedByAngle = { ...nextCapturedByAngle, [angle]: dataUrl };
+        nextSequence = [...nextSequence, angle];
+        setCapturedImagesByAngle(nextCapturedByAngle);
+        setCaptureSequence(nextSequence);
+        setCapturedImage(dataUrl);
+
+        if (angle !== 'right') {
+          toast.success(
+            angle === 'front'
+              ? 'Face frontale capturée. Préparez le profil gauche.'
+              : 'Profil gauche capturé. Préparez le profil droit.',
+            { duration: 1200 },
+          );
+        }
+      }
+
+      const finalBase64 = (nextCapturedByAngle.right || '').split(',')[1];
+
+      if (!finalBase64) {
+        throw new Error('Capture finale indisponible.');
+      }
+
+      if (!selectedPreocupent.length) {
+        setPendingPreocupentAction({ mode: 'scan', base64: finalBase64 });
+        setPreocupentModalOpen(true);
+        return;
+      }
+
+      await runScanAnalysis(finalBase64, selectedPreocupent, nextSequence);
+    } catch (error) {
+      console.error(error);
+      toast.error('Auto-capture échouée. Veuillez réessayer.');
+      setPhase('camera');
+    } finally {
+      setIsAutoCapturing(false);
+      setAutoCaptureHint('');
+    }
   };
 
   // Save scan as full analysis
@@ -599,28 +830,52 @@ export function CameraScanModal({
     const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.9);
     const base64 = dataUrl.split(',')[1];
 
+    if (captureSequence.length < 3) {
+      toast.error('Capturez d’abord les 3 angles (front, gauche, droite).');
+      return;
+    }
+
     if (!selectedPreocupent.length) {
       setPendingPreocupentAction({ mode: 'save', base64 });
       setPreocupentModalOpen(true);
       return;
     }
 
-    await saveAnalysisWithPreocupent(base64, selectedPreocupent);
+    await saveAnalysisWithPreocupent(base64, selectedPreocupent, captureSequence);
   };
 
   // ─── Retake ───
   const retake = () => {
     setResult(null);
+    setEvolutionRemark(null);
     setCapturedImage(null);
     setVisibleAnnotations([]);
     setAnalysisProgress(0);
     setCurrentAnalysisText('');
+    setCapturedImagesByAngle({});
+    setCaptureSequence([]);
+    setLoadingCapturedImages({});
+    setIsAutoCapturing(false);
+    setAutoCaptureHint('');
     setPhase('camera');
     startCamera();
   };
 
   if (!open) return null;
   if (typeof document === 'undefined') return null;
+
+  const captureProgress = Math.round((captureSequence.length / 3) * 100);
+  const angleDisplayNames: Record<ScanAngle, string> = {
+    front: 'Front',
+    left: 'Gauche',
+    right: 'Droite',
+  };
+  const nextCaptureLabel =
+    captureSequence.length === 0
+      ? 'Face frontale'
+      : captureSequence.length === 1
+        ? 'Profil gauche'
+        : 'Profil droit';
 
   const detailedScores = extractDetailedScores(result);
 
@@ -703,10 +958,14 @@ export function CameraScanModal({
                   <h3 className="text-gray-900 font-bold text-xl leading-tight">
                     Live Skin Scan
                   </h3>
-                  <p className="text-gray-500 text-xs mt-0.5">
-                    {phase === 'camera' && 'Position your face in the frame'}
-                    {phase === 'verifying' && 'Vérification de votre identité...'}
-                  </p>
+                    <p className="text-gray-500 text-xs mt-0.5">
+                      {phase === 'camera' &&
+                        `Capture ${Math.min(captureSequence.length + 1, 3)}/3 · ${captureSequence.length === 0 ? 'Front' : captureSequence.length === 1 ? 'Gauche' : 'Droite'}`}
+                      {phase === 'verifying' && 'Vérification de votre identité...'}
+                    </p>
+                    {phase === 'camera' && isAutoCapturing && (
+                      <p className="text-[11px] text-[#8B5CF6] mt-1 font-medium">{autoCaptureHint}</p>
+                    )}
                 </div>
               </div>
             )}
@@ -753,20 +1012,103 @@ export function CameraScanModal({
                       />
                       {/* Guide overlay */}
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-48 h-64 border-2 border-dashed border-white/50 rounded-full" />
-                        <div className="absolute text-center text-white text-sm font-medium opacity-70 bottom-4">
-                          Position your face in the circle
+                        <div className="relative w-56 h-56">
+                          <div className="absolute inset-0 rounded-full border border-white/25" />
+                          <motion.div
+                            className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#22D3EE] border-r-[#8B5CF6]"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                          />
+                          <motion.div
+                            className="absolute inset-[18px] rounded-full border border-dashed border-white/35"
+                            animate={{ scale: [1, 1.04, 1], opacity: [0.7, 1, 0.7] }}
+                            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                          />
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+                            <p className="text-sm font-medium opacity-90">
+                              Capture {Math.min(captureSequence.length + 1, 3)}/3
+                            </p>
+                            <p className="text-xs opacity-75">{nextCaptureLabel}</p>
+                            <p className="text-lg font-bold mt-1">{captureProgress}%</p>
+                          </div>
+                        </div>
+                        <div className="absolute text-center text-white text-sm font-medium opacity-80 bottom-4">
+                          Alignez votre visage puis capturez
                         </div>
                       </div>
                     </motion.div>
+
+                    <div className="flex items-center justify-center gap-4 mb-1">
+                      {(['front', 'left', 'right'] as ScanAngle[]).map((angle, index) => {
+                        const done = !!capturedImagesByAngle[angle];
+                        const current = captureSequence.length === index;
+
+                        return (
+                          <div key={angle} className="flex items-center gap-2">
+                            <div
+                              className={`w-7 h-7 rounded-full flex items-center justify-center border text-xs font-bold ${
+                                done
+                                  ? 'bg-emerald-500 border-emerald-400 text-white'
+                                  : current
+                                    ? 'bg-[#0EA5E9]/20 border-[#0EA5E9] text-[#0EA5E9]'
+                                    : 'bg-gray-100 border-gray-300 text-gray-400'
+                              }`}
+                            >
+                              {done ? '✓' : index + 1}
+                            </div>
+                            <span className={`text-xs ${current ? 'text-gray-900 font-semibold' : 'text-gray-500'}`}>
+                              {angleDisplayNames[angle]}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {Object.keys(capturedImagesByAngle).length > 0 && (
+                      <div className="grid grid-cols-3 gap-2">
+                        {(['front', 'left', 'right'] as ScanAngle[]).map((angle) => {
+                          const shot = capturedImagesByAngle[angle];
+                          return (
+                            <div
+                              key={`capture-preview-${angle}`}
+                              className="rounded-xl border border-white/20 bg-gradient-to-br from-slate-50 to-white p-1 shadow-sm"
+                            >
+                              <div className="mb-1 flex items-center justify-between px-1">
+                                <span className="text-[10px] font-semibold text-slate-700">
+                                  {angleDisplayNames[angle]}
+                                </span>
+                                <span className={`text-[9px] font-medium ${shot ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                  {shot ? 'capturée' : 'en attente'}
+                                </span>
+                              </div>
+                              <div className="relative h-14 overflow-hidden rounded-lg bg-slate-100">
+                                {shot ? (
+                                  <img src={shot} alt={angle} className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="h-full w-full animate-pulse bg-gradient-to-r from-slate-100 via-slate-200 to-slate-100" />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={captureAndScan}
-                      className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white shadow-lg shadow-[#0EA5E9]/20 transition-all"
+                      disabled={isAutoCapturing}
+                      className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-sm text-white shadow-lg transition-all ${
+                        isAutoCapturing
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] shadow-[#0EA5E9]/20'
+                      }`}
                     >
-                      <Camera className="w-5 h-5" />
-                      Capture & Analyze
+                      {isAutoCapturing ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Camera className="w-5 h-5" />
+                      )}
+                      {isAutoCapturing ? 'Capture automatique en cours...' : 'Scan automatique (1 clic)'}
                     </motion.button>
                   </>
                 )}
@@ -813,6 +1155,42 @@ export function CameraScanModal({
 
                 {/* Image with annotations overlay */}
                 <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-video bg-black">
+                  <div className="absolute top-3 left-3 right-3 z-30 grid grid-cols-3 gap-2">
+                    {(['front', 'left', 'right'] as ScanAngle[]).map((angle) => (
+                      <div
+                        key={angle}
+                        className={`rounded-xl border p-1.5 backdrop-blur-md shadow-lg ${
+                          loadingCapturedImages[angle]
+                            ? 'border-cyan-200/70 bg-black/50'
+                            : 'border-white/20 bg-black/35'
+                        }`}
+                      >
+                        <div className="mb-1 flex items-center justify-between">
+                          <div className="text-[10px] font-semibold text-white/90">
+                            {angleDisplayNames[angle]}
+                          </div>
+                          <div
+                            className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
+                              loadingCapturedImages[angle]
+                                ? 'bg-emerald-500/25 text-emerald-100'
+                                : 'bg-white/10 text-white/60'
+                            }`}
+                          >
+                            {loadingCapturedImages[angle] ? 'OK' : '...'}
+                          </div>
+                        </div>
+                        {loadingCapturedImages[angle] ? (
+                          <img
+                            src={loadingCapturedImages[angle]}
+                            alt={angle}
+                            className="h-14 w-full rounded-lg object-cover ring-1 ring-white/30"
+                          />
+                        ) : (
+                          <div className="h-14 w-full animate-pulse rounded-lg bg-gradient-to-r from-white/10 via-white/20 to-white/10" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
                   <img
                     src={capturedImage}
                     alt="Captured face"
@@ -1375,6 +1753,64 @@ export function CameraScanModal({
                           <h4 className="font-bold text-gray-900 text-xs">AI Summary</h4>
                         </div>
                         <p className="text-[11px] text-gray-700 leading-relaxed">{result.summary}</p>
+                      </motion.div>
+                    )}
+
+                    {/* Evolution Remark */}
+                    {evolutionRemark && (
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.34 }}
+                        className="rounded-2xl p-3"
+                        style={{
+                          background:
+                            evolutionRemark.trend === 'improved'
+                              ? 'rgba(16,185,129,0.08)'
+                              : evolutionRemark.trend === 'declined'
+                                ? 'rgba(239,68,68,0.08)'
+                                : 'rgba(14,165,233,0.06)',
+                          border:
+                            evolutionRemark.trend === 'improved'
+                              ? '1px solid rgba(16,185,129,0.2)'
+                              : evolutionRemark.trend === 'declined'
+                                ? '1px solid rgba(239,68,68,0.2)'
+                                : '1px solid rgba(14,165,233,0.14)',
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <h4 className="font-bold text-gray-900 text-xs">Évolution vs ancienne analyse</h4>
+                          <span
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              evolutionRemark.trend === 'improved'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : evolutionRemark.trend === 'declined'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-sky-100 text-sky-700'
+                            }`}
+                          >
+                            {evolutionRemark.hasHistory
+                              ? evolutionRemark.trend === 'improved'
+                                ? 'En amélioration'
+                                : evolutionRemark.trend === 'declined'
+                                  ? 'À surveiller'
+                                  : 'Stable'
+                              : 'Première base'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-700 leading-relaxed mb-2">{evolutionRemark.remark}</p>
+                        {evolutionRemark.hasHistory && (
+                          <div className="flex flex-wrap gap-1.5">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/70 text-gray-700 border border-gray-200">
+                              Score: {evolutionRemark.healthScoreChange > 0 ? '+' : ''}
+                              {evolutionRemark.healthScoreChange}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/70 text-gray-700 border border-gray-200">
+                              Âge peau: {evolutionRemark.skinAgeChange > 0 ? '+' : ''}
+                              {evolutionRemark.skinAgeChange}
+                            </span>
+                          </div>
+                        )}
                       </motion.div>
                     )}
                   </div>
