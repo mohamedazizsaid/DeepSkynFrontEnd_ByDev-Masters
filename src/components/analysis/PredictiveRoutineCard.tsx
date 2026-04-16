@@ -134,7 +134,7 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
         {/* Days grid */}
         <div className="space-y-4">
           <h4 className="text-md font-semibold text-[#1F2937] mb-4">Programme de soins 7 jours</h4>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto scrollbar-hide">
             <div className="flex gap-4 pb-2" style={{ minWidth: 'max-content' }}>
               {routine.days.map((day, index) => (
                 <motion.div

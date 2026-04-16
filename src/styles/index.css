@@ -313,3 +313,32 @@ body {
 		opacity: 1 !important;
 	}
 }
+
+/* Hide scrollbar for horizontal scroll container */
+.scrollbar-hide {
+	-ms-overflow-style: none; /* IE and Edge */
+	scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+	display: none; /* Chrome, Safari and Opera */
+}
+
+/* Custom z-index for modal */
+.z-70 {
+	z-index: 70;
+}
+
+/* Fade in animation for modal */
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.animate-fadeIn {
+	animation: fadeIn 0.3s ease-in-out;
+}
