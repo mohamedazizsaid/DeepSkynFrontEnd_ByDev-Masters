@@ -39,6 +39,7 @@ export interface Analysis {
   userId: string;
   images: string[];
   questionnaire: Record<string, unknown> | null;
+  preocupent: string[];
   results: GeminiAnalysisResult | null;
   healthScore: number | null;
   skinAge: number | null;
@@ -87,4 +88,5 @@ export interface RealTimeScanDto {
   mimeType?: 'image/jpeg' | 'image/png' | 'image/webp';
   saveImage?: boolean;
   saveAnalysis?: boolean;
+  preocupent?: string[];
 }

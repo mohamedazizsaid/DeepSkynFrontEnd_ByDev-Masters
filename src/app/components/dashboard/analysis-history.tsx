@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   TrendingUp, TrendingDown, Calendar, Eye,
@@ -122,12 +123,14 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
     );
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <>
       {/* Inject scrollbar styles */}
       <style>{scrollbarStyles}</style>
       
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center overflow-y-auto pt-20 pb-4 custom-scrollbar">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1300] flex items-start justify-center overflow-y-auto pt-20 pb-4 custom-scrollbar">
         <motion.div
           initial={{ scale: 0.95, opacity: 0, y: -20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -426,6 +429,7 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
         </div>
       </motion.div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 }

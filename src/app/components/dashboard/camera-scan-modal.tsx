@@ -1,10 +1,15 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Camera, X, Loader2, RotateCcw, Save, Sparkles, AlertCircle, Lock, Crown, ShieldCheck, ShieldX, UserCheck, Droplets, Sun, Wind, Scan, Activity, Eye, Zap, CircleDot, Frown, TrendingDown, Flame } from 'lucide-react';
 import { analysisService } from '../../../lib/services/analysis.service';
 import { extractDetailedScores } from '../../../lib/analysis-helpers';
 import { useFaceVerification } from '../../../lib/hooks/useFaceVerification';
 import type { GeminiAnalysisResult } from '../../../lib/types';
+import {
+  PreocupentSelectorModal,
+  type PreocupentZoneKey,
+} from './preocupent-selector-modal';
 import toast from 'react-hot-toast';
 
 // Types for real-time analysis annotations (scores)
@@ -60,6 +65,7 @@ interface CameraScanModalProps {
 }
 
 type ScanPhase = 'camera' | 'verifying' | 'verification_failed' | 'analyzing' | 'results';
+type PendingPreocupentAction = { mode: 'scan' | 'save'; base64: string };
 
 export function CameraScanModal({
   open,
@@ -86,6 +92,10 @@ export function CameraScanModal({
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [currentAnalysisText, setCurrentAnalysisText] = useState<string>('');
   const [showFinalScore, setShowFinalScore] = useState(false);
+  const [selectedPreocupent, setSelectedPreocupent] = useState<PreocupentZoneKey[]>([]);
+  const [preocupentModalOpen, setPreocupentModalOpen] = useState(false);
+  const [pendingPreocupentAction, setPendingPreocupentAction] = useState<PendingPreocupentAction | null>(null);
+  const [preocupentConfirming, setPreocupentConfirming] = useState(false);
 
   // Face verification hook
   const {
@@ -129,6 +139,10 @@ export function CameraScanModal({
       setResult(null);
       setVerificationMessage('');
       setLocalVerificationResult(null);
+      setSelectedPreocupent([]);
+      setPendingPreocupentAction(null);
+      setPreocupentModalOpen(false);
+      setPreocupentConfirming(false);
       resetVerification();
       startCamera();
     } else {
@@ -390,40 +404,161 @@ export function CameraScanModal({
   // Analysis text messages that appear during analysis
   const analysisMessages = [
     "Analyse de l'hydratation en cours...",
-    "Détection de la texture de peau...",
-    "Évaluation des pores...",
-    "Analyse de l'élasticité...",
-    "Mesure de l'éclat cutané...",
-    "Vérification des dommages UV...",
-    "Calcul du score de santé global...",
+    'Detection de la texture de peau...',
+    'Evaluation des pores...',
+    "Analyse de l'elasticite...",
+    "Mesure de l'eclat cutane...",
+    'Verification des dommages UV...',
+    'Calcul du score de sante global...',
     "Finalisation de l'analyse...",
   ];
 
-  // ─── Face Verification + Capture + Scan ───
+  const runScanAnalysis = async (
+    base64: string,
+    preocupent: PreocupentZoneKey[],
+  ) => {
+    stopCamera();
+    setPhase('analyzing');
+    setVisibleAnnotations([]);
+    setVisibleIssues([]);
+    setShowFinalScore(false);
+    setAnalysisProgress(0);
+    setCurrentAnalysisText(analysisMessages[0]);
+
+    try {
+      let messageIndex = 0;
+      const textInterval = setInterval(() => {
+        messageIndex = (messageIndex + 1) % analysisMessages.length;
+        setCurrentAnalysisText(analysisMessages[messageIndex]);
+        setAnalysisProgress(prev => Math.min(prev + 12, 95));
+      }, 800);
+
+      const scanResult = await analysisService.scan({
+        image: base64,
+        mimeType: 'image/jpeg',
+        saveAnalysis: false,
+        preocupent,
+      });
+
+      clearInterval(textInterval);
+      setResult(scanResult);
+
+      const annotations = generateAnnotations(scanResult);
+      setAnalysisProgress(100);
+      setCurrentAnalysisText('Detection des metriques...');
+
+      const scoreAnnotations = annotations.filter(a => a.id !== 'healthScore');
+      for (let i = 0; i < scoreAnnotations.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 350));
+        setVisibleAnnotations(prev => [...prev, scoreAnnotations[i]]);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 600));
+      setCurrentAnalysisText('Detection des problemes cutanes...');
+
+      const issues = generateIssueMarkers(scanResult);
+      for (let i = 0; i < issues.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 450));
+        setVisibleIssues(prev => [...prev, issues[i]]);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setCurrentAnalysisText('Calcul du score final...');
+
+      const healthScoreAnnotation = annotations.find(a => a.id === 'healthScore');
+      if (healthScoreAnnotation) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setVisibleAnnotations(prev => [...prev, healthScoreAnnotation]);
+        setShowFinalScore(true);
+      }
+
+      setCurrentAnalysisText('Analyse terminee !');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setPhase('results');
+    } catch {
+      toast.error('Scan failed. Please try again.');
+      setPhase('camera');
+      setCapturedImage(null);
+      startCamera();
+    }
+  };
+
+  const saveAnalysisWithPreocupent = async (
+    base64: string,
+    preocupent: PreocupentZoneKey[],
+  ) => {
+    if (!canSaveAnalysis) {
+      toast.error(analysisBlockedMessage || 'Analysis limit reached for your plan.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await analysisService.scan({
+        image: base64,
+        mimeType: 'image/jpeg',
+        saveImage: true,
+        saveAnalysis: true,
+        preocupent,
+      });
+      toast.success('Analysis saved successfully!');
+      onAnalysisSaved?.();
+      onClose();
+    } catch {
+      toast.error('Failed to save analysis.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePreocupentConfirm = async (zones: PreocupentZoneKey[]) => {
+    const pendingAction = pendingPreocupentAction;
+    setSelectedPreocupent(zones);
+    setPreocupentConfirming(true);
+    setPreocupentModalOpen(false);
+    setPendingPreocupentAction(null);
+
+    try {
+      if (!pendingAction) return;
+
+      if (pendingAction.mode === 'scan') {
+        await runScanAnalysis(pendingAction.base64, zones);
+      } else {
+        await saveAnalysisWithPreocupent(pendingAction.base64, zones);
+      }
+    } finally {
+      setPreocupentConfirming(false);
+    }
+  };
+
+  const closePreocupentModal = () => {
+    if (preocupentConfirming || saving) return;
+    setPreocupentModalOpen(false);
+    setPendingPreocupentAction(null);
+  };
+
+  // Face Verification + Capture + Scan
   const captureAndScan = async () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
 
-    // Draw current frame to canvas
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.drawImage(video, 0, 0);
 
-    // Capture the image for display during analysis
     const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
     setCapturedImage(dataUrl);
 
-    // Step 1: Face Verification
     if (isModelLoaded) {
       setPhase('verifying');
-      
+
       const verification = await verifyFromVideo(video);
-      
+
       if (!verification) {
-        setVerificationMessage('Erreur lors de la vérification faciale. Veuillez réessayer.');
+        setVerificationMessage('Erreur lors de la verification faciale. Veuillez reessayer.');
         setLocalVerificationResult({ needsProfilePhoto: false });
         setPhase('verification_failed');
         return;
@@ -437,112 +572,40 @@ export function CameraScanModal({
         return;
       }
 
-      // Face verified - show success message briefly
       setVerificationMessage(verification.message);
       toast.success(verification.message, { duration: 2000 });
     }
 
-    // Step 2: Proceed with skin analysis
     const base64 = dataUrl.split(',')[1];
 
-    stopCamera();
-    setPhase('analyzing');
-    setVisibleAnnotations([]);
-    setVisibleIssues([]);
-    setShowFinalScore(false);
-    setAnalysisProgress(0);
-    setCurrentAnalysisText(analysisMessages[0]);
-
-    // Start the analysis
-    try {
-      // Start progressive text animation
-      let messageIndex = 0;
-      const textInterval = setInterval(() => {
-        messageIndex = (messageIndex + 1) % analysisMessages.length;
-        setCurrentAnalysisText(analysisMessages[messageIndex]);
-        setAnalysisProgress(prev => Math.min(prev + 12, 95));
-      }, 800);
-
-      const scanResult = await analysisService.scan({
-        image: base64,
-        mimeType: 'image/jpeg',
-        saveAnalysis: false,
-      });
-
-      clearInterval(textInterval);
-      setResult(scanResult);
-
-      // Phase 1: Show score annotations progressively
-      const annotations = generateAnnotations(scanResult);
-      setAnalysisProgress(100);
-      setCurrentAnalysisText("Détection des métriques...");
-
-      // Show score annotations one by one (excluding healthScore for now)
-      const scoreAnnotations = annotations.filter(a => a.id !== 'healthScore');
-      for (let i = 0; i < scoreAnnotations.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 350));
-        setVisibleAnnotations(prev => [...prev, scoreAnnotations[i]]);
-      }
-
-      // Phase 2: Show skin issues/problems
-      await new Promise(resolve => setTimeout(resolve, 600));
-      setCurrentAnalysisText("Détection des problèmes cutanés...");
-      
-      const issues = generateIssueMarkers(scanResult);
-      for (let i = 0; i < issues.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 450));
-        setVisibleIssues(prev => [...prev, issues[i]]);
-      }
-
-      // Phase 3: Show final health score with emphasis
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setCurrentAnalysisText("Calcul du score final...");
-      
-      const healthScoreAnnotation = annotations.find(a => a.id === 'healthScore');
-      if (healthScoreAnnotation) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setVisibleAnnotations(prev => [...prev, healthScoreAnnotation]);
-        setShowFinalScore(true);
-      }
-
-      setCurrentAnalysisText("Analyse terminée !");
-
-      // Delay before showing full results
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setPhase('results');
-    } catch {
-      toast.error('Scan failed. Please try again.');
+    if (!selectedPreocupent.length) {
+      setPendingPreocupentAction({ mode: 'scan', base64 });
+      setPreocupentModalOpen(true);
       setPhase('camera');
-      setCapturedImage(null);
-      startCamera();
+      return;
     }
+
+    await runScanAnalysis(base64, selectedPreocupent);
   };
 
-  // ─── Save scan as full analysis ───
+  // Save scan as full analysis
   const saveAnalysis = async () => {
     if (!canvasRef.current) return;
     if (!canSaveAnalysis) {
       toast.error(analysisBlockedMessage || 'Analysis limit reached for your plan.');
       return;
     }
-    setSaving(true);
-    try {
-      const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.9);
-      const base64 = dataUrl.split(',')[1];
-      await analysisService.scan({
-        image: base64,
-        mimeType: 'image/jpeg',
-        saveImage: true,
-        saveAnalysis: true,
-      });
-      toast.success('Analysis saved successfully!');
-      onAnalysisSaved?.();
-      onClose();
-    } catch {
-      toast.error('Failed to save analysis.');
-    } finally {
-      setSaving(false);
+
+    const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.9);
+    const base64 = dataUrl.split(',')[1];
+
+    if (!selectedPreocupent.length) {
+      setPendingPreocupentAction({ mode: 'save', base64 });
+      setPreocupentModalOpen(true);
+      return;
     }
+
+    await saveAnalysisWithPreocupent(base64, selectedPreocupent);
   };
 
   // ─── Retake ───
@@ -557,10 +620,11 @@ export function CameraScanModal({
   };
 
   if (!open) return null;
+  if (typeof document === 'undefined') return null;
 
   const detailedScores = extractDetailedScores(result);
 
-  return (
+  return createPortal(
     <AnimatePresence mode="wait">
       {open && (
         <>
@@ -579,7 +643,7 @@ export function CameraScanModal({
               backgroundColor: 'rgba(255, 255, 255, 0.3)',
               backdropFilter: 'blur(12px)',
               WebkitBackdropFilter: 'blur(12px)',
-              zIndex: 200,
+              zIndex: 1300,
             }}
           />
 
@@ -590,7 +654,7 @@ export function CameraScanModal({
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 300, damping: 28 }}
             className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl mx-auto max-h-[95vh] overflow-y-auto hidden-scrollbar"
-            style={{ zIndex: 201 }}
+            style={{ zIndex: 1301 }}
           >
             <div
               className="relative rounded-3xl border border-gray-100 shadow-2xl overflow-hidden bg-white"
@@ -1392,8 +1456,19 @@ export function CameraScanModal({
           <canvas ref={canvasRef} className="hidden" />
         </div>
       </motion.div>
+          <PreocupentSelectorModal
+            open={preocupentModalOpen}
+            initialSelected={selectedPreocupent}
+            onClose={closePreocupentModal}
+            onConfirm={handlePreocupentConfirm}
+            loading={preocupentConfirming || saving}
+            confirmLabel="Valider et continuer"
+            title="Zones de preoccupation"
+            subtitle="Selectionnez les zones avant le lancement de l analyse."
+          />
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

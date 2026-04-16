@@ -30,6 +30,10 @@ import {
 import type { Analysis, AnalysisStats, GeminiAnalysisResult } from '../../../lib/types';
 import type { DetailedScoreItem } from '../../../lib/analysis-helpers';
 import { CameraScanModal } from './camera-scan-modal';
+import {
+  PreocupentSelectorModal,
+  type PreocupentZoneKey,
+} from './preocupent-selector-modal';
 import { PredictiveRoutineCard } from '../../../components/analysis';
 import { AnalysisHistory } from './analysis-history';
 import { useFaceVerification } from '../../../lib/hooks/useFaceVerification';
@@ -64,12 +68,17 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
   const [uploading, setUploading] = useState(false);
   const [adviceLoading, setAdviceLoading] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
+  const [preocupentModalOpen, setPreocupentModalOpen] = useState(false);
+  const [pendingUploadFiles, setPendingUploadFiles] = useState<File[]>([]);
+  const [uploadPreocupentSubmitting, setUploadPreocupentSubmitting] = useState(false);
+  const [lastSelectedPreocupent, setLastSelectedPreocupent] = useState<PreocupentZoneKey[]>([]);
   const [isPremium, setIsPremium] = useState(false);
   const [analysisLimit, setAnalysisLimit] = useState<number | null>(3);
   const [analysisUsed, setAnalysisUsed] = useState(0);
   const [analysisResetAt, setAnalysisResetAt] = useState<string | null>(null);
   const [verifyingUpload, setVerifyingUpload] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const loadRunIdRef = useRef(0);
 
   // Face verification hook
   const { 
@@ -134,24 +143,20 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
 
   // ─── Load latest analysis + stats + advice ───
   const loadData = async () => {
+    const runId = ++loadRunIdRef.current;
     setLoading(true);
     try {
-      const [latestRes, statsRes, usageRes, historyRes] = await Promise.allSettled([
+      // Core data first to render fast blocks immediately.
+      const [latestRes, usageRes] = await Promise.allSettled([
         analysisService.getLatest(),
-        analysisService.getStats(),
         subscriptionService.getUsageSummary(),
-        analysisService.getAll(1, 10),
       ]);
 
-      const historyAnalyses =
-        historyRes.status === 'fulfilled' && Array.isArray(historyRes.value?.analyses)
-          ? historyRes.value.analyses
-          : [];
+      if (loadRunIdRef.current !== runId) return;
 
       const latestAnalysis = latestRes.status === 'fulfilled' ? latestRes.value : null;
-      setAnalysis(selectBestAnalysis(latestAnalysis, historyAnalyses));
+      setAnalysis(latestAnalysis);
 
-      if (statsRes.status === 'fulfilled') setStats(statsRes.value);
       if (usageRes.status === 'fulfilled') {
         setIsPremium(usageRes.value.isPremium);
         setAnalysisLimit(usageRes.value.quotas.analyses.limit);
@@ -159,38 +164,79 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
         setAnalysisResetAt(usageRes.value.quotas.analyses.resetsAt);
       }
 
-      // Load advice separately (can be slower — Gemini call)
-      if (latestAnalysis?.status === 'completed') {
+      // Advice can be slow (Gemini): do it async and non-blocking.
+      let adviceRequested = false;
+      const requestAdvice = (candidate: Analysis | null) => {
+        if (candidate?.status !== 'completed' || adviceRequested) return;
+        adviceRequested = true;
         setAdviceLoading(true);
-        try {
-          const adv = await analysisService.getAdvice();
-          setAdvice(typeof adv === 'string' ? adv : null);
-        } catch { /* non-blocking */ }
-        finally { setAdviceLoading(false); }
-      }
 
-      // Load analysis history for chart
-      if (historyAnalyses.length > 0) {
-        setAnalysisHistory(
-          historyAnalyses
-            .filter((a: Analysis) => a.status === 'completed')
-            .slice(0, 10)
-            .reverse()
-            .map((a: Analysis) => ({
-              date: new Date(a.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }),
-              score: a.healthScore || 0,
-            }))
-        );
-      } else {
+        void analysisService
+          .getAdvice()
+          .then((adv) => {
+            if (loadRunIdRef.current !== runId) return;
+            setAdvice(typeof adv === 'string' ? adv : null);
+          })
+          .catch(() => {
+            // non-blocking
+          })
+          .finally(() => {
+            if (loadRunIdRef.current !== runId) return;
+            setAdviceLoading(false);
+          });
+      };
+
+      requestAdvice(latestAnalysis);
+      if (!latestAnalysis || latestAnalysis.status !== 'completed') {
+        setAdvice(null);
+        setAdviceLoading(false);
         setAnalysisHistory([]);
       }
+
+      // Secondary sections continue loading in background.
+      void Promise.allSettled([
+        analysisService.getStats(),
+        analysisService.getAll(1, 10),
+      ]).then(([statsRes, historyRes]) => {
+        if (loadRunIdRef.current !== runId) return;
+
+        if (statsRes.status === 'fulfilled') {
+          setStats(statsRes.value);
+        }
+
+        const historyAnalyses =
+          historyRes.status === 'fulfilled' && Array.isArray(historyRes.value?.analyses)
+            ? historyRes.value.analyses
+            : [];
+
+        const selectedAnalysis = selectBestAnalysis(latestAnalysis, historyAnalyses);
+        setAnalysis(selectedAnalysis);
+
+        if (historyAnalyses.length > 0) {
+          setAnalysisHistory(
+            historyAnalyses
+              .filter((a: Analysis) => a.status === 'completed')
+              .slice(0, 10)
+              .reverse()
+              .map((a: Analysis) => ({
+                date: new Date(a.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }),
+                score: a.healthScore || 0,
+              })),
+          );
+        } else {
+          setAnalysisHistory([]);
+        }
+
+        // Fallback: if latest endpoint had nothing completed but history does.
+        requestAdvice(selectedAnalysis);
+      });
     } catch {
       toast.error('Failed to load analysis data.');
     } finally {
+      if (loadRunIdRef.current !== runId) return;
       setLoading(false);
     }
   };
-
   // Load weather data with geolocation
   const loadWeatherData = async () => {
     setWeatherLoading(true);
@@ -247,6 +293,41 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
   };
 
   useEffect(() => { loadData(); loadWeatherData(); }, []);
+
+  const closeUploadPreocupentModal = () => {
+    if (uploadPreocupentSubmitting) return;
+    setPreocupentModalOpen(false);
+    setPendingUploadFiles([]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const submitUploadWithPreocupent = async (zones: PreocupentZoneKey[]) => {
+    if (!pendingUploadFiles.length) return;
+
+    setUploadPreocupentSubmitting(true);
+    setUploading(true);
+    try {
+      const result = await analysisService.uploadAndAnalyze(
+        pendingUploadFiles,
+        undefined,
+        zones,
+      );
+      setAnalysis(result);
+      setLastSelectedPreocupent(zones);
+      toast.success('Analysis started! Results will appear shortly.');
+      await refreshUsage();
+      setTimeout(() => loadData(), 5000);
+    } catch {
+      toast.error('Upload failed. Please try again.');
+      await refreshUsage();
+    } finally {
+      setUploading(false);
+      setUploadPreocupentSubmitting(false);
+      setPreocupentModalOpen(false);
+      setPendingUploadFiles([]);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   // ─── Upload handler with face verification ───
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -329,22 +410,9 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
       }
     }
 
-    // Step 2: Proceed with upload
-    setUploading(true);
-    try {
-      const result = await analysisService.uploadAndAnalyze(Array.from(files));
-      setAnalysis(result);
-      toast.success('Analysis started! Results will appear shortly.');
-      await refreshUsage();
-      // Reload to get processed results (analysis is async on backend)
-      setTimeout(() => loadData(), 5000);
-    } catch {
-      toast.error('Upload failed. Please try again.');
-      await refreshUsage();
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    // Step 2: Ask for face concern zones before launching analysis
+    setPendingUploadFiles(Array.from(files));
+    setPreocupentModalOpen(true);
   };
 
   // ─── Derived data ───
@@ -485,6 +553,14 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
           analysisBlockedMessage={`Monthly analysis limit reached. Reset: ${formatResetDate(analysisResetAt)}.`}
           onUpgrade={onUpgrade}
           onNavigateToSettings={onNavigateToSettings}
+        />
+        <PreocupentSelectorModal
+          open={preocupentModalOpen}
+          initialSelected={lastSelectedPreocupent}
+          onClose={closeUploadPreocupentModal}
+          onConfirm={submitUploadWithPreocupent}
+          loading={uploadPreocupentSubmitting}
+          confirmLabel="Lancer l analyse"
         />
       </div>
     );
@@ -1355,6 +1431,14 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
         analysisBlockedMessage={`Monthly analysis limit reached. Reset: ${formatResetDate(analysisResetAt)}.`}
         onUpgrade={onUpgrade}
         onNavigateToSettings={onNavigateToSettings}
+      />
+      <PreocupentSelectorModal
+        open={preocupentModalOpen}
+        initialSelected={lastSelectedPreocupent}
+        onClose={closeUploadPreocupentModal}
+        onConfirm={submitUploadWithPreocupent}
+        loading={uploadPreocupentSubmitting}
+        confirmLabel="Lancer l analyse"
       />
       </div>
     </div>

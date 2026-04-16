@@ -14,11 +14,15 @@ export const analysisService = {
   async uploadAndAnalyze(
     files: File[],
     questionnaire?: Record<string, unknown>,
+    preocupent?: string[],
   ): Promise<Analysis> {
     const formData = new FormData();
     files.forEach((file) => formData.append('images', file));
     if (questionnaire) {
       formData.append('questionnaire', JSON.stringify(questionnaire));
+    }
+    if (preocupent?.length) {
+      formData.append('preocupent', JSON.stringify(preocupent));
     }
     const res = await apiClient.post<Analysis>('/analyses/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -40,8 +44,14 @@ export const analysisService = {
   },
 
   /** Create analysis from existing image URLs */
-  async createFromUrls(imageUrls: string[]): Promise<Analysis> {
-    const res = await apiClient.post<Analysis>('/analyses', { images: imageUrls });
+  async createFromUrls(
+    imageUrls: string[],
+    preocupent?: string[],
+  ): Promise<Analysis> {
+    const res = await apiClient.post<Analysis>('/analyses', {
+      images: imageUrls,
+      ...(preocupent?.length ? { preocupent } : {}),
+    });
     
     // Auto-capture pour Digital Twin
     if (res.data?.id) {
