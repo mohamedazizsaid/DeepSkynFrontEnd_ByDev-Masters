@@ -117,4 +117,5 @@ export interface RealTimeScanDto {
   saveImage?: boolean;
   saveAnalysis?: boolean;
   preocupent?: string[];
+  cachedAnalysis?: GeminiAnalysisResult;
 }

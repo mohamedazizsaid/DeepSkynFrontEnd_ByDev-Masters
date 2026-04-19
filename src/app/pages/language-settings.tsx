@@ -34,11 +34,11 @@ export function LanguageSettings({ onBack }: LanguageSettingsProps) {
       });
       await loadUser();
       setLanguage(languageCode as any);
-      toast.success('La langue de l\'interface a été mise à jour.', {
+      toast.success(t('settings.language.updateSuccess'), {
         style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
       });
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Une erreur est survenue lors du changement de langue.', {
+      toast.error(error?.response?.data?.message || t('settings.language.updateError'), {
         style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
       });
       setSelectedLanguage(user?.preferredLanguage || 'fr');
@@ -54,10 +54,10 @@ export function LanguageSettings({ onBack }: LanguageSettingsProps) {
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         onClick={onBack}
-        className="flex lg:hidden items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-colors w-fit"
+        className="flex lg:hidden items-center gap-2 text-[#6B7280] dark:text-gray-400 hover:text-[#111827] dark:hover:text-gray-100 transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span className="text-sm font-medium">Retour</span>
+        <span className="text-sm font-medium">{t('common.back')}</span>
       </motion.button>
 
       {/* Header */}
@@ -70,8 +70,8 @@ export function LanguageSettings({ onBack }: LanguageSettingsProps) {
           <Globe className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-[#111827]">{t('settings.help.title')}</h2>
-          <p className="text-xs text-[#6B7280]">{t('settings.help.subtitle')}</p>
+          <h2 className="text-lg font-bold text-[#111827] dark:text-gray-100">{t('settings.language.title')}</h2>
+          <p className="text-xs text-[#6B7280] dark:text-gray-400">{t('settings.language.subtitle')}</p>
         </div>
       </motion.div>
 
@@ -94,7 +94,7 @@ export function LanguageSettings({ onBack }: LanguageSettingsProps) {
               relative p-5 rounded-2xl border-2 transition-all duration-200 text-left group
               ${selectedLanguage === lang.code
                 ? 'bg-gradient-to-br from-[#6366F1]/10 to-[#8B5CF6]/10 border-[#6366F1] shadow-lg shadow-[#6366F1]/20'
-                : 'bg-white border-[#E5E7EB] hover:border-[#6366F1]/30 hover:shadow-md'
+                : 'bg-white dark:bg-slate-900 border-[#E5E7EB] dark:border-slate-700 hover:border-[#6366F1]/30 hover:shadow-md'
               }
               ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
             `}
@@ -104,10 +104,10 @@ export function LanguageSettings({ onBack }: LanguageSettingsProps) {
 
             {/* Language Info */}
             <div className="flex-1">
-              <h3 className={`font-bold text-lg transition-colors ${selectedLanguage === lang.code ? 'text-[#6366F1]' : 'text-[#111827]'}`}>
+              <h3 className={`font-bold text-lg transition-colors ${selectedLanguage === lang.code ? 'text-[#6366F1]' : 'text-[#111827] dark:text-gray-100'}`}>
                 {lang.name}
               </h3>
-              <p className={`text-sm transition-colors ${selectedLanguage === lang.code ? 'text-[#6366F1]/70' : 'text-[#6B7280]'}`}>
+              <p className={`text-sm transition-colors ${selectedLanguage === lang.code ? 'text-[#6366F1]/70' : 'text-[#6B7280] dark:text-gray-400'}`}>
                 {lang.region}
               </p>
             </div>
@@ -133,8 +133,8 @@ export function LanguageSettings({ onBack }: LanguageSettingsProps) {
         transition={{ duration: 0.3, delay: 0.3 }}
         className="mt-0 p-5 bg-[#6366F1]/5 border border-[#6366F1]/20 rounded-2xl"
       >
-        <h3 className="font-semibold text-[#111827] mb-3">{t('settings.language.current')}</h3>
-        <p className="text-sm text-[#6B7280]">
+        <h3 className="font-semibold text-[#111827] dark:text-gray-100 mb-3">{t('settings.language.current')}</h3>
+        <p className="text-sm text-[#6B7280] dark:text-gray-300">
           {t('settings.language.description')}{' '}
           <span className="font-semibold text-[#6366F1]">
             {LANGUAGES.find(l => l.code === selectedLanguage)?.name || 'Français'}

@@ -532,6 +532,11 @@ export function CameraScanModal({
 
     setSaving(true);
     try {
+      if (!result) {
+        toast.error('No scan result available to save. Please run a scan first.');
+        return;
+      }
+
       const sequence = (forcedCaptureSequence && forcedCaptureSequence.length === 3)
         ? forcedCaptureSequence
         : (captureSequence.length === 3 ? captureSequence : ['front', 'left', 'right']);
@@ -549,6 +554,7 @@ export function CameraScanModal({
         saveImage: true,
         saveAnalysis: true,
         preocupent,
+        cachedAnalysis: result,
       });
       toast.success('Analysis saved successfully!');
       onAnalysisSaved?.();

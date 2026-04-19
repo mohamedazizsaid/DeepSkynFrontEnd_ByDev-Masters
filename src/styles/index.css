@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Sora:wght@400;500;600;700&display=swap');
 
 @import './fonts.css';
 @import './tailwind.css';
@@ -11,7 +11,19 @@ html {
 body {
 	-webkit-font-smoothing: antialiased;
 	text-rendering: optimizeLegibility;
+	position: relative;
 }
+
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	background:
+		radial-gradient(1200px 420px at 12% -20%, rgba(14, 165, 233, 0.16), transparent 55%),
+		radial-gradient(900px 380px at 88% -16%, rgba(6, 182, 212, 0.14), transparent 60%),
+		linear-gradient(180deg, rgba(240, 249, 255, 0.6) 0%, rgba(248, 250, 252, 0) 55%);
+	pointer-events: none;
+	z-index: -1;
 
 :root {
 	--admin-primary: #0ea5e9;
@@ -19,8 +31,8 @@ body {
 	--admin-accent: #f59e0b;
 	--admin-accent-2: #f97316;
 	--admin-accent-3: #10b981;
-	--admin-accent-4: #ec4899;
-	--admin-accent-5: #8b5cf6;
+	--admin-accent-4: #38bdf8;
+	--admin-accent-5: #22d3ee;
 	--admin-ink: #0f172a;
 	--admin-muted: #64748b;
 	--admin-surface: #ffffff;
@@ -43,7 +55,7 @@ body {
 	background:
 		radial-gradient(1100px 380px at -8% -12%, rgba(14, 165, 233, 0.14), transparent 55%),
 		radial-gradient(900px 360px at 108% -22%, rgba(6, 182, 212, 0.12), transparent 60%),
-		radial-gradient(760px 300px at 42% 120%, rgba(236, 72, 153, 0.08), transparent 60%),
+		radial-gradient(760px 300px at 42% 120%, rgba(34, 211, 238, 0.08), transparent 60%),
 		linear-gradient(180deg, #f7fbff 0%, #f8fafc 100%);
 	border: 1px solid rgba(14, 165, 233, 0.14);
 	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
@@ -113,11 +125,11 @@ body {
 }
 
 .admin-panel .grid .ds-card:nth-child(4n + 3)::before {
-	background: linear-gradient(90deg, #8b5cf6, #6366f1, #0ea5e9);
+	background: linear-gradient(90deg, #0ea5e9, #38bdf8, #06b6d4);
 }
 
 .admin-panel .grid .ds-card:nth-child(4n + 4)::before {
-	background: linear-gradient(90deg, #ec4899, #f43f5e, #f59e0b);
+	background: linear-gradient(90deg, #38bdf8, #22d3ee, #f59e0b);
 }
 
 .admin-panel h1 {
@@ -219,7 +231,7 @@ body {
 	background:
 		radial-gradient(1100px 380px at -8% -12%, rgba(14, 165, 233, 0.22), transparent 55%),
 		radial-gradient(900px 360px at 108% -22%, rgba(6, 182, 212, 0.2), transparent 60%),
-		radial-gradient(760px 300px at 42% 120%, rgba(236, 72, 153, 0.12), transparent 60%),
+		radial-gradient(760px 300px at 42% 120%, rgba(56, 189, 248, 0.12), transparent 60%),
 		linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
 	border-color: rgba(56, 189, 248, 0.24);
 	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -341,4 +353,5 @@ body {
 
 .animate-fadeIn {
 	animation: fadeIn 0.3s ease-in-out;
+}
 }

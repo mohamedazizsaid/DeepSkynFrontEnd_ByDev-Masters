@@ -48,8 +48,8 @@ export function NotificationSettings({ onBack }: NotificationSettingsProps) {
           notifications: updatedLocal
         }
       });
-      setUser(updatedUser);
-      toast.success('Vos préférences de notification ont été synchronisées.', {
+      setUser(updatedUser );
+      toast.success(t('settings.notifications.syncSuccess'), {
         icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />,
         duration: 2500,
         style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
@@ -57,7 +57,7 @@ export function NotificationSettings({ onBack }: NotificationSettingsProps) {
     } catch (error) {
       // Revert on error
       setLocalSettings(localSettings);
-      toast.error('Une erreur est survenue lors de la mise à jour de vos préférences.', {
+      toast.error(t('settings.notifications.syncError'), {
         style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
       });
     } finally {
@@ -93,10 +93,10 @@ export function NotificationSettings({ onBack }: NotificationSettingsProps) {
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         onClick={onBack}
-        className="flex lg:hidden items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-all w-fit"
+        className="flex lg:hidden items-center gap-2 text-[#6B7280] dark:text-gray-400 hover:text-[#111827] dark:hover:text-gray-100 transition-all w-fit"
       >
         <ArrowLeft className="w-5 h-5" />
-        <span className="text-sm font-medium">{t('common.back') || 'Retour'}</span>
+        <span className="text-sm font-medium">{t('common.back')}</span>
       </motion.button>
 
       {/* Header */}
@@ -110,8 +110,8 @@ export function NotificationSettings({ onBack }: NotificationSettingsProps) {
             <Bell className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#111827]">{t('settings.notifications.title')}</h2>
-            <p className="text-xs text-[#6B7280]">{t('settings.notifications.subtitle')}</p>
+            <h2 className="text-lg font-bold text-[#111827] dark:text-gray-100">{t('settings.notifications.title')}</h2>
+            <p className="text-xs text-[#6B7280] dark:text-gray-400">{t('settings.notifications.subtitle')}</p>
           </div>
         </div>
         
@@ -132,11 +132,11 @@ export function NotificationSettings({ onBack }: NotificationSettingsProps) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6 space-y-10"
+        className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-6 space-y-10"
       >
         {notificationSections.map((section, idx) => (
           <div key={idx} className="space-y-6">
-            <h3 className="text-sm font-bold text-[#111827] flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#111827] dark:text-gray-100 flex items-center gap-2">
               {section.icon}
               {section.title}
             </h3>
@@ -149,14 +149,14 @@ export function NotificationSettings({ onBack }: NotificationSettingsProps) {
                   className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-200 group text-left ${
                     item.value 
                       ? 'border-[#0EA5E9] bg-sky-50/30' 
-                      : 'border-gray-50 bg-gray-50/50 hover:bg-white hover:border-gray-200'
+                      : 'border-gray-50 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 hover:border-gray-200 dark:hover:border-slate-600'
                   } ${saving ? 'opacity-80 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex-1 pr-6">
-                    <p className={`text-sm font-bold transition-colors ${item.value ? 'text-sky-700' : 'text-[#111827]'}`}>
+                    <p className={`text-sm font-bold transition-colors ${item.value ? 'text-sky-700 dark:text-sky-300' : 'text-[#111827] dark:text-gray-100'}`}>
                       {item.label}
                     </p>
-                    <p className="text-[10px] font-medium text-gray-500 mt-1 leading-relaxed">
+                    <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
                       {item.desc}
                     </p>
                   </div>
@@ -172,7 +172,7 @@ export function NotificationSettings({ onBack }: NotificationSettingsProps) {
                 </button>
               ))}
             </div>
-            {idx < notificationSections.length - 1 && <div className="h-px bg-gray-100" />}
+            {idx < notificationSections.length - 1 && <div className="h-px bg-gray-100 dark:bg-slate-700" />}
           </div>
         ))}
 
@@ -182,8 +182,8 @@ export function NotificationSettings({ onBack }: NotificationSettingsProps) {
               <Sparkles className="w-5 h-5 text-sky-500" />
            </div>
            <div>
-              <p className="text-sm font-bold text-sky-900 mb-1">{t('dashboard.personalizedAdvice')}</p>
-              <p className="text-xs font-medium text-sky-800/80 leading-relaxed">
+              <p className="text-sm font-bold text-sky-900 dark:text-sky-200 mb-1">{t('dashboard.personalizedAdvice')}</p>
+              <p className="text-xs font-medium text-sky-800/80 dark:text-sky-300/80 leading-relaxed">
                 {t('dashboard.dailySteps')}
               </p>
            </div>

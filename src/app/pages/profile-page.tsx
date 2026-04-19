@@ -10,6 +10,7 @@ import { ProfileSidebar } from './components/profile-sidebar';
 import { MOCK_POSTS } from './components/mock-posts';
 import { MOCK_ADS, interleaveFeedWithAds } from './components/mock-ads';
 import { useAuthStore } from '../../stores/auth.store';
+import { useAccessibilityStore } from '../../stores/accessibility.store';
 import toast from 'react-hot-toast';
 
 export interface ProfilePageProps {
@@ -19,13 +20,14 @@ export interface ProfilePageProps {
 
 export function ProfilePage({ onBack, userId }: ProfilePageProps) {
   const { user: currentUser } = useAuthStore();
+  const { t } = useAccessibilityStore();
   const [activeTab, setActiveTab] = useState<Tab>('publications');
   const [isLoading, setIsLoading] = useState(false);
   const [posts, setPosts] = useState(MOCK_POSTS);
   const [feedWithAds, setFeedWithAds] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState({
     id: userId || currentUser?.sub || '',
-    name: currentUser?.name || 'Utilisateur',
+    name: currentUser?.name || t('common.user'),
     email: currentUser?.email || 'user@example.com',
     avatar: currentUser?.avatar,
     coverPhoto: currentUser?.coverPhoto,
@@ -56,7 +58,7 @@ export function ProfilePage({ onBack, userId }: ProfilePageProps) {
       setUserProfile((prev) => ({ ...prev, coverPhoto: url }));
       // In real app, would call: await authService.updateProfile({ coverPhoto: url });
     } catch (error) {
-      toast.error('Erreur lors du téléchargement');
+      toast.error(t('common.error'));
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -71,7 +73,7 @@ export function ProfilePage({ onBack, userId }: ProfilePageProps) {
       setUserProfile((prev) => ({ ...prev, avatar: url }));
       // In real app, would call: await authService.updateProfile({ avatar: url });
     } catch (error) {
-      toast.error('Erreur lors du téléchargement');
+      toast.error(t('common.error'));
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -106,7 +108,7 @@ export function ProfilePage({ onBack, userId }: ProfilePageProps) {
       const interleaved = interleaveFeedWithAds([newPost, ...posts], ads);
       setFeedWithAds(interleaved);
     } catch (error) {
-      toast.error('Erreur lors de la publication');
+      toast.error(t('common.error'));
       console.error(error);
     }
   };
@@ -135,18 +137,18 @@ export function ProfilePage({ onBack, userId }: ProfilePageProps) {
   return (
     <div className="min-h-screen relative" style={{ zIndex: 1 }}>
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-white border-b border-[#E5E7EB] shadow-sm">
+      <div className="sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-[#E5E7EB] dark:border-slate-700 shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {onBack && (
               <button
                 onClick={onBack}
-                className="flex items-center gap-2 text-[#6B7280] hover:text-[#0EA5E9] transition-colors"
+                className="flex items-center gap-2 text-[#6B7280] dark:text-gray-400 hover:text-[#0EA5E9] dark:hover:text-sky-300 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
             )}
-            <h1 className="text-2xl font-bold text-[#111827]">Profil</h1>
+            <h1 className="text-2xl font-bold text-[#111827] dark:text-gray-100">{t('community.profile')}</h1>
           </div>
         </div>
       </div>
@@ -163,10 +165,10 @@ export function ProfilePage({ onBack, userId }: ProfilePageProps) {
         <ProfileHero
           user={userProfile}
           isOwnProfile={isOwnProfile}
-          onEditProfile={() => toast('Page d\'édition - Fonctionnalité à venir')}
+          onEditProfile={() => toast(t('common.edit'))}
           onCoverPhotoUpload={handleCoverPhotoUpload}
           onAvatarUpload={handleAvatarUpload}
-          onFollow={() => toast.success('Vous suivez maintenant cet utilisateur')}
+          onFollow={() => toast.success(t('common.follow'))}
         />
 
         {/* Tabs */}
@@ -204,8 +206,8 @@ export function ProfilePage({ onBack, userId }: ProfilePageProps) {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 bg-white rounded-2xl border border-[#E5E7EB]">
-                  <p className="text-[#6B7280]">Aucune publication pour le moment</p>
+                <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700">
+                  <p className="text-[#6B7280] dark:text-gray-400">{t('community.noPosts')}</p>
                 </div>
               )}
             </div>
@@ -293,30 +295,30 @@ export function ProfilePage({ onBack, userId }: ProfilePageProps) {
 
         {/* Other Tabs Content */}
         {activeTab === 'about' && (
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-8">
-            <h2 className="text-2xl font-bold text-[#111827] mb-6">À propos</h2>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-8">
+            <h2 className="text-2xl font-bold text-[#111827] dark:text-gray-100 mb-6">{t('community.profileAboutTitle')}</h2>
             <div className="space-y-6">
               <div>
-                <h3 className="font-semibold text-[#111827] mb-2">Bio</h3>
-                <p className="text-[#6B7280]">{userProfile.bio}</p>
+                <h3 className="font-semibold text-[#111827] dark:text-gray-100 mb-2">{t('community.profileBioLabel')}</h3>
+                <p className="text-[#6B7280] dark:text-gray-400">{userProfile.bio}</p>
               </div>
               <div>
-                <h3 className="font-semibold text-[#111827] mb-2">Localisation</h3>
-                <p className="text-[#6B7280]">{userProfile.location}</p>
+                <h3 className="font-semibold text-[#111827] dark:text-gray-100 mb-2">{t('community.profileLocationLabel')}</h3>
+                <p className="text-[#6B7280] dark:text-gray-400">{userProfile.location}</p>
               </div>
             </div>
           </div>
         )}
 
         {activeTab === 'photos' && (
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-8">
-            <h2 className="text-2xl font-bold text-[#111827] mb-6">Photos</h2>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-8">
+            <h2 className="text-2xl font-bold text-[#111827] dark:text-gray-100 mb-6">{t('community.profilePhotosTitle')}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {Array.from({ length: 12 }).map((_, i) => (
                 <motion.div
                   key={i}
                   whileHover={{ scale: 1.05 }}
-                  className="aspect-square rounded-lg bg-[#F3F4F6] cursor-pointer overflow-hidden"
+                  className="aspect-square rounded-lg bg-[#F3F4F6] dark:bg-slate-800 cursor-pointer overflow-hidden"
                 >
                   <img
                     src={`https://images.unsplash.com/photo-${1556228578 + i}?w=300&h=300&fit=crop`}
@@ -330,28 +332,28 @@ export function ProfilePage({ onBack, userId }: ProfilePageProps) {
         )}
 
         {activeTab === 'videos' && (
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-8 text-center py-12">
-            <p className="text-[#6B7280]">Aucune vidéo pour le moment</p>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-8 text-center py-12">
+            <p className="text-[#6B7280] dark:text-gray-400">{t('community.profileNoVideosYet')}</p>
           </div>
         )}
 
         {activeTab === 'friends' && (
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-8">
-            <h2 className="text-2xl font-bold text-[#111827] mb-6">
-              Amis ({userProfile.followingCount})
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-8">
+            <h2 className="text-2xl font-bold text-[#111827] dark:text-gray-100 mb-6">
+              {t('community.profileFriendsTitle', { count: userProfile.followingCount })}
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
               {Array.from({ length: 8 }).map((_, i) => (
                 <motion.div
                   key={i}
                   whileHover={{ scale: 1.05 }}
-                  className="flex flex-col items-center p-4 rounded-lg hover:bg-[#F9FAFB] transition-colors cursor-pointer"
+                  className="flex flex-col items-center p-4 rounded-lg hover:bg-[#F9FAFB] dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center text-white font-bold text-lg mb-3">
                     {String.fromCharCode(65 + i)}
                   </div>
-                  <h3 className="font-semibold text-sm text-center">Ami {i + 1}</h3>
-                  <p className="text-xs text-[#6B7280] text-center mt-1">@friend{i + 1}</p>
+                  <h3 className="font-semibold text-sm text-center dark:text-gray-100">{t('community.profileFriendLabel', { index: i + 1 })}</h3>
+                  <p className="text-xs text-[#6B7280] dark:text-gray-400 text-center mt-1">@friend{i + 1}</p>
                 </motion.div>
               ))}
             </div>

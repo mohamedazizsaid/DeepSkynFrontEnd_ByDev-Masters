@@ -43,7 +43,7 @@ const getRelativeTime = (date: string, t: any) => {
   const postDate = new Date(date);
   const seconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
 
-  if (seconds < 60) return t('community.justNow') || "À l'instant";
+  if (seconds < 60) return t('community.justNow');
   if (seconds < 3600) return `${Math.floor(seconds / 60)} min`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)} h`;
   if (seconds < 604800) return `${Math.floor(seconds / 86400)} j`;
@@ -109,7 +109,7 @@ export function PostCard({
     const shareTarget = `${window.location.origin}${window.location.pathname}?postId=${encodeURIComponent(post.id)}`;
     const quote = safeContent
       ? safeContent.slice(0, 600)
-      : `${post.userName} a partage un post sur DeepSkyn`;
+      : `${post.userName} ${t('stats.shares')} DeepSkyn`;
     const firstHashtagMatch = safeContent.match(/#\w+/);
     const hashtag = firstHashtagMatch ? firstHashtagMatch[0] : '#DeepSkyn';
 
@@ -131,12 +131,12 @@ export function PostCard({
 
     if (!popup) {
       setShareState('error');
-      toast.error('Impossible d ouvrir Facebook. Popup bloquee.');
+      toast.error(t('common.error'));
 
       try {
         const fallbackText = `${(post.content || '').trim()}\n\n${window.location.origin}${window.location.pathname}?postId=${encodeURIComponent(post.id)}`.trim();
         await navigator.clipboard.writeText(fallbackText);
-        toast.success('Texte et lien copies. Collez-les dans Facebook.');
+        toast.success(t('common.success'));
       } catch {
         // Clipboard can fail on insecure contexts, keep UX feedback in share flow.
       }
@@ -154,7 +154,7 @@ export function PostCard({
 
     shareTimersRef.current.push(window.setTimeout(() => {
       setShareState('success');
-      toast.success('Partage Facebook pret avec le contenu du post.');
+      toast.success(t('common.success'));
     }, 520));
 
     shareTimersRef.current.push(window.setTimeout(() => {
@@ -172,7 +172,7 @@ export function PostCard({
       } else {
         // Comportement standard pour les posts texte/image
         if (!post.content?.trim()) {
-          toast.error('Aucun texte à traduire');
+          toast.error(t('community.addCommentError'));
           return;
         }
         setShowLSFModal(true);
@@ -317,7 +317,7 @@ export function PostCard({
       setReactions(result.data || []);
     } catch {
       setShowReactionsModal(false);
-      toast.error(t('common.error') || 'Impossible de charger les reactions');
+      toast.error(t('common.error'));
     } finally {
       setReactionsLoading(false);
     }
@@ -561,7 +561,7 @@ export function PostCard({
           className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-colors ${btnHover}`}
         >
           <Share2 className="w-5 h-5" />
-          <span>{t('stats.shares') || 'Partager'}</span>
+          <span>{t('stats.shares')}</span>
         </motion.button>
 
         {!post.media?.includes('video') && (
@@ -578,7 +578,7 @@ export function PostCard({
                     ? 'hover:bg-[#334155] text-gray-400'
                     : 'hover:bg-gray-100 text-[#6B7280]'
             }`}
-            title="Traduire le texte en LSF"
+            title={t('common.translate')}
           >
             {isTranslating ? (
               <>
@@ -650,10 +650,10 @@ export function PostCard({
                     transition={{ duration: 0.22 }}
                     className={`text-sm font-bold ${textColor}`}
                   >
-                    {shareState === 'preparing' && 'Preparation du partage Facebook...'}
-                    {shareState === 'opening' && 'Ouverture de Facebook...'}
-                    {shareState === 'success' && 'Post pret a etre partage sur Facebook'}
-                    {shareState === 'error' && 'Partage direct bloque. Lien copie si possible.'}
+                    {shareState === 'preparing' && t('common.loading')}
+                    {shareState === 'opening' && t('common.loading')}
+                    {shareState === 'success' && t('common.success')}
+                    {shareState === 'error' && t('common.error')}
                   </motion.p>
                 </AnimatePresence>
 
@@ -700,7 +700,7 @@ export function PostCard({
                 }}
                 className={`text-xs font-semibold px-2 py-1 rounded-md transition-colors ${isHcHigh ? 'text-yellow-400 hover:bg-yellow-400/20' : isDark ? 'text-gray-300 hover:bg-[#1e293b]' : 'text-[#475569] hover:bg-white'}`}
               >
-                Fermer
+                {t('common.cancel')}
               </motion.button>
             </div>
           </motion.div>
@@ -742,7 +742,7 @@ export function PostCard({
                 </div>
               ) : reactions.length === 0 ? (
                 <p className={`text-sm text-center py-8 ${subText}`}>
-                  {t('common.noResults') || 'Aucune reaction'}
+                  {t('common.noResults')}
                 </p>
               ) : (
                 <div className="max-h-[320px] overflow-y-auto pr-1 space-y-2">
@@ -751,8 +751,7 @@ export function PostCard({
                       const reactionUserName =
                         item.user?.name ||
                         item.userId ||
-                        t('common.user') ||
-                        'User';
+                        t('common.user');
 
                       return (
                         <div

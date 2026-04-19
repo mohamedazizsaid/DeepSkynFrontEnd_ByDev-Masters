@@ -44,14 +44,14 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
     e.preventDefault();
 
     if (formData.newPassword !== formData.confirmPassword) {
-      toast.error(t('settings.security.mismatch') || 'Les mots de passe saisis ne sont pas identiques.', {
+      toast.error(t('settings.security.mismatch'), {
         style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
       });
       return;
     }
 
     if (formData.newPassword.length < 8) {
-      toast.error(t('settings.security.minLength') || 'Votre nouveau mot de passe doit contenir au moins 8 caractères.', {
+      toast.error(t('settings.security.minLength'), {
         style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
       });
       return;
@@ -63,13 +63,13 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
         formData.currentPassword,
         formData.newPassword
       );
-      toast.success(t('settings.security.updateSuccess') || 'Votre mot de passe a été modifié avec succès.', {
+      toast.success(t('settings.security.updateSuccess'), {
         style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
       });
       setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setPasswordStrength(0);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Une erreur est survenue lors du changement de mot de passe.', {
+      toast.error(error?.response?.data?.message || t('common.error'), {
         style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
       });
     } finally {
@@ -77,7 +77,7 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
     }
   };
 
-  const strengthLabels = t('settings.security.strengthLabels') as unknown as string[] || ['Très faible', 'Faible', 'Moyen', 'Bon', 'Très bon'];
+  const strengthLabels = t('settings.security.strengthLabels') as unknown as string[];
   const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-lime-500', 'bg-green-500'];
 
   return (
@@ -87,7 +87,7 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         onClick={onBack}
-        className="flex lg:hidden items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-colors w-fit"
+        className="flex lg:hidden items-center gap-2 text-[#6B7280] dark:text-gray-400 hover:text-[#111827] dark:hover:text-gray-100 transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
         <span className="text-sm font-medium">{t('common.back')}</span>
@@ -104,8 +104,8 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
             <Lock className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#111827]">{t('settings.security.passwordTitle')}</h2>
-            <p className="text-xs text-[#6B7280]">{t('settings.security.passwordSubtitle')}</p>
+            <h2 className="text-lg font-bold text-[#111827] dark:text-gray-100">{t('settings.security.passwordTitle')}</h2>
+            <p className="text-xs text-[#6B7280] dark:text-gray-400">{t('settings.security.passwordSubtitle')}</p>
           </div>
         </div>
       </motion.div>
@@ -115,18 +115,18 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         onSubmit={handleSubmit}
-        className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6"
+        className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-6"
       >
         {/* Current Password */}
         <div className="mb-6">
-          <label className="block text-sm font-semibold text-[#111827] mb-2">{t('settings.security.currentPassword')}</label>
+          <label className="block text-sm font-semibold text-[#111827] dark:text-gray-100 mb-2">{t('settings.security.currentPassword')}</label>
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
               value={formData.currentPassword}
               onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
               placeholder={t('settings.security.currentPassword')}
-              className="w-full pl-10 pr-10 py-3 bg-[#F9FAFB] border-2 border-[#E5E7EB] rounded-xl focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/20 outline-none transition-all duration-200 text-[#111827] placeholder-[#9CA3AF]"
+              className="w-full pl-10 pr-10 py-3 bg-[#F9FAFB] dark:bg-slate-800 border-2 border-[#E5E7EB] dark:border-slate-700 rounded-xl focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/20 outline-none transition-all duration-200 text-[#111827] dark:text-gray-100 placeholder-[#9CA3AF] dark:placeholder-gray-500"
             />
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
             <button
@@ -139,18 +139,18 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
           </div>
         </div>
 
-        <div className="h-px bg-[#E5E7EB] my-8" />
+        <div className="h-px bg-[#E5E7EB] dark:bg-slate-700 my-8" />
 
         {/* New Password */}
         <div className="mb-6">
-          <label className="block text-sm font-semibold text-[#111827] mb-2">{t('settings.security.newPassword')}</label>
+          <label className="block text-sm font-semibold text-[#111827] dark:text-gray-100 mb-2">{t('settings.security.newPassword')}</label>
           <div className="relative">
             <input
               type={showNewPassword ? 'text' : 'password'}
               value={formData.newPassword}
               onChange={handleNewPasswordChange}
               placeholder={t('settings.security.newPassword')}
-              className="w-full pl-10 pr-10 py-3 bg-[#F9FAFB] border-2 border-[#E5E7EB] rounded-xl focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/20 outline-none transition-all duration-200 text-[#111827] placeholder-[#9CA3AF]"
+              className="w-full pl-10 pr-10 py-3 bg-[#F9FAFB] dark:bg-slate-800 border-2 border-[#E5E7EB] dark:border-slate-700 rounded-xl focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/20 outline-none transition-all duration-200 text-[#111827] dark:text-gray-100 placeholder-[#9CA3AF] dark:placeholder-gray-500"
             />
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
             <button
@@ -170,8 +170,8 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
               className="mt-3"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-[#6B7280]">{t('settings.security.strength')}</span>
-                <span className="text-xs font-semibold text-[#111827]">{strengthLabels[passwordStrength - 1]}</span>
+                <span className="text-xs font-medium text-[#6B7280] dark:text-gray-400">{t('settings.security.strength')}</span>
+                <span className="text-xs font-semibold text-[#111827] dark:text-gray-100">{strengthLabels[passwordStrength - 1]}</span>
               </div>
               <div className="w-full h-2 bg-[#E5E7EB] rounded-full overflow-hidden">
                 <motion.div
@@ -180,7 +180,7 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
                   className={`h-full ${strengthColors[passwordStrength - 1]} transition-all duration-300`}
                 />
               </div>
-              <ul className="mt-3 space-y-2 text-xs text-[#6B7280]">
+              <ul className="mt-3 space-y-2 text-xs text-[#6B7280] dark:text-gray-400">
                 <li className={`flex items-center gap-2 ${formData.newPassword.length >= 8 ? 'text-[#10B981]' : ''}`}>
                   {formData.newPassword.length >= 8 ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />}
                   {t('settings.security.minLength')}
@@ -204,14 +204,14 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
 
         {/* Confirm Password */}
         <div className="mb-8">
-          <label className="block text-sm font-semibold text-[#111827] mb-2">{t('settings.security.confirmPassword')}</label>
+          <label className="block text-sm font-semibold text-[#111827] dark:text-gray-100 mb-2">{t('settings.security.confirmPassword')}</label>
           <div className="relative">
             <input
               type={showConfirmPassword ? 'text' : 'password'}
               value={formData.confirmPassword}
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               placeholder={t('settings.security.confirmPassword')}
-              className="w-full pl-10 pr-10 py-3 bg-[#F9FAFB] border-2 border-[#E5E7EB] rounded-xl focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/20 outline-none transition-all duration-200 text-[#111827] placeholder-[#9CA3AF]"
+              className="w-full pl-10 pr-10 py-3 bg-[#F9FAFB] dark:bg-slate-800 border-2 border-[#E5E7EB] dark:border-slate-700 rounded-xl focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/20 outline-none transition-all duration-200 text-[#111827] dark:text-gray-100 placeholder-[#9CA3AF] dark:placeholder-gray-500"
             />
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
             <button
@@ -249,10 +249,10 @@ export function ChangePasswordSettings({ onBack }: ChangePasswordSettingsProps) 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
-        className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-xl"
+        className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/40 rounded-xl"
       >
-        <p className="text-sm font-medium text-blue-900 mb-2">💡 {t('dashboard.personalizedAdvice')}</p>
-        <ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
+        <p className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-2">💡 {t('dashboard.personalizedAdvice')}</p>
+        <ul className="text-xs text-blue-800 dark:text-blue-300 space-y-1 list-disc list-inside">
           <li>{t('auth.chooseStrongPassword')}</li>
           <li>{t('settings.security.passwordSubtitle')}</li>
         </ul>

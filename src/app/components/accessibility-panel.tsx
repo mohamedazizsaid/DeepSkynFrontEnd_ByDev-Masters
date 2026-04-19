@@ -142,20 +142,111 @@ function FeatureCard({
 // ─────────────────────────────────────────────────────────────────────────────
 // Voice commands list
 // ─────────────────────────────────────────────────────────────────────────────
-const VOICE_COMMANDS = [
-    { command: '"Accueil" / "Tableau de bord"', desc: 'Aller au tableau de bord' },
-    { command: '"Analyse"', desc: 'Ouvrir l\'analyse' },
-    { command: '"Routine"', desc: 'Ouvrir les routines' },
-    { command: '"Profil"', desc: 'Ouvrir le profil' },
-    { command: '"Communauté"', desc: 'Ouvrir la communauté' },
-    { command: '"Météo"', desc: 'Ouvrir la météo' },
-    { command: '"Mode sombre" / "Mode clair"', desc: 'Changer le thème' },
-    { command: '"Zoom plus" / "Zoom moins"', desc: 'Ajuster la taille' },
-    { command: '"Lire la page"', desc: 'Lecture vocale de la page' },
-    { command: '"Arrêter"', desc: 'Stopper la lecture' },
-    { command: '"Contraste élevé" / "moyen" / "normal"', desc: 'Changer le contraste' },
-    { command: '"Aide"', desc: 'Liste des commandes' },
-];
+const SHORTCUTS_BY_LANGUAGE: Record<Language, { key: string; desc: string }[]> = {
+    fr: [
+        { key: 'Alt + A', desc: 'Panneau' },
+        { key: 'Alt + D', desc: 'Mode sombre' },
+        { key: 'Alt + R', desc: 'Lire sélection' },
+        { key: 'Alt + P', desc: 'Lire la page' },
+        { key: 'Alt + S', desc: 'Stop lecture' },
+        { key: 'Alt + M', desc: 'Micro' },
+        { key: 'Alt + +', desc: 'Zoom +' },
+        { key: 'Alt + -', desc: 'Zoom -' },
+        { key: 'Échap', desc: 'Fermer' },
+    ],
+    en: [
+        { key: 'Alt + A', desc: 'Panel' },
+        { key: 'Alt + D', desc: 'Dark mode' },
+        { key: 'Alt + R', desc: 'Read selection' },
+        { key: 'Alt + P', desc: 'Read page' },
+        { key: 'Alt + S', desc: 'Stop reading' },
+        { key: 'Alt + M', desc: 'Mic' },
+        { key: 'Alt + +', desc: 'Zoom +' },
+        { key: 'Alt + -', desc: 'Zoom -' },
+        { key: 'Esc', desc: 'Close' },
+    ],
+    ar: [
+        { key: 'Alt + A', desc: 'اللوحة' },
+        { key: 'Alt + D', desc: 'الوضع الداكن' },
+        { key: 'Alt + R', desc: 'قراءة التحديد' },
+        { key: 'Alt + P', desc: 'قراءة الصفحة' },
+        { key: 'Alt + S', desc: 'إيقاف القراءة' },
+        { key: 'Alt + M', desc: 'الميكروفون' },
+        { key: 'Alt + +', desc: 'تكبير +' },
+        { key: 'Alt + -', desc: 'تكبير -' },
+        { key: 'Esc', desc: 'إغلاق' },
+    ],
+    es: [
+        { key: 'Alt + A', desc: 'Panel' },
+        { key: 'Alt + D', desc: 'Modo oscuro' },
+        { key: 'Alt + R', desc: 'Leer selección' },
+        { key: 'Alt + P', desc: 'Leer página' },
+        { key: 'Alt + S', desc: 'Detener lectura' },
+        { key: 'Alt + M', desc: 'Micrófono' },
+        { key: 'Alt + +', desc: 'Zoom +' },
+        { key: 'Alt + -', desc: 'Zoom -' },
+        { key: 'Esc', desc: 'Cerrar' },
+    ],
+};
+
+const VOICE_COMMANDS_BY_LANGUAGE: Record<Language, { command: string; desc: string }[]> = {
+    fr: [
+        { command: '"Accueil" / "Tableau de bord"', desc: 'Aller au tableau de bord' },
+        { command: '"Analyse"', desc: 'Ouvrir l\'analyse' },
+        { command: '"Routine"', desc: 'Ouvrir les routines' },
+        { command: '"Profil"', desc: 'Ouvrir le profil' },
+        { command: '"Communauté"', desc: 'Ouvrir la communauté' },
+        { command: '"Météo"', desc: 'Ouvrir la météo' },
+        { command: '"Mode sombre" / "Mode clair"', desc: 'Changer le thème' },
+        { command: '"Zoom plus" / "Zoom moins"', desc: 'Ajuster la taille' },
+        { command: '"Lire la page"', desc: 'Lecture vocale de la page' },
+        { command: '"Arrêter"', desc: 'Stopper la lecture' },
+        { command: '"Contraste élevé" / "moyen" / "normal"', desc: 'Changer le contraste' },
+        { command: '"Aide"', desc: 'Liste des commandes' },
+    ],
+    en: [
+        { command: '"Home" / "Dashboard"', desc: 'Go to dashboard' },
+        { command: '"Analysis"', desc: 'Open analysis' },
+        { command: '"Routine"', desc: 'Open routine' },
+        { command: '"Profile"', desc: 'Open profile' },
+        { command: '"Community"', desc: 'Open community' },
+        { command: '"Weather"', desc: 'Open weather page' },
+        { command: '"Dark mode" / "Light mode"', desc: 'Change theme' },
+        { command: '"Zoom in" / "Zoom out"', desc: 'Adjust size' },
+        { command: '"Read page"', desc: 'Read current page' },
+        { command: '"Stop"', desc: 'Stop reading' },
+        { command: '"High contrast" / "medium" / "normal"', desc: 'Change contrast' },
+        { command: '"Help"', desc: 'List commands' },
+    ],
+    ar: [
+        { command: '"الرئيسية" / "لوحة التحكم"', desc: 'الانتقال إلى لوحة التحكم' },
+        { command: '"تحليل"', desc: 'فتح التحليل' },
+        { command: '"الروتين"', desc: 'فتح الروتين' },
+        { command: '"الملف الشخصي"', desc: 'فتح الملف الشخصي' },
+        { command: '"المجتمع"', desc: 'فتح المجتمع' },
+        { command: '"الطقس"', desc: 'فتح صفحة الطقس' },
+        { command: '"الوضع الداكن" / "الوضع الفاتح"', desc: 'تغيير النمط' },
+        { command: '"تكبير" / "تصغير"', desc: 'تعديل الحجم' },
+        { command: '"اقرأ الصفحة"', desc: 'قراءة الصفحة صوتيا' },
+        { command: '"توقف"', desc: 'إيقاف القراءة' },
+        { command: '"تباين عال" / "متوسط" / "عادي"', desc: 'تغيير التباين' },
+        { command: '"مساعدة"', desc: 'قائمة الأوامر' },
+    ],
+    es: [
+        { command: '"Inicio" / "Panel"', desc: 'Ir al panel' },
+        { command: '"Análisis"', desc: 'Abrir análisis' },
+        { command: '"Rutina"', desc: 'Abrir rutina' },
+        { command: '"Perfil"', desc: 'Abrir perfil' },
+        { command: '"Comunidad"', desc: 'Abrir comunidad' },
+        { command: '"Clima"', desc: 'Abrir página del clima' },
+        { command: '"Modo oscuro" / "Modo claro"', desc: 'Cambiar tema' },
+        { command: '"Zoom más" / "Zoom menos"', desc: 'Ajustar tamaño' },
+        { command: '"Leer página"', desc: 'Lectura de la página' },
+        { command: '"Detener"', desc: 'Detener lectura' },
+        { command: '"Alto contraste" / "medio" / "normal"', desc: 'Cambiar contraste' },
+        { command: '"Ayuda"', desc: 'Lista de comandos' },
+    ],
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main component
@@ -219,6 +310,75 @@ export function AccessibilityPanel() {
         extras: false,
     });
     const [showCommands, setShowCommands] = useState(false);
+    const shortcuts = SHORTCUTS_BY_LANGUAGE[language] ?? SHORTCUTS_BY_LANGUAGE.fr;
+    const voiceCommands = VOICE_COMMANDS_BY_LANGUAGE[language] ?? VOICE_COMMANDS_BY_LANGUAGE.fr;
+
+    const quickLabels = {
+        fr: {
+            openPanel: "Ouvrir le panneau d'accessibilité (Alt+A)",
+            panel: "Panneau d'accessibilité",
+            keyboard: 'Raccourcis clavier',
+            eyeTrackingTitle: 'Suivi Oculaire',
+            eyeTrackingDesc: 'Contrôlez le curseur avec votre tête via la webcam',
+            eyeTrackingAria: 'Activer le suivi oculaire',
+            eyeTrackingActive: 'Suivi actif - Bougez la tête pour déplacer le curseur',
+            listening: 'Écoute en cours…',
+            clearTranscript: 'Effacer le texte dicté',
+            voiceToggleOn: "Arrêter l'écoute",
+            voiceToggleOff: "Démarrer l'écoute (Alt+M)",
+        },
+        en: {
+            openPanel: 'Open accessibility panel (Alt+A)',
+            panel: 'Accessibility panel',
+            keyboard: 'Keyboard shortcuts',
+            eyeTrackingTitle: 'Eye Tracking',
+            eyeTrackingDesc: 'Control cursor with your head using webcam',
+            eyeTrackingAria: 'Enable eye tracking',
+            eyeTrackingActive: 'Tracking active - move your head to move the cursor',
+            listening: 'Listening…',
+            clearTranscript: 'Clear dictated text',
+            voiceToggleOn: 'Stop listening',
+            voiceToggleOff: 'Start listening (Alt+M)',
+        },
+        ar: {
+            openPanel: 'فتح لوحة إمكانية الوصول (Alt+A)',
+            panel: 'لوحة إمكانية الوصول',
+            keyboard: 'اختصارات لوحة المفاتيح',
+            eyeTrackingTitle: 'تتبع العين',
+            eyeTrackingDesc: 'تحكم بالمؤشر عبر حركة الرأس باستخدام الكاميرا',
+            eyeTrackingAria: 'تفعيل تتبع العين',
+            eyeTrackingActive: 'التتبع نشط - حرّك رأسك لتحريك المؤشر',
+            listening: 'جاري الاستماع…',
+            clearTranscript: 'مسح النص المملى',
+            voiceToggleOn: 'إيقاف الاستماع',
+            voiceToggleOff: 'بدء الاستماع (Alt+M)',
+        },
+        es: {
+            openPanel: 'Abrir panel de accesibilidad (Alt+A)',
+            panel: 'Panel de accesibilidad',
+            keyboard: 'Atajos de teclado',
+            eyeTrackingTitle: 'Seguimiento ocular',
+            eyeTrackingDesc: 'Controla el cursor con la cabeza usando la webcam',
+            eyeTrackingAria: 'Activar seguimiento ocular',
+            eyeTrackingActive: 'Seguimiento activo - mueve la cabeza para mover el cursor',
+            listening: 'Escuchando…',
+            clearTranscript: 'Borrar texto dictado',
+            voiceToggleOn: 'Detener escucha',
+            voiceToggleOff: 'Iniciar escucha (Alt+M)',
+        },
+    }[language] ?? {
+        openPanel: "Ouvrir le panneau d'accessibilité (Alt+A)",
+        panel: "Panneau d'accessibilité",
+        keyboard: 'Raccourcis clavier',
+        eyeTrackingTitle: 'Suivi Oculaire',
+        eyeTrackingDesc: 'Contrôlez le curseur avec votre tête via la webcam',
+        eyeTrackingAria: 'Activer le suivi oculaire',
+        eyeTrackingActive: 'Suivi actif - Bougez la tête pour déplacer le curseur',
+        listening: 'Écoute en cours…',
+        clearTranscript: 'Effacer le texte dicté',
+        voiceToggleOn: "Arrêter l'écoute",
+        voiceToggleOff: "Démarrer l'écoute (Alt+M)",
+    };
 
     const toggle = (key: keyof typeof openSections) =>
         setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -316,7 +476,7 @@ export function AccessibilityPanel() {
         return (
             <button
                 onClick={togglePanel}
-                aria-label="Ouvrir le panneau d'accessibilité (Alt+A)"
+                aria-label={quickLabels.openPanel}
                 className="
           fixed bottom-[24px] right-[24px] z-[9999]
           flex items-center justify-center w-[56px] h-[56px]
@@ -349,7 +509,7 @@ export function AccessibilityPanel() {
         animate-fade-in
       "
             role="dialog"
-            aria-label="Panneau d'accessibilité"
+            aria-label={quickLabels.panel}
             aria-modal="false"
         >
             {/* ── Header ──────────────────────────────────────────────────── */}
@@ -366,8 +526,8 @@ export function AccessibilityPanel() {
                 <div className="flex items-center gap-[4px]">
                     <button
                         onClick={() => setShowCommands(!showCommands)}
-                        aria-label="Raccourcis clavier"
-                        title="Raccourcis clavier"
+                        aria-label={quickLabels.keyboard}
+                        title={quickLabels.keyboard}
                         className="flex items-center justify-center w-[32px] h-[32px] rounded-lg hover:bg-[var(--secondary)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors duration-200"
                     >
                         <Keyboard size={16} />
@@ -387,17 +547,7 @@ export function AccessibilityPanel() {
                 <div className="mx-[20px] mb-[12px] p-[12px] rounded-xl bg-[var(--secondary)] border border-[var(--border)]">
                     <p className="text-[11px] font-bold text-[var(--foreground)] mb-[8px] uppercase tracking-wider">{t('accessibilityPanel.shortcuts')}</p>
                     <div className="grid grid-cols-2 gap-[4px]">
-                        {[
-                            { key: 'Alt + A', desc: 'Panneau' },
-                            { key: 'Alt + D', desc: 'Mode sombre' },
-                            { key: 'Alt + R', desc: 'Lire sélection' },
-                            { key: 'Alt + P', desc: 'Lire la page' },
-                            { key: 'Alt + S', desc: 'Stop lecture' },
-                            { key: 'Alt + M', desc: 'Micro' },
-                            { key: 'Alt + +', desc: 'Zoom +' },
-                            { key: 'Alt + -', desc: 'Zoom -' },
-                            { key: 'Échap', desc: 'Fermer' },
-                        ].map((s) => (
+                        {shortcuts.map((s) => (
                             <div key={s.key} className="flex items-center gap-[6px]">
                                 <kbd className="px-[6px] py-[2px] rounded bg-[var(--background)] border border-[var(--border)] text-[9px] font-mono font-bold text-[var(--foreground)]">
                                     {s.key}
@@ -721,13 +871,13 @@ export function AccessibilityPanel() {
                             <FeatureCard
                                 icon={Eye}
                                 iconBg={eyeTracking ? 'bg-green-500' : 'bg-green-500/60'}
-                                title="Suivi Oculaire"
-                                description="Contrôlez le curseur avec votre tête via la webcam"
+                                title={quickLabels.eyeTrackingTitle}
+                                description={quickLabels.eyeTrackingDesc}
                                 action={
                                     <ToggleSwitch
                                         checked={eyeTracking}
                                         onChange={toggleEyeTracking}
-                                        ariaLabel="Activer le suivi oculaire"
+                                        ariaLabel={quickLabels.eyeTrackingAria}
                                     />
                                 }
                             />
@@ -740,7 +890,7 @@ export function AccessibilityPanel() {
                                         <span className="relative inline-flex rounded-full h-[10px] w-[10px] bg-green-500" />
                                     </span>
                                     <span className="text-[11px] font-medium text-green-600 dark:text-green-400">
-                                        Suivi actif - Bougez la tête pour déplacer le curseur
+                                        {quickLabels.eyeTrackingActive}
                                     </span>
                                 </div>
                             )}
@@ -902,7 +1052,7 @@ export function AccessibilityPanel() {
                                     <ToggleSwitch
                                         checked={isListening}
                                         onChange={isListening ? stopListening : startListening}
-                                        ariaLabel={isListening ? "Arrêter l'écoute" : "Démarrer l'écoute (Alt+M)"}
+                                        ariaLabel={isListening ? quickLabels.voiceToggleOn : quickLabels.voiceToggleOff}
                                     />
                                 }
                             />
@@ -914,7 +1064,7 @@ export function AccessibilityPanel() {
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
                                         <span className="relative inline-flex rounded-full h-[10px] w-[10px] bg-rose-500" />
                                     </span>
-                                    <span className="text-[11px] font-medium text-rose-600 dark:text-rose-400">Écoute en cours…</span>
+                                    <span className="text-[11px] font-medium text-rose-600 dark:text-rose-400">{quickLabels.listening}</span>
                                 </div>
                             )}
 
@@ -924,7 +1074,7 @@ export function AccessibilityPanel() {
                                     <p className="text-[12px] text-[var(--foreground)] leading-relaxed pr-[24px]">{spokenText}</p>
                                     <button
                                         onClick={clearSpokenText}
-                                        aria-label="Effacer le texte dicté"
+                                        aria-label={quickLabels.clearTranscript}
                                         className="absolute top-[8px] right-[8px] w-[20px] h-[20px] flex items-center justify-center rounded-full bg-[var(--background)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
                                     >
                                         <X size={10} />
@@ -945,7 +1095,7 @@ export function AccessibilityPanel() {
                             {showCommands && (
                                 <div className="p-[12px] rounded-xl bg-[var(--secondary)] border border-[var(--border)]">
                                     <div className="space-y-[6px]">
-                                        {VOICE_COMMANDS.map((vc, i) => (
+                                        {voiceCommands.map((vc, i) => (
                                             <div key={i} className="flex items-start gap-[8px]">
                                                 <span className="text-[10px] font-mono font-bold text-[var(--primary)] shrink-0 mt-[1px]">»</span>
                                                 <div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Download, ExternalLink, FileText, Loader2, ReceiptText } from 'lucide-react';
+import { ArrowLeft, Download, FileText, Loader2, ReceiptText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAccessibilityStore } from '../../stores/accessibility.store';
 import { subscriptionService } from '../../lib/services/subscription.service';
@@ -103,15 +103,7 @@ export function PaymentHistorySettings({ onBack }: PaymentHistorySettingsProps) 
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto">
-      <motion.button
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        onClick={onBack}
-        className="flex items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-all w-fit"
-      >
-        <ArrowLeft className="w-5 h-5" />
-        <span className="text-sm font-medium">{t('common.back')}</span>
-      </motion.button>
+      
 
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -122,28 +114,28 @@ export function PaymentHistorySettings({ onBack }: PaymentHistorySettingsProps) 
           <ReceiptText className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-[#111827]">{t('settings.paymentHistory.title')}</h2>
-          <p className="text-xs text-[#6B7280]">{t('settings.paymentHistory.subtitle')}</p>
+          <h2 className="text-lg font-bold text-[#111827] dark:text-gray-100">{t('settings.paymentHistory.title')}</h2>
+          <p className="text-xs text-[#6B7280] dark:text-gray-400">{t('settings.paymentHistory.subtitle')}</p>
         </div>
       </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-4 sm:p-6"
+        className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-4 sm:p-6"
       >
         {loading ? (
-          <div className="flex items-center justify-center gap-3 py-16 text-[#6B7280]">
+          <div className="flex items-center justify-center gap-3 py-16 text-[#6B7280] dark:text-gray-400">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>{t('settings.paymentHistory.loading')}</span>
           </div>
         ) : sortedPayments.length === 0 ? (
           <div className="py-14 text-center">
-            <div className="mx-auto w-14 h-14 rounded-2xl bg-[#F3F4F6] flex items-center justify-center mb-4">
-              <FileText className="w-6 h-6 text-[#9CA3AF]" />
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-[#F3F4F6] dark:bg-slate-800 flex items-center justify-center mb-4">
+              <FileText className="w-6 h-6 text-[#9CA3AF] dark:text-gray-500" />
             </div>
-            <h3 className="text-base font-semibold text-[#111827]">{t('settings.paymentHistory.emptyTitle')}</h3>
-            <p className="text-sm text-[#6B7280] mt-1">{t('settings.paymentHistory.emptyDescription')}</p>
+            <h3 className="text-base font-semibold text-[#111827] dark:text-gray-100">{t('settings.paymentHistory.emptyTitle')}</h3>
+            <p className="text-sm text-[#6B7280] dark:text-gray-400 mt-1">{t('settings.paymentHistory.emptyDescription')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -153,14 +145,14 @@ export function PaymentHistorySettings({ onBack }: PaymentHistorySettingsProps) 
                 return (
               <div
                 key={payment.invoiceId}
-                className="rounded-2xl border border-[#E5E7EB] p-4 sm:p-5 flex flex-col gap-4"
+                className="rounded-2xl border border-[#E5E7EB] dark:border-slate-700 p-4 sm:p-5 flex flex-col gap-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-[#111827]">
+                    <p className="text-sm font-semibold text-[#111827] dark:text-gray-100">
                       {t('settings.paymentHistory.invoice')} #{payment.invoiceNumber || payment.invoiceId.slice(0, 8)}
                     </p>
-                    <p className="text-xs text-[#6B7280] mt-1">
+                    <p className="text-xs text-[#6B7280] dark:text-gray-400 mt-1">
                       {t('settings.paymentHistory.date')}: {formatDate(payment.createdAt)}
                     </p>
                   </div>
@@ -170,23 +162,23 @@ export function PaymentHistorySettings({ onBack }: PaymentHistorySettingsProps) 
                 </div>
 
                 <div className={`grid grid-cols-1 ${hideAmountDue ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-3`}>
-                  <div className="rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-wider text-[#6B7280]">{t('settings.paymentHistory.amountPaid')}</p>
-                    <p className="text-sm font-semibold text-[#111827] mt-1">
+                  <div className="rounded-xl bg-[#F9FAFB] dark:bg-slate-800 border border-[#E5E7EB] dark:border-slate-700 px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-wider text-[#6B7280] dark:text-gray-400">{t('settings.paymentHistory.amountPaid')}</p>
+                    <p className="text-sm font-semibold text-[#111827] dark:text-gray-100 mt-1">
                       {formatAmount(payment.amountPaid, payment.currency)}
                     </p>
                   </div>
                   {!hideAmountDue && (
-                    <div className="rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] px-3 py-2">
-                      <p className="text-[11px] uppercase tracking-wider text-[#6B7280]">{t('settings.paymentHistory.amountDue')}</p>
-                      <p className="text-sm font-semibold text-[#111827] mt-1">
+                    <div className="rounded-xl bg-[#F9FAFB] dark:bg-slate-800 border border-[#E5E7EB] dark:border-slate-700 px-3 py-2">
+                      <p className="text-[11px] uppercase tracking-wider text-[#6B7280] dark:text-gray-400">{t('settings.paymentHistory.amountDue')}</p>
+                      <p className="text-sm font-semibold text-[#111827] dark:text-gray-100 mt-1">
                         {formatAmount(payment.amountDue, payment.currency)}
                       </p>
                     </div>
                   )}
-                  <div className="rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-wider text-[#6B7280]">{t('settings.paymentHistory.currency')}</p>
-                    <p className="text-sm font-semibold text-[#111827] mt-1">{payment.currency || 'EUR'}</p>
+                  <div className="rounded-xl bg-[#F9FAFB] dark:bg-slate-800 border border-[#E5E7EB] dark:border-slate-700 px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-wider text-[#6B7280] dark:text-gray-400">{t('settings.paymentHistory.currency')}</p>
+                    <p className="text-sm font-semibold text-[#111827] dark:text-gray-100 mt-1">{payment.currency || 'EUR'}</p>
                   </div>
                 </div>
 

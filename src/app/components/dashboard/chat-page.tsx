@@ -111,7 +111,7 @@ const getConversationTitle = (chat: ChatHistory, fallbackTitle: string): string 
 };
 
 export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
-    const { t, language } = useAccessibilityStore();
+    const { t, language, theme, contrastMode } = useAccessibilityStore();
     const welcomeMessage: Message = {
         id: 'welcome',
         type: 'ai',
@@ -131,6 +131,57 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     const [historyItems, setHistoryItems] = useState<ChatHistory[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+    const isDark = theme === 'dark';
+    const isHcHigh = contrastMode === 'high';
+
+    const chatShellClass = isHcHigh
+        ? 'border-2 border-yellow-400 bg-black/90'
+        : isDark
+            ? 'border-[#334155] bg-white/[0.04] backdrop-blur-xl shadow-lg shadow-black/30'
+            : 'border-[#CFE3FB] bg-gradient-to-b from-[#E8F3FF]/70 via-[#E1EFFF]/60 to-[#D6E9FF]/55 backdrop-blur-xl shadow-lg shadow-[#0EA5E9]/12';
+
+    const messagesAreaClass = isHcHigh
+        ? 'bg-black'
+        : isDark
+            ? 'bg-white/[0.03]'
+            : 'bg-transparent';
+
+    const inputAreaClass = isHcHigh
+        ? 'border-yellow-400 bg-black'
+        : isDark
+            ? 'border-[#334155] bg-white/[0.04]'
+            : 'border-[#CFE3FB] bg-[#EAF4FF]/70 backdrop-blur-lg';
+
+    const contextCardClass = isHcHigh
+        ? 'border-2 border-yellow-400 bg-black'
+        : isDark
+            ? 'border-[#2563EB]/40 bg-gradient-to-br from-[#0B2340] via-[#0f172a] to-[#153251] shadow-[0_14px_30px_rgba(37,99,235,0.24)]'
+            : 'border-[#52C7EA] bg-gradient-to-br from-[#1FA7D8] via-[#21B8DE] to-[#19C1D9] shadow-[0_16px_34px_rgba(25,193,217,0.26)]';
+
+    const contextTileClass = isHcHigh
+        ? 'border-yellow-400 bg-black'
+        : isDark
+            ? 'border-[#334155] bg-white/[0.06]'
+            : 'border-white/45 bg-white/88';
+
+    const contextScoreTileClass = isHcHigh
+        ? 'border-yellow-400 bg-black'
+        : isDark
+            ? 'border-[#3B82F6]/40 bg-[#0b2948]'
+            : 'border-white/45 bg-white/92';
+
+    const contextHintClass = isHcHigh
+        ? 'bg-yellow-400/10 border-yellow-400 text-yellow-200'
+        : isDark
+            ? 'bg-[#1d4ed8]/20 border-[#2563eb]/40 text-[#bfdbfe]'
+            : 'bg-white/18 border-white/40 text-white';
+
+    const contextTitleTextClass = isHcHigh ? 'text-cyan-400' : isDark ? 'text-[#e2e8f0]' : 'text-white';
+    const contextLabelTextClass = isHcHigh ? 'text-yellow-300' : isDark ? 'text-[#94a3b8]' : 'text-[#0B3A5A]';
+    const contextValueTextClass = isHcHigh ? 'text-cyan-200' : isDark ? 'text-white' : 'text-[#0F172A]';
+    const contextScoreLabelClass = isHcHigh ? 'text-yellow-200' : isDark ? 'text-[#93c5fd]' : 'text-[#0369A1]';
+    const contextScoreValueClass = isHcHigh ? 'text-cyan-200' : isDark ? 'text-[#67e8f9]' : 'text-[#0284C7]';
 
     const refreshUsage = async () => {
         try {
@@ -369,10 +420,10 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
             <div className="grid lg:grid-cols-3 gap-6 items-start">
                 {/* Chat Area */}
                 <div className="lg:col-span-2 flex flex-col gap-4">
-                    <Card className="flex flex-col h-[70vh] sm:h-[74vh] lg:h-[78vh] min-h-[560px] max-h-[980px] p-0 overflow-hidden border-[#93C5FD] bg-gradient-to-b from-[#D9ECFF] via-[#E8F3FF] to-[#D2E8FF] shadow-lg shadow-[#0EA5E9]/15">
+                    <Card className={`flex flex-col h-[70vh] sm:h-[74vh] lg:h-[78vh] min-h-[560px] max-h-[980px] p-0 overflow-hidden ${chatShellClass}`}>
 
                         {/* Messages */}
-                        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-gradient-to-b from-[#D5EAFF] via-[#E7F3FF] to-[#CDE5FF] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                        <div ref={messagesContainerRef} className={`flex-1 overflow-y-auto p-4 md:p-6 space-y-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${messagesAreaClass}`}>
                             <AnimatePresence>
                                 {messages.map((message) => (
                                     <motion.div
@@ -425,7 +476,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                         </div>
 
                         {/* Input Area */}
-                        <div className="border-t border-[#93C5FD] p-4 md:p-5 bg-gradient-to-b from-[#EAF4FF] to-[#D4E9FF]">
+                        <div className={`border-t p-4 md:p-5 ${inputAreaClass}`}>
                             {!isPremium && freeRemaining !== null && (
                                 <div className="mb-4">
                                     <QuotaAlertBanner
@@ -466,38 +517,38 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                     </Card>
 
                     {/* Context Info */}
-                    <Card className="border-[#BFDBFE] bg-gradient-to-b from-white to-[#F8FAFC] shadow-md shadow-[#0EA5E9]/10">
+                    <Card className={`${contextCardClass}`}>
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold text-[#0F172A]">{t('chatPage.context.title')}</h3>
-                            <span className="text-[11px] px-2 py-1 rounded-full bg-[#E0F2FE] text-[#0369A1] font-semibold">{t('chatPage.context.live')}</span>
+                            <h3 className={`text-lg font-bold ${contextTitleTextClass}`}>{t('chatPage.context.title')}</h3>
+                            <span className={`text-[11px] px-2 py-1 rounded-full font-semibold ${isHcHigh ? 'bg-yellow-400/20 text-yellow-200' : isDark ? 'bg-[#1e40af]/40 text-[#bfdbfe]' : 'bg-white/25 text-white border border-white/30'}`}>{t('chatPage.context.live')}</span>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-sm">
-                            <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
-                                <span className="text-[#6B7280]">{t('chatPage.context.skinTypeLabel')}</span>
-                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.skinTypeValue')}</span>
+                            <div className={`flex items-center justify-between rounded-lg border px-3 py-2 ${contextTileClass}`}>
+                                <span className={contextLabelTextClass}>{t('chatPage.context.skinTypeLabel')}</span>
+                                <span className={`font-semibold ${contextValueTextClass}`}>{t('chatPage.context.skinTypeValue')}</span>
                             </div>
-                            <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
-                                <span className="text-[#6B7280]">{t('chatPage.context.ageLabel')}</span>
-                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.ageValue')}</span>
+                            <div className={`flex items-center justify-between rounded-lg border px-3 py-2 ${contextTileClass}`}>
+                                <span className={contextLabelTextClass}>{t('chatPage.context.ageLabel')}</span>
+                                <span className={`font-semibold ${contextValueTextClass}`}>{t('chatPage.context.ageValue')}</span>
                             </div>
-                            <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
-                                <span className="text-[#6B7280]">{t('chatPage.context.mainConcernsLabel')}</span>
-                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.mainConcernsValue')}</span>
+                            <div className={`flex items-center justify-between rounded-lg border px-3 py-2 ${contextTileClass}`}>
+                                <span className={contextLabelTextClass}>{t('chatPage.context.mainConcernsLabel')}</span>
+                                <span className={`font-semibold ${contextValueTextClass}`}>{t('chatPage.context.mainConcernsValue')}</span>
                             </div>
-                            <div className="rounded-lg border border-[#BAE6FD] bg-[#F0F9FF] px-3 py-2 sm:col-span-2 xl:col-span-1">
+                            <div className={`rounded-lg border px-3 py-2 sm:col-span-2 xl:col-span-1 ${contextScoreTileClass}`}>
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-[#0369A1] font-medium">{t('chatPage.context.currentScore')}</span>
-                                    <span className="font-bold text-[#0284C7]">87/100</span>
+                                    <span className={`font-medium ${contextScoreLabelClass}`}>{t('chatPage.context.currentScore')}</span>
+                                    <span className={`font-bold ${contextScoreValueClass}`}>87/100</span>
                                 </div>
-                                <div className="h-2 rounded-full bg-[#DBEAFE] overflow-hidden">
+                                <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-[#1e3a5f]' : 'bg-[#DBEAFE]'}`}>
                                     <div className="h-full w-[87%] bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] rounded-full" />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="mt-3 p-3 bg-[#0EA5E9]/10 rounded-xl border border-[#BAE6FD]">
-                            <p className="text-xs text-[#0369A1]">
+                        <div className={`mt-3 p-3 rounded-xl border ${contextHintClass}`}>
+                            <p className="text-xs">
                                 {t('chatPage.context.hint')}
                             </p>
                         </div>

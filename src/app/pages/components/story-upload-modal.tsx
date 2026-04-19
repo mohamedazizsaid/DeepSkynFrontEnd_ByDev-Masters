@@ -49,11 +49,11 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
 
   const processFile = (selectedFile: File) => {
     if (!selectedFile.type.startsWith('image/') && !selectedFile.type.startsWith('video/')) {
-      alert(t('community.storyInvalidMediaType') || 'Veuillez sélectionner une image ou une vidéo.');
+      alert(t('community.storyInvalidMediaType'));
       return;
     }
     if (selectedFile.size > 10 * 1024 * 1024) {
-      alert(t('community.fileTooLarge') || 'Le fichier est trop volumineux (max 10MB).');
+      alert(t('community.fileTooLarge'));
       return;
     }
     setFile(selectedFile);
@@ -76,11 +76,11 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
     if (!selectedFile.type.startsWith('audio/')) {
-      alert(t('community.storyInvalidMusicType') || 'Veuillez sélectionner un fichier audio (MP3, WAV, etc.).');
+      alert(t('community.storyInvalidMusicType'));
       return;
     }
     if (selectedFile.size > 15 * 1024 * 1024) {
-      alert(t('community.storyMusicTooLarge') || 'Le fichier audio est trop volumineux (max 15MB).');
+      alert(t('community.storyMusicTooLarge'));
       return;
     }
     setMusicFile(selectedFile);
@@ -117,7 +117,7 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
         setFreeMusic(music);
       } catch (error) {
         console.error('Error loading free music:', error);
-        toast.error(t('community.storyLoadingMusic') || 'Failed to load free music');
+        toast.error(t('common.error'));
       } finally {
         setLoadingMusic(false);
       }
@@ -134,7 +134,7 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
     setMusicPreviewUrl(music.url);
     setMusicFile(null); // Free music doesn't need a file object
     setShowFreeMusicList(false);
-    toast.success(`${music.title} selected!`);
+    toast.success(t('common.success'));
   };
 
   const handleUploadClick = async () => {
@@ -146,7 +146,7 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
       onClose();
     } catch (e) {
       console.error(e);
-      alert('Failed to upload story');
+      alert(t('community.storyError'));
     } finally {
       setIsUploading(false);
     }
@@ -180,7 +180,7 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
         >
           {/* Header (Mobile Only) */}
           <div className={`md:hidden p-4 border-b flex justify-between items-center ${isHcHigh ? 'border-yellow-400' : isDark ? 'border-[#334155]' : 'border-gray-200'}`}>
-            <h2 className={`text-lg font-bold ${textColor}`}>{t('community.storyCreateTitle') || 'Créer une Story'}</h2>
+            <h2 className={`text-lg font-bold ${textColor}`}>{t('community.storyCreateTitle')}</h2>
             <button onClick={onClose} className={`p-2 rounded-full ${isDark ? 'bg-[#334155] text-gray-200' : 'bg-gray-100 text-gray-600'}`}>
               <X className="w-5 h-5" />
             </button>
@@ -189,7 +189,7 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
           {/* Left / Settings Side */}
           <div className={`w-full md:w-80 flex flex-col border-r ${isHcHigh ? 'border-yellow-400 bg-black' : isDark ? 'border-[#334155] bg-[#0f172a]' : 'border-gray-200 bg-gray-50/50'} p-6`}>
             <div className="hidden md:flex justify-between items-center mb-6">
-              <h2 className={`text-xl font-bold ${textColor}`}>{t('community.storyYourStory') || 'Votre Story'}</h2>
+              <h2 className={`text-xl font-bold ${textColor}`}>{t('community.storyYourStory')}</h2>
               <button onClick={onClose} className={`p-2 rounded-full transition-colors ${isDark ? 'hover:bg-[#334155] text-gray-400 hover:text-white' : 'hover:bg-gray-200 text-gray-500 hover:text-black'}`}>
                 <X className="w-5 h-5" />
               </button>
@@ -201,7 +201,7 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
               </div>
               <div>
                 <p className={`font-semibold ${textColor}`}>{userName}</p>
-                <p className={`text-xs ${subText}`}>{t('community.storyVisibleFor24h') || 'Sera visible pendant 24h'}</p>
+                <p className={`text-xs ${subText}`}>{t('community.storyVisibleFor24h')}</p>
               </div>
             </div>
 
@@ -212,8 +212,8 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
                   <Music className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <p className={`text-xs font-bold uppercase tracking-wider ${textColor}`}>{t('community.storyAddMusic') || 'Ajouter une musique'}</p>
-                  <p className={`text-[10px] ${subText}`}>{t('community.storyMusicFormats') || 'MP3, WAV, OGG (max 15MB)'}</p>
+                  <p className={`text-xs font-bold uppercase tracking-wider ${textColor}`}>{t('community.storyAddMusic')}</p>
+                  <p className={`text-[10px] ${subText}`}>{t('community.storyMusicFormats')}</p>
                 </div>
               </div>
 
@@ -263,12 +263,12 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
                     className={`w-full py-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2 text-xs font-bold transition-all hover:scale-[1.02] active:scale-[0.98] ${isHcHigh ? 'border-yellow-400/40 text-yellow-400 hover:bg-yellow-400/5' : isDark ? 'border-white/20 text-gray-400 hover:text-white hover:border-white/40' : 'border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-400'}`}
                   >
                     <UploadCloud className="w-4 h-4" />
-                    {t('community.storyUploadOwnMusic') || 'Téléchargez votre propre musique'}
+                    {t('community.storyUploadOwnMusic')}
                   </button>
 
                   <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider ${subText}`}>
                     <div className="flex-1 h-px" style={{ backgroundColor: isHcHigh ? '#fbbf24' : isDark ? '#64748b' : '#e5e7eb' }} />
-                    <span>{t('community.storyOrUpload') || 'OU'}</span>
+                    <span>{t('community.storyOrUpload')}</span>
                     <div className="flex-1 h-px" style={{ backgroundColor: isHcHigh ? '#fbbf24' : isDark ? '#64748b' : '#e5e7eb' }} />
                   </div>
 
@@ -283,8 +283,8 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
                         <Music className="w-3 h-3 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className={`text-xs font-bold uppercase tracking-wider ${textColor}`}>{t('community.storyFreeMusic') || 'Musiques Libres'}</p>
-                        <p className={`text-[10px] ${subText}`}>{t('community.storyFreeMusicDesc') || 'Gratuit & sans droits'}</p>
+                        <p className={`text-xs font-bold uppercase tracking-wider ${textColor}`}>{t('community.storyFreeMusic')}</p>
+                        <p className={`text-[10px] ${subText}`}>{t('community.storyFreeMusicDesc')}</p>
                       </div>
                     </div>
 
@@ -302,12 +302,12 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
                       {loadingMusic ? (
                         <>
                           <Loader2 className="w-3 h-3 animate-spin" />
-                          {t('community.storyLoadingMusic') || 'Chargement...'}
+                          {t('community.storyLoadingMusic')}
                         </>
                       ) : (
                         <>
                           <Download className="w-3 h-3" />
-                          {t('community.storyBrowseFreeMusic') || 'Parcourir'}
+                          {t('community.storyBrowseFreeMusic')}
                         </>
                       )}
                     </button>
@@ -322,7 +322,7 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
                           className="mt-2 max-h-48 overflow-y-auto space-y-2"
                         >
                           {freeMusic.length === 0 ? (
-                            <p className={`text-xs text-center py-3 ${subText}`}>{t('community.storyNoMusicAvailable') || 'Aucune musique disponible'}</p>
+                            <p className={`text-xs text-center py-3 ${subText}`}>{t('community.storyNoMusicAvailable')}</p>
                           ) : (
                             freeMusic.map((music, idx) => (
                               <button
@@ -341,7 +341,7 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
                                   <div className="flex-1 min-w-0">
                                     <p className={`font-bold truncate ${textColor}`}>{music.title}</p>
                                     <p className={`text-[9px] ${subText} truncate`}>{music.artist}</p>
-                                    <p className={`text-[9px] ${subText}`}>{t('community.storyMusicSource', { source: music.source }) || `Source: ${music.source}`}</p>
+                                    <p className={`text-[9px] ${subText}`}>{t('community.storyMusicSource', { source: music.source })}</p>
                                   </div>
                                   <ExternalLink className="w-3 h-3 mt-0.5 flex-shrink-0 opacity-50" />
                                 </div>
@@ -360,11 +360,11 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
             {/* Music Title Input */}
             {musicFile && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-4">
-                <label className={`text-[10px] font-bold uppercase tracking-wider ${subText} mb-1 block`}>{t('community.storyMusicTitle') || 'Titre de la musique'}</label>
+                <label className={`text-[10px] font-bold uppercase tracking-wider ${subText} mb-1 block`}>{t('community.storyMusicTitle')}</label>
                 <input
                   value={musicTitle}
                   onChange={(e) => setMusicTitle(e.target.value)}
-                  placeholder={t('community.storyMusicTitlePlaceholder') || 'Ex: Summer Vibes - Artist'}
+                  placeholder={t('community.storyMusicTitlePlaceholder')}
                   className={`w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none transition-all ${isHcHigh ? 'bg-black border border-yellow-400 text-cyan-400' : isDark ? 'bg-[#0f172a] border border-white/10 text-gray-200 focus:border-[#EC4899]' : 'bg-white border border-gray-200 text-gray-900 focus:border-[#EC4899]'}`}
                 />
               </motion.div>
@@ -373,7 +373,7 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
             <div className="mt-auto">
               {!file ? (
                 <div className="p-4 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 opacity-50 border-gray-400">
-                  <span className={`text-xs font-medium text-center ${textColor}`}>{t('community.storySelectMedia') || 'Sélectionnez ou glissez un média pour commencer'}</span>
+                  <span className={`text-xs font-medium text-center ${textColor}`}>{t('community.storySelectMedia')}</span>
                 </div>
               ) : (
                 <button
@@ -385,7 +385,7 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
                       : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white hover:from-[#0284C7] hover:to-[#0891B2] hover:shadow-[#0EA5E9]/30'
                   }`}
                 >
-                  {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : (t('community.storyShare') || 'Partager la Story')}
+                  {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('community.storyShare')}
                 </button>
               )}
             </div>
@@ -408,8 +408,8 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${isDragging ? 'bg-[#0EA5E9]/20 text-[#0EA5E9]' : isDark ? 'bg-[#334155] text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
                   <ImageIcon className="w-8 h-8" />
                 </div>
-                <h3 className={`text-lg font-bold mb-1 ${textColor}`}>{t('community.storyAddMedia') || 'Ajouter à votre Story'}</h3>
-                <p className={`text-sm text-center px-6 ${subText}`}>{t('community.storyDragAndDrop') || 'Glissez et déposez une photo/vidéo, ou cliquez pour parcourir.'}</p>
+                <h3 className={`text-lg font-bold mb-1 ${textColor}`}>{t('community.storyAddMedia')}</h3>
+                <p className={`text-sm text-center px-6 ${subText}`}>{t('community.storyDragDrop')}</p>
                 <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
               </div>
             ) : (

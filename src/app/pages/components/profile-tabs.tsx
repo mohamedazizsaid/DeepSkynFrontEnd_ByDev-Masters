@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 export type Tab = 'publications' | 'about' | 'photos' | 'videos' | 'friends';
 
@@ -8,15 +9,16 @@ interface ProfileTabsProps {
   onTabChange: (tab: Tab) => void;
 }
 
-const TABS = [
-  { id: 'publications', label: 'Publications' },
-  { id: 'about', label: 'À propos' },
-  { id: 'photos', label: 'Photos' },
-  { id: 'videos', label: 'Vidéos' },
-  { id: 'friends', label: 'Amis' },
-] as const;
-
 export function ProfileTabs({ activeTab, onTabChange }: ProfileTabsProps) {
+  const { t } = useAccessibilityStore();
+  const tabs = [
+    { id: 'publications', label: t('community.posts') },
+    { id: 'about', label: t('community.profileAboutTitle') },
+    { id: 'photos', label: t('community.profilePhotosTitle') },
+    { id: 'videos', label: t('community.videos') },
+    { id: 'friends', label: t('community.profileFriendsTitle') },
+  ] as const;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -24,7 +26,7 @@ export function ProfileTabs({ activeTab, onTabChange }: ProfileTabsProps) {
       className="sticky top-0 z-40 bg-white border-b border-[#E5E7EB] rounded-lg mb-6 shadow-sm"
     >
       <div className="flex items-center overflow-x-auto">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <motion.button
             key={tab.id}
             onClick={() => onTabChange(tab.id as Tab)}

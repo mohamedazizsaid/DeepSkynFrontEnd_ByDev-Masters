@@ -4,6 +4,7 @@ import { X, ChevronLeft, ChevronRight, Heart, MessageCircle, Send, Music, Trash2
 import type { StoryUser } from './story-bar';
 import { postsService } from '../../../lib/services/posts.service';
 import { useAuthStore } from '../../../stores/auth.store';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 import toast from 'react-hot-toast';
 
 interface StoryViewerModalProps {
@@ -34,6 +35,7 @@ interface StoryCommentData {
 
 export function StoryViewerModal({ isOpen, onClose, stories, initialUserIndex = 0, onUserFinished }: StoryViewerModalProps) {
   const { user } = useAuthStore();
+  const { t } = useAccessibilityStore();
   const [currentUserIndex, setCurrentUserIndex] = useState(initialUserIndex);
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -210,7 +212,7 @@ export function StoryViewerModal({ isOpen, onClose, stories, initialUserIndex = 
       setComments(prev => [...prev, comment]);
       setNewComment('');
     } catch {
-      toast.error('Erreur');
+      toast.error(t('common.error'));
     } finally {
       setSendingComment(false);
     }
@@ -329,7 +331,7 @@ export function StoryViewerModal({ isOpen, onClose, stories, initialUserIndex = 
                     <Music className="w-3.5 h-3.5 text-white" />
                   </motion.div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-[11px] font-bold truncate">{itemData.musicTitle || 'Music'}</p>
+                    <p className="text-white text-[11px] font-bold truncate">{itemData.musicTitle || t('community.storyAddMusic')}</p>
                   </div>
                   <div className="flex items-center gap-0.5">
                     {[...Array(8)].map((_, i) => (
@@ -378,7 +380,7 @@ export function StoryViewerModal({ isOpen, onClose, stories, initialUserIndex = 
                 >
                   <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
                     <h4 className="text-xs font-bold uppercase tracking-widest text-white/70">
-                      {comments.length} Commentaires
+                      {comments.length} {t('community.comments')}
                     </h4>
                     <button onClick={handleCloseComments} className="text-white/50 hover:text-white p-1">
                       <X className="w-4 h-4" />
@@ -392,7 +394,7 @@ export function StoryViewerModal({ isOpen, onClose, stories, initialUserIndex = 
                     ) : comments.length === 0 ? (
                       <div className="text-center py-8">
                         <MessageCircle className="w-8 h-8 text-white/20 mx-auto mb-2" />
-                        <p className="text-xs text-white/40 font-medium">Aucun commentaire</p>
+                        <p className="text-xs text-white/40 font-medium">{t('community.noComments')}</p>
                       </div>
                     ) : (
                       comments.map((c) => (
@@ -407,13 +409,13 @@ export function StoryViewerModal({ isOpen, onClose, stories, initialUserIndex = 
                               <img src={c.user.avatar} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white/60">
-                                {c.user?.name?.charAt(0) || 'U'}
+                                {c.user?.name?.charAt(0) || t('common.user').charAt(0)}
                               </div>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="text-[11px] font-bold text-white/90">{c.user?.name || 'Utilisateur'}</span>
+                              <span className="text-[11px] font-bold text-white/90">{c.user?.name || t('common.user')}</span>
                               <span className="text-[9px] text-white/30">{getRelativeTime(c.createdAt)}</span>
                             </div>
                             <p className="text-xs text-white/70 mt-0.5 leading-relaxed">{c.comment}</p>
@@ -436,7 +438,7 @@ export function StoryViewerModal({ isOpen, onClose, stories, initialUserIndex = 
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSendComment()}
-                      placeholder="Écrire un commentaire..."
+                      placeholder={t('community.addComment')}
                       className="flex-1 bg-white/10 border border-white/10 rounded-full px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
                     />
                     <button
@@ -503,7 +505,7 @@ export function StoryViewerModal({ isOpen, onClose, stories, initialUserIndex = 
                         setTimeout(() => handleSendComment(), 500);
                       }
                     }}
-                    placeholder={`Répondre à ${currentUser.name.split(' ')[0]}...`}
+                    placeholder={t('community.storyReplyTo', { name: currentUser.name.split(' ')[0] })}
                     className="flex-1 bg-black/40 border border-white/30 rounded-full px-4 py-3 text-sm text-white focus:outline-none focus:border-white transition-colors"
                   />
                 </div>
@@ -532,7 +534,7 @@ export function StoryViewerModal({ isOpen, onClose, stories, initialUserIndex = 
                 onClick={(e) => e.stopPropagation()}
                 className="bg-[#111] rounded-2xl border border-white/20 p-6 w-full max-w-sm shadow-2xl"
               >
-                <h2 className="text-xl font-bold text-white mb-4">Ajouter aux highlights</h2>
+                <h2 className="text-xl font-bold text-white mb-4">{t('community.storyAddToHighlights')}</h2>
                 
                 <input
                   type="text"
@@ -543,19 +545,19 @@ export function StoryViewerModal({ isOpen, onClose, stories, initialUserIndex = 
                       setSavingHighlight(true);
                       postsService.saveStoryAsHighlight(currentItem.id, highlightTitle)
                         .then(() => {
-                          toast.success('Story ajoutée aux highlights!');
+                          toast.success(t('community.storyHighlightAdded'));
                           setShowHighlightModal(false);
                           setHighlightTitle('');
                           // Emit event for real-time update in timeline
                           window.dispatchEvent(new CustomEvent('highlightAdded'));
                         })
                         .catch(() => {
-                          toast.error('Erreur lors de l\'ajout aux highlights');
+                          toast.error(t('community.storyHighlightAddError'));
                         })
                         .finally(() => setSavingHighlight(false));
                     }
                   }}
-                  placeholder="Ex: Vacances, Amis, Fitness..."
+                  placeholder={t('community.storyHighlightTitlePlaceholder')}
                   autoFocus
                   className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/60 mb-6 transition-colors"
                 />
@@ -569,7 +571,7 @@ export function StoryViewerModal({ isOpen, onClose, stories, initialUserIndex = 
                     disabled={savingHighlight}
                     className="flex-1 px-4 py-3 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors disabled:opacity-50"
                   >
-                    Annuler
+                    {t('common.cancel')}
                   </button>
                   <button
                     onClick={() => {
@@ -577,14 +579,14 @@ export function StoryViewerModal({ isOpen, onClose, stories, initialUserIndex = 
                         setSavingHighlight(true);
                         postsService.saveStoryAsHighlight(currentItem.id, highlightTitle)
                           .then(() => {
-                            toast.success('Story ajoutée aux highlights!');
+                            toast.success(t('community.storyHighlightAdded'));
                             setShowHighlightModal(false);
                             setHighlightTitle('');
                             // Emit event for real-time update in timeline
                             window.dispatchEvent(new CustomEvent('highlightAdded'));
                           })
                           .catch(() => {
-                            toast.error('Erreur lors de l\'ajout aux highlights');
+                            toast.error(t('community.storyHighlightAddError'));
                           })
                           .finally(() => setSavingHighlight(false));
                       }
@@ -592,7 +594,7 @@ export function StoryViewerModal({ isOpen, onClose, stories, initialUserIndex = 
                     disabled={!highlightTitle.trim() || savingHighlight}
                     className="flex-1 px-4 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {savingHighlight ? 'Ajout...' : 'Ajouter'}
+                    {savingHighlight ? t('community.storyAdding') : t('community.storyAddAction')}
                   </button>
                 </div>
               </motion.div>

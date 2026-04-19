@@ -121,7 +121,7 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         onClick={onBack}
-        className="flex lg:hidden items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-colors w-fit"
+        className="flex lg:hidden items-center gap-2 text-[#6B7280] dark:text-gray-400 hover:text-[#111827] dark:hover:text-gray-100 transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
         <span className="text-sm font-medium">{t('common.back')}</span>
@@ -137,8 +137,8 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
           <Shield className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-[#111827]">{t('settings.security.twoFactor')}</h2>
-          <p className="text-xs text-[#6B7280]">{t('settings.security.twoFactorSubtitle')}</p>
+          <h2 className="text-lg font-bold text-[#111827] dark:text-gray-100">{t('settings.security.twoFactor')}</h2>
+          <p className="text-xs text-[#6B7280] dark:text-gray-400">{t('settings.security.twoFactorSubtitle')}</p>
         </div>
       </motion.div>
 
@@ -146,7 +146,7 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className={`bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6 overflow-hidden relative group transition-all hover:border-[#8B5CF6]/30`}
+        className={`bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-6 overflow-hidden relative group transition-all hover:border-[#8B5CF6]/30`}
       >
         <div className="flex items-center gap-4 relative z-10">
           <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${isEnabled ? 'bg-emerald-50 text-emerald-500 shadow-sm border border-emerald-100' : 'bg-orange-50 text-orange-500 shadow-sm border border-orange-100'}`}>
@@ -160,7 +160,7 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
             <h3 className={`text-base font-bold ${isEnabled ? 'text-emerald-600' : 'text-orange-600'}`}>
               {isEnabled ? t('settings.security.enabled') : t('settings.security.disabled')}
             </h3>
-            <p className="text-xs text-[#6B7280] font-medium">
+            <p className="text-xs text-[#6B7280] dark:text-gray-400 font-medium">
               {isEnabled
                 ? t('settings.security.twoFactorActive')
                 : t('settings.security.twoFactorInactive')}
@@ -188,9 +188,9 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6"
+            className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-6"
           >
-            <h3 className="text-lg font-bold text-[#111827] mb-6 flex items-center gap-2">
+            <h3 className="text-lg font-bold text-[#111827] dark:text-gray-100 mb-6 flex items-center gap-2">
               <Smartphone className="w-5 h-5 text-[#8B5CF6]" />
               {t('settings.security.twoFactor')}
             </h3>
@@ -202,16 +202,16 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
                   <div className="w-8 h-8 rounded-full bg-[#8B5CF6] text-white flex items-center justify-center font-bold text-sm">
                     1
                   </div>
-                  <span className="ml-3 font-semibold text-[#111827]">{t('settings.security.step1')}</span>
+                  <span className="ml-3 font-semibold text-[#111827] dark:text-gray-100">{t('settings.security.step1')}</span>
                 </div>
-                <p className="text-sm text-[#6B7280] mb-4 ml-11">
+                <p className="text-sm text-[#6B7280] dark:text-gray-400 mb-4 ml-11">
                   {t('settings.security.setup')}
                 </p>
                 {qrCode && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="ml-11 flex justify-center p-4 bg-[#F9FAFB] rounded-xl border border-[#E5E7EB]"
+                    className="ml-11 flex justify-center p-4 bg-[#F9FAFB] dark:bg-slate-800 rounded-xl border border-[#E5E7EB] dark:border-slate-700"
                   >
                     <img src={qrCode} alt="QR Code 2FA" className="w-48 h-48" />
                   </motion.div>
@@ -226,20 +226,20 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
                   <div className="w-8 h-8 rounded-full bg-[#8B5CF6] text-white flex items-center justify-center font-bold text-sm">
                     2
                   </div>
-                  <span className="ml-3 font-semibold text-[#111827]">{t('settings.security.step2')}</span>
+                  <span className="ml-3 font-semibold text-[#111827] dark:text-gray-100">{t('settings.security.step2')}</span>
                 </div>
-                <p className="text-sm text-[#6B7280] mb-3 ml-11">{t('settings.security.secretKey')}</p>
+                <p className="text-sm text-[#6B7280] dark:text-gray-400 mb-3 ml-11">{t('settings.security.secretKey')}</p>
                 <motion.div
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="ml-11 flex items-center gap-2 p-4 bg-[#F9FAFB] rounded-xl border border-[#E5E7EB] hover:border-[#8B5CF6]/30 transition-colors"
+                  className="ml-11 flex items-center gap-2 p-4 bg-[#F9FAFB] dark:bg-slate-800 rounded-xl border border-[#E5E7EB] dark:border-slate-700 hover:border-[#8B5CF6]/30 transition-colors"
                 >
-                  <code className="flex-1 text-sm font-mono text-[#111827] break-all tracking-widest">
+                  <code className="flex-1 text-sm font-mono text-[#111827] dark:text-gray-100 break-all tracking-widest">
                     {secret}
                   </code>
                   <button
                     onClick={copySecret}
-                    className="p-2 hover:bg-white rounded-lg transition-colors text-[#6B7280] hover:text-[#8B5CF6]"
+                    className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-colors text-[#6B7280] dark:text-gray-400 hover:text-[#8B5CF6]"
                   >
                     {copied ? <Check className="w-5 h-5 text-[#10B981]" /> : <Copy className="w-5 h-5" />}
                   </button>
@@ -254,9 +254,9 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
                   <div className="w-8 h-8 rounded-full bg-[#8B5CF6] text-white flex items-center justify-center font-bold text-sm">
                     3
                   </div>
-                  <span className="ml-3 font-semibold text-[#111827]">{t('settings.security.step3')}</span>
+                  <span className="ml-3 font-semibold text-[#111827] dark:text-gray-100">{t('settings.security.step3')}</span>
                 </div>
-                <p className="text-sm text-[#6B7280] mb-3 ml-11">{t('settings.security.verify')}</p>
+                <p className="text-sm text-[#6B7280] dark:text-gray-400 mb-3 ml-11">{t('settings.security.verify')}</p>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -264,7 +264,7 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
                   maxLength={6}
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  className="w-full text-center text-3xl tracking-[0.3em] px-4 py-4 bg-white border-2 border-[#E5E7EB] rounded-xl text-[#111827] focus:outline-none focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/20 transition-all font-bold"
+                  className="w-full text-center text-3xl tracking-[0.3em] px-4 py-4 bg-white dark:bg-slate-800 border-2 border-[#E5E7EB] dark:border-slate-700 rounded-xl text-[#111827] dark:text-gray-100 focus:outline-none focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/20 transition-all font-bold"
                   placeholder="000000"
                   autoFocus
                 />
@@ -302,13 +302,13 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6"
+            className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-6"
           >
-            <h3 className="text-lg font-bold text-[#111827] mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-bold text-[#111827] dark:text-gray-100 mb-4 flex items-center gap-2">
               <ShieldOff className="w-5 h-5 text-[#EF4444]" />
               {t('common.disable')}
             </h3>
-            <p className="text-sm text-[#6B7280] mb-6">
+            <p className="text-sm text-[#6B7280] dark:text-gray-400 mb-6">
               {t('settings.security.passwordSubtitle')}
             </p>
             <input
@@ -352,14 +352,14 @@ export function TwoFactorSettings({ onBack }: TwoFactorSettingsProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="p-6 bg-purple-50 rounded-2xl border border-purple-100 flex gap-4 items-start"
+          className="p-6 bg-purple-50 dark:bg-purple-900/20 rounded-2xl border border-purple-100 dark:border-purple-700/40 flex gap-4 items-start"
         >
-          <div className="p-2.5 rounded-xl bg-white shadow-sm border border-purple-100 flex-shrink-0">
+          <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-purple-100 dark:border-purple-700/40 flex-shrink-0">
              <Shield className="w-5 h-5 text-purple-600" />
           </div>
           <div>
-            <p className="text-sm font-bold text-purple-900 mb-1">{t('settings.security.twoFactor')}</p>
-            <p className="text-xs font-medium text-purple-800/80 leading-relaxed">
+            <p className="text-sm font-bold text-purple-900 dark:text-purple-200 mb-1">{t('settings.security.twoFactor')}</p>
+            <p className="text-xs font-medium text-purple-800/80 dark:text-purple-300/80 leading-relaxed">
               {t('settings.security.twoFactorSubtitle')}
             </p>
           </div>

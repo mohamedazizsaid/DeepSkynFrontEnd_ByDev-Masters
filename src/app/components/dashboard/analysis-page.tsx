@@ -93,6 +93,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [analysisHistory, setAnalysisHistory] = useState<Array<{ date: string; score: number }>>([]);
   const [showAnalysisHistory, setShowAnalysisHistory] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const { theme, contrastMode } = useAccessibilityStore();
 
@@ -424,6 +425,34 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
   const detailedScores = extractDetailedScores(results);
   const hasAnalysis = analysis !== null && analysis.status === 'completed';
 
+  useEffect(() => {
+    setSelectedImageIndex(0);
+  }, [analysis?.id, analysis?.images?.length]);
+
+  const getRadarBadge = (value: number) => {
+    if (value > 75) {
+      return {
+        label: 'Excellent',
+        className: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+      };
+    }
+    if (value >= 50) {
+      return {
+        label: 'Moyen',
+        className: 'bg-amber-100 text-amber-700 border border-amber-200',
+      };
+    }
+    return {
+      label: 'Faible',
+      className: 'bg-red-100 text-red-700 border border-red-200',
+    };
+  };
+
+  const selectedImageSrc = analysis?.images?.[selectedImageIndex] || null;
+  const analysisThumbDate = analysis?.createdAt
+    ? new Date(analysis.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+    : '';
+
   // ─── Dynamic accessibility colors ───
   const isDark = theme === 'dark';
   const isHcHigh = contrastMode === 'high';
@@ -445,6 +474,32 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
     if (isHcHigh) return '#00ffff';
     return '#0EA5E9';
   };
+
+  const insightCardClass = isHcHigh
+    ? 'h-full relative overflow-hidden rounded-2xl p-6 bg-black border-2 border-yellow-400 shadow-none'
+    : isDark
+      ? 'h-full relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#1e293b] border border-[#334155] shadow-[0_12px_28px_rgba(2,6,23,0.45)]'
+      : 'h-full relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-[#ffffff] via-[#f8fbff] to-[#eef6ff] border border-[#dbe7f4] shadow-[0_12px_28px_rgba(56,138,221,0.10)]';
+
+  const insightTitleClass = isHcHigh ? 'text-[15px] font-semibold text-yellow-300 mb-4' : isDark ? 'text-[15px] font-semibold text-[#e2e8f0] mb-4' : 'text-[15px] font-semibold text-[#0f172a] mb-4';
+
+  const thumbBaseClass = isHcHigh
+    ? 'border-yellow-400 bg-black'
+    : isDark
+      ? 'border-[#334155] bg-[#0f172a]'
+      : 'border-[#e2e8f0] bg-white';
+
+  const thumbDateClass = isHcHigh
+    ? 'bg-black text-yellow-300'
+    : isDark
+      ? 'bg-[#0f172a] text-[#94a3b8]'
+      : 'bg-white text-[#64748b]';
+
+  const previewFrameClass = isHcHigh
+    ? 'mt-4 rounded-xl overflow-hidden border-2 border-yellow-400'
+    : isDark
+      ? 'mt-4 rounded-xl overflow-hidden border border-[#334155]'
+      : 'mt-4 rounded-xl overflow-hidden border border-[#e2e8f0]';
 
   // ─── Loading skeleton ───
   if (loading) {
@@ -1149,65 +1204,125 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
         <div className="grid lg:grid-cols-2 gap-6 md:gap-8 mb-8">
           {/* Radar Chart */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-            <Card className="h-full border-[#E2E8F0] shadow-md">
-            <h3 className="text-lg font-bold mb-6">Skin Profile Overview</h3>
+            <Card className={insightCardClass}>
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#378ADD] via-[#60A5FA] to-[#22D3EE]" />
+            <div className="absolute -right-12 -top-10 w-32 h-32 rounded-full bg-[#378ADD]/10 blur-2xl" />
+            <h3 className={insightTitleClass}>Skin Profile Overview</h3>
             {radarData.length > 0 ? (
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="h-[340px] flex items-center justify-center">
+                <div className="w-full max-w-[430px] mx-auto">
+                <ResponsiveContainer width="100%" height={320}>
                   <RadarChart data={radarData}>
-                    <PolarGrid stroke={getGridStroke()} />
-                    <PolarAngleAxis dataKey="category" stroke={getAxisStroke()} tick={{ fontSize: 12 }} />
-                    <PolarRadiusAxis angle={90} domain={[0, 100]} stroke={getAxisStroke()} />
-                    <Radar name="Score" dataKey="value" stroke={getRadarStroke()} fill={getRadarStroke()} fillOpacity={isHcHigh ? 0 : 0.3} strokeWidth={isHcHigh ? 3 : 2} />
+                    <PolarGrid stroke={getGridStroke()} strokeDasharray="4 4" />
+                    <PolarAngleAxis
+                      dataKey="category"
+                      tick={{ fontSize: 13, fill: isHcHigh ? '#ffffff' : isDark ? '#cbd5e1' : '#64748b', fontWeight: 500 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickSize={14}
+                    />
+                    <PolarRadiusAxis
+                      angle={90}
+                      domain={[0, 100]}
+                      tickCount={5}
+                      tick={{ fontSize: 10, fill: isHcHigh ? '#facc15' : isDark ? '#94a3b8' : '#94a3b8' }}
+                      axisLine={false}
+                      tickLine={false}
+                      stroke={getGridStroke()}
+                    />
+                    <Radar
+                      name="Score"
+                      dataKey="value"
+                      stroke={isHcHigh ? '#00ffff' : '#378ADD'}
+                      fill={isHcHigh ? 'rgba(0,255,255,0.18)' : 'rgba(56, 138, 221, 0.25)'}
+                      strokeWidth={2}
+                      dot={{ r: 5, fill: '#378ADD', stroke: '#ffffff', strokeWidth: 2 }}
+                      activeDot={{ r: 5, fill: '#378ADD', stroke: '#ffffff', strokeWidth: 2 }}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const point = payload[0]?.payload as { category: string; value: number };
+                        const value = Number(point?.value ?? 0);
+                        const badge = getRadarBadge(value);
+                        return (
+                          <div className={`rounded-xl border px-3 py-2 shadow-lg ${isDark ? 'border-[#334155] bg-[#0f172a]' : 'border-[#e2e8f0] bg-white'}`}>
+                            <div className={`text-xs font-semibold mb-1 ${isDark ? 'text-[#e2e8f0]' : 'text-[#0f172a]'}`}>{point?.category}</div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-sm font-bold ${isDark ? 'text-[#f8fafc]' : 'text-[#0f172a]'}`}>{value}/100</span>
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${badge.className}`}>
+                                {badge.label}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }}
+                    />
                   </RadarChart>
                 </ResponsiveContainer>
+                </div>
               </div>
             ) : (
-              <div className="h-80 flex items-center justify-center text-[#6B7280]">
+              <div className="h-[340px] flex items-center justify-center text-[#6B7280]">
                 No detailed metrics available
               </div>
             )}
           </Card>
         </motion.div>
 
-        {/* Face Map / Uploaded Image */}
+        {/* Analysis Images History */}
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-          <Card className="h-full border-[#E2E8F0] shadow-md">
-            <h3 className="text-lg font-bold mb-6">
-              {analysis.images.length > 0 ? 'Analyzed Image' : 'Face Mapping'}
-            </h3>
-            <div className="relative">
-              {analysis.images.length > 0 ? (
-                <img
-                  src={analysis.images[0]}
-                  alt="Analyzed skin"
-                  className="w-full h-80 object-cover rounded-xl"
-                />
-              ) : (
-                <div className="w-full h-80 bg-[#F3F4F6] rounded-xl flex items-center justify-center text-[#6B7280]">
-                  No image available
-                </div>
-              )}
-
-              {/* Condition badges overlay */}
-              {analysis.conditions.length > 0 && (
-                <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1.5">
-                  {analysis.conditions.slice(0, 4).map((condition, i) => (
-                    <span
-                      key={i}
-                      className="px-2.5 py-1 bg-black/70 text-white text-xs rounded-full font-medium backdrop-blur-sm"
+          <Card className={insightCardClass}>
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#378ADD] via-[#60A5FA] to-[#22D3EE]" />
+            <div className="absolute -left-12 -bottom-12 w-36 h-36 rounded-full bg-[#378ADD]/10 blur-2xl" />
+            <h3 className={insightTitleClass}>Historique des analyses</h3>
+            {analysis.images.length > 0 ? (
+              <>
+                <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {analysis.images.map((imgSrc, idx) => (
+                    <button
+                      key={`${imgSrc}-${idx}`}
+                      onClick={() => setSelectedImageIndex(idx)}
+                      className={`relative flex-shrink-0 w-40 snap-start overflow-hidden rounded-xl transition-all duration-200 cursor-pointer border ${
+                        selectedImageIndex === idx
+                          ? 'border-2 border-[#378ADD]'
+                          : `${thumbBaseClass} hover:border-[#378ADD] hover:shadow-[0_8px_24px_rgba(56,138,221,0.2)] hover:scale-105`
+                      }`}
                     >
-                      {condition}
-                    </span>
+                      <img
+                        src={imgSrc}
+                        alt={`Analyse du ${analysisThumbDate}`}
+                        className="w-full h-[140px] object-cover block"
+                      />
+                      <span className={`block text-[11px] text-center py-1.5 ${thumbDateClass} ${selectedImageIndex === idx ? 'text-[#378ADD] font-semibold' : 'font-medium'}`}>
+                        {analysisThumbDate}
+                      </span>
+                    </button>
                   ))}
-                  {analysis.conditions.length > 4 && (
-                    <span className="px-2.5 py-1 bg-black/70 text-white text-xs rounded-full font-medium backdrop-blur-sm">
-                      +{analysis.conditions.length - 4} more
-                    </span>
-                  )}
                 </div>
-              )}
-            </div>
+
+                <div className={previewFrameClass}>
+                  <AnimatePresence mode="wait">
+                    {selectedImageSrc && (
+                      <motion.img
+                        key={selectedImageSrc}
+                        src={selectedImageSrc}
+                        alt={`Analyse du ${analysisThumbDate}`}
+                        className="w-full max-h-[280px] object-cover"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                      />
+                    )}
+                  </AnimatePresence>
+                </div>
+              </>
+            ) : (
+              <div className="w-full h-80 bg-[#F3F4F6] rounded-xl flex items-center justify-center text-[#6B7280]">
+                No image available
+              </div>
+            )}
           </Card>
         </motion.div>
         </div>
@@ -1406,7 +1521,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
           <PredictiveRoutineCard
             analysisId={analysis.id}
             analysisResult={{
-              condition: results.condition || 'état cutané normal',
+              condition: results.conditions?.[0] || 'état cutané normal',
               detectedIssues: analysis.conditions || [],
               skinType: results.skinType || 'normal',
             }}

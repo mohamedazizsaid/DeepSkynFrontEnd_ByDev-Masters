@@ -119,6 +119,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
     const [currentPlan, setCurrentPlan] = useState<string>('free');
 
     const {
+        language,
         theme,
         contrastMode,
         zoomLevel,
@@ -232,6 +233,55 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                 ? 'Premium Mensuel'
                 : 'Free';
 
+    const shortcuts = {
+        fr: [
+            { key: 'Alt+D', desc: 'Mode sombre' },
+            { key: 'Alt+R', desc: 'Lire sélection' },
+            { key: 'Alt+P', desc: 'Lire la page' },
+            { key: 'Alt+S', desc: 'Stop lecture' },
+            { key: 'Alt+M', desc: 'Micro' },
+            { key: 'Alt++/-', desc: 'Zoom' },
+        ],
+        en: [
+            { key: 'Alt+D', desc: 'Dark mode' },
+            { key: 'Alt+R', desc: 'Read selection' },
+            { key: 'Alt+P', desc: 'Read page' },
+            { key: 'Alt+S', desc: 'Stop reading' },
+            { key: 'Alt+M', desc: 'Mic' },
+            { key: 'Alt++/-', desc: 'Zoom' },
+        ],
+        ar: [
+            { key: 'Alt+D', desc: 'الوضع الداكن' },
+            { key: 'Alt+R', desc: 'قراءة التحديد' },
+            { key: 'Alt+P', desc: 'قراءة الصفحة' },
+            { key: 'Alt+S', desc: 'إيقاف القراءة' },
+            { key: 'Alt+M', desc: 'الميكروفون' },
+            { key: 'Alt++/-', desc: 'تكبير' },
+        ],
+        es: [
+            { key: 'Alt+D', desc: 'Modo oscuro' },
+            { key: 'Alt+R', desc: 'Leer selección' },
+            { key: 'Alt+P', desc: 'Leer página' },
+            { key: 'Alt+S', desc: 'Detener lectura' },
+            { key: 'Alt+M', desc: 'Micrófono' },
+            { key: 'Alt++/-', desc: 'Zoom' },
+        ],
+    }[language] ?? [
+        { key: 'Alt+D', desc: 'Mode sombre' },
+        { key: 'Alt+R', desc: 'Lire sélection' },
+        { key: 'Alt+P', desc: 'Lire la page' },
+        { key: 'Alt+S', desc: 'Stop lecture' },
+        { key: 'Alt+M', desc: 'Micro' },
+        { key: 'Alt++/-', desc: 'Zoom' },
+    ];
+
+    const voiceCommands = {
+        fr: ['"Accueil"', '"Analyse"', '"Routine"', '"Profil"', '"Mode sombre"', '"Mode clair"', '"Zoom plus"', '"Zoom moins"', '"Lire la page"', '"Arrêter"', '"Contraste élevé"', '"Aide"'],
+        en: ['"Home"', '"Analysis"', '"Routine"', '"Profile"', '"Dark mode"', '"Light mode"', '"Zoom in"', '"Zoom out"', '"Read page"', '"Stop"', '"High contrast"', '"Help"'],
+        ar: ['"الرئيسية"', '"تحليل"', '"الروتين"', '"الملف الشخصي"', '"الوضع الداكن"', '"الوضع الفاتح"', '"تكبير"', '"تصغير"', '"اقرأ الصفحة"', '"توقف"', '"تباين عال"', '"مساعدة"'],
+        es: ['"Inicio"', '"Análisis"', '"Rutina"', '"Perfil"', '"Modo oscuro"', '"Modo claro"', '"Zoom más"', '"Zoom menos"', '"Leer página"', '"Detener"', '"Alto contraste"', '"Ayuda"'],
+    }[language] ?? ['"Accueil"', '"Analyse"', '"Routine"', '"Profil"', '"Mode sombre"', '"Mode clair"', '"Zoom plus"', '"Zoom moins"', '"Lire la page"', '"Arrêter"', '"Contraste élevé"', '"Aide"'];
+
     // Close dropdown on outside click
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -317,7 +367,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
     ];
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm transition-all duration-300">
+        <nav className="fixed top-0 left-0 right-0 z-40 bg-white/25 dark:bg-[#0f172a]/65 backdrop-blur-2xl border-b border-white/50 dark:border-white/10 shadow-lg shadow-[#0EA5E9]/10 dark:shadow-black/30 transition-all duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-[74px]">
                     <div className="flex">
@@ -417,7 +467,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
                                         transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                                        className="absolute ltr:right-0 rtl:left-0 mt-3 rounded-2xl shadow-2xl bg-white/95 dark:bg-[#16213e]/95 backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10 focus:outline-none z-50 ltr:origin-top-right rtl:origin-top-left overflow-hidden border border-transparent dark:border-gray-800"
+                                        className="absolute ltr:right-0 rtl:left-0 mt-3 rounded-2xl shadow-2xl bg-white/88 dark:bg-[#16213e]/82 backdrop-blur-2xl ring-1 ring-black/5 dark:ring-white/10 focus:outline-none z-50 ltr:origin-top-right rtl:origin-top-left overflow-hidden border border-white/60 dark:border-white/10"
                                         style={{ width: showAccessibility ? '420px' : '340px' }}
                                     >
                                         <AnimatePresence mode="wait">
@@ -507,7 +557,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-[#06B6D4]/10 transition-colors duration-200">
                                                                 <Cloud className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-[#06B6D4] dark:group-hover:text-[#22D3EE] transition-colors duration-200" />
                                                             </div>
-                                                            <span className="font-medium">Météo</span>
+                                                            <span className="font-medium">{t('nav.weather')}</span>
                                                         </button>
 
                                                         <button
@@ -565,8 +615,8 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                                 <Eye className="w-4 h-4 text-white" />
                                                             </div>
                                                             <div>
-                                                                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-tight">Affichage & Accessibilité</h3>
-                                                                <p className="text-[10px] text-gray-500 dark:text-gray-400">Personnalisez votre expérience</p>
+                                                                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-tight">{t('accessibility.title')}</h3>
+                                                                <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('accessibilityPanel.customize')}</p>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -584,8 +634,8 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                                 <Cloud className="w-5 h-5 text-white" />
                                                             </div>
                                                             <div className="flex-1 text-left">
-                                                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Page Météo</p>
-                                                                <p className="text-xs text-gray-600 dark:text-gray-400">Conseils skincare selon la météo</p>
+                                                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{t('nav.weather')}</p>
+                                                                <p className="text-xs text-gray-600 dark:text-gray-400">{t('accessibilityPanel.customize')}</p>
                                                             </div>
                                                             <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#0EA5E9] transition-colors" />
                                                         </button>
@@ -603,10 +653,10 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                                     {theme === 'dark' ? <Moon className="w-4 h-4 text-white" /> : <Sun className="w-4 h-4 text-white" />}
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
-                                                                    <p className="text-[13px] font-semibold text-gray-900 dark:text-gray-100">Mode sombre</p>
-                                                                    <p className="text-[10px] text-gray-500 dark:text-gray-400">{theme === 'dark' ? 'Thème sombre activé' : 'Thème clair activé'}</p>
+                                                                    <p className="text-[13px] font-semibold text-gray-900 dark:text-gray-100">{t('accessibilityPanel.darkMode')}</p>
+                                                                    <p className="text-[10px] text-gray-500 dark:text-gray-400">{theme === 'dark' ? t('accessibilityPanel.darkModeOn') : t('accessibilityPanel.lightModeOn')}</p>
                                                                 </div>
-                                                                <ToggleSwitch checked={theme === 'dark'} onChange={toggleTheme} ariaLabel="Basculer le mode sombre" />
+                                                                <ToggleSwitch checked={theme === 'dark'} onChange={toggleTheme} ariaLabel={t('accessibilityPanel.darkMode')} />
                                                             </div>
 
                                                             {/* Contrast */}
@@ -615,11 +665,11 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                                     <div className="flex items-center justify-center w-6 h-6 rounded-md bg-yellow-500/10">
                                                                         <Contrast className="w-3.5 h-3.5 text-yellow-600 dark:text-yellow-400" />
                                                                     </div>
-                                                                    <span className="text-[13px] font-semibold text-gray-900 dark:text-gray-100">Contraste élevé</span>
+                                                                    <span className="text-[13px] font-semibold text-gray-900 dark:text-gray-100">{t('accessibilityPanel.highContrast')}</span>
                                                                 </div>
                                                                 <div className="flex items-center gap-1.5">
                                                                     {(['off', 'medium', 'high'] as const).map((mode) => {
-                                                                        const labels = { off: 'Normal', medium: 'Moyen', high: 'Élevé' };
+                                                                        const labels = t('accessibilityPanel.contrastLabels') as unknown as Record<'off' | 'medium' | 'high', string>;
                                                                         const isActive = contrastMode === mode;
                                                                         const activeStyles = {
                                                                             off: 'bg-gray-800 text-white shadow-md',
@@ -666,7 +716,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                                 </div>
                                                                 {zoomLevel !== 100 && (
                                                                     <button onClick={resetZoom} className="flex items-center justify-center gap-1.5 mt-2 w-full py-1 text-[10px] font-medium text-gray-500 dark:text-gray-400 hover:text-[#0EA5E9] rounded-md hover:bg-white dark:hover:bg-gray-700 transition-all duration-200">
-                                                                        <RotateCcw className="w-2.5 h-2.5" /> Réinitialiser à 100%
+                                                                        <RotateCcw className="w-2.5 h-2.5" /> {t('accessibilityPanel.resetZoom')}
                                                                     </button>
                                                                 )}
                                                             </div>
@@ -681,13 +731,13 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
 
                                                             <div className="flex flex-col gap-2">
                                                                 {[
-                                                                    { icon: Pause, title: 'Réduire les animations', desc: 'WCAG 2.3.3 — Désactive les animations', checked: reduceMotion, onChange: toggleReduceMotion, color: 'bg-teal-500' },
-                                                                    { icon: BookOpen, title: 'Police dyslexie', desc: 'WCAG 1.4.8 — Police Lexend adaptée', checked: dyslexiaFont, onChange: toggleDyslexiaFont, color: 'bg-pink-500' },
-                                                                    { icon: Link, title: 'Souligner les liens', desc: 'WCAG 1.4.1 — Liens toujours visibles', checked: linkHighlight, onChange: toggleLinkHighlight, color: 'bg-blue-500' },
-                                                                    { icon: MousePointer, title: 'Grand curseur', desc: 'Curseur agrandi pour la visibilité', checked: bigCursor, onChange: toggleBigCursor, color: 'bg-orange-500' },
-                                                                    { icon: Space, title: 'Espacement du texte', desc: 'WCAG 1.4.12 — Lignes & lettres espacées', checked: textSpacing, onChange: toggleTextSpacing, color: 'bg-lime-500' },
-                                                                    { icon: Eye, title: 'Indicateur de focus', desc: 'WCAG 2.4.7 — Surligne le focus clavier', checked: focusHighlight, onChange: toggleFocusHighlight, color: 'bg-cyan-500' },
-                                                                    { icon: Type, title: 'Guide de lecture', desc: 'Bande suivant la souris pour faciliter la lecture', checked: readingGuide, onChange: toggleReadingGuide, color: 'bg-emerald-500' },
+                                                                    { icon: Pause, title: t('accessibilityPanel.reduceMotion'), desc: t('accessibilityPanel.reduceMotionDesc'), checked: reduceMotion, onChange: toggleReduceMotion, color: 'bg-teal-500' },
+                                                                    { icon: BookOpen, title: t('accessibilityPanel.dyslexicFont'), desc: t('accessibilityPanel.dyslexicFontDesc'), checked: dyslexiaFont, onChange: toggleDyslexiaFont, color: 'bg-pink-500' },
+                                                                    { icon: Link, title: t('accessibilityPanel.highlightLinks'), desc: t('accessibilityPanel.highlightLinksDesc'), checked: linkHighlight, onChange: toggleLinkHighlight, color: 'bg-blue-500' },
+                                                                    { icon: MousePointer, title: t('accessibilityPanel.bigCursor'), desc: t('accessibilityPanel.bigCursorDesc'), checked: bigCursor, onChange: toggleBigCursor, color: 'bg-orange-500' },
+                                                                    { icon: Space, title: t('accessibilityPanel.textSpacing'), desc: t('accessibilityPanel.textSpacingDesc'), checked: textSpacing, onChange: toggleTextSpacing, color: 'bg-lime-500' },
+                                                                    { icon: Eye, title: t('accessibilityPanel.focusHighlight'), desc: t('accessibilityPanel.focusHighlightDesc'), checked: focusHighlight, onChange: toggleFocusHighlight, color: 'bg-cyan-500' },
+                                                                    { icon: Type, title: t('accessibilityPanel.readingGuide'), desc: t('accessibilityPanel.readingGuideDesc'), checked: readingGuide, onChange: toggleReadingGuide, color: 'bg-emerald-500' },
                                                                 ].map((feature) => (
                                                                     <div key={feature.title} className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-200">
                                                                         <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${feature.checked ? feature.color : feature.color + '/60'} shadow-sm`}>
@@ -834,7 +884,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
                                                                         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
                                                                     </span>
-                                                                    <span className="text-[10px] font-medium text-rose-600 dark:text-rose-400">Écoute en cours…</span>
+                                                                    <span className="text-[10px] font-medium text-rose-600 dark:text-rose-400">{t('accessibilityPanel.voiceActive')}</span>
                                                                 </div>
                                                             )}
 
@@ -853,13 +903,9 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
 
                                                             {/* Voice commands info */}
                                                             <div className="mt-2 p-2.5 rounded-xl bg-sky-50 dark:bg-sky-900/20 border border-sky-200/50 dark:border-sky-700/30">
-                                                                <p className="text-[10px] font-bold text-sky-700 dark:text-sky-300 mb-1.5">Commandes vocales :</p>
+                                                                <p className="text-[10px] font-bold text-sky-700 dark:text-sky-300 mb-1.5">{t('accessibilityPanel.voiceCommands')}</p>
                                                                 <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-                                                                    {[
-                                                                        '"Accueil"', '"Analyse"', '"Routine"', '"Profil"',
-                                                                        '"Mode sombre"', '"Mode clair"', '"Zoom plus"', '"Zoom moins"',
-                                                                        '"Lire la page"', '"Arrêter"', '"Contraste élevé"', '"Aide"',
-                                                                    ].map((cmd) => (
+                                                                    {voiceCommands.map((cmd) => (
                                                                         <span key={cmd} className="text-[9px] text-sky-600 dark:text-sky-400 font-mono">{cmd}</span>
                                                                     ))}
                                                                 </div>
@@ -870,18 +916,11 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                         <section>
                                                             <div className="flex items-center gap-1.5 mb-2.5">
                                                                 <Settings className="w-3 h-3 text-gray-400 dark:text-gray-500" />
-                                                                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Raccourcis clavier</span>
+                                                                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{t('accessibilityPanel.shortcuts')}</span>
                                                             </div>
                                                             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
                                                                 <div className="grid grid-cols-2 gap-1.5">
-                                                                    {[
-                                                                        { key: 'Alt+D', desc: 'Mode sombre' },
-                                                                        { key: 'Alt+R', desc: 'Lire sélection' },
-                                                                        { key: 'Alt+P', desc: 'Lire la page' },
-                                                                        { key: 'Alt+S', desc: 'Stop lecture' },
-                                                                        { key: 'Alt+M', desc: 'Micro' },
-                                                                        { key: 'Alt++/-', desc: 'Zoom' },
-                                                                    ].map((s) => (
+                                                                    {shortcuts.map((s) => (
                                                                         <div key={s.key} className="flex items-center gap-1.5">
                                                                             <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-[8px] font-mono font-bold text-gray-700 dark:text-gray-300">{s.key}</kbd>
                                                                             <span className="text-[9px] text-gray-500 dark:text-gray-400">{s.desc}</span>
@@ -899,7 +938,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-all duration-200 hover:text-gray-700 dark:hover:text-gray-200"
                                                         >
                                                             <RotateCcw className="w-3 h-3" />
-                                                            Réinitialiser les paramètres
+                                                            {t('accessibilityPanel.resetAll')}
                                                         </button>
                                                     </div>
                                                 </motion.div>
@@ -934,7 +973,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="lg:hidden border-t border-gray-100 bg-white"
+                        className="lg:hidden border-t border-white/60 dark:border-white/10 bg-white/82 dark:bg-[#0f172a]/82 backdrop-blur-xl"
                     >
                         <div className="pt-2 pb-3 space-y-1">
                             {[...mainItems, ...rightNavItems].map((item) => (

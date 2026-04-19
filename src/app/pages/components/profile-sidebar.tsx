@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { MapPin, Link2, Calendar, Users } from 'lucide-react';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 interface Friend {
   id: string;
@@ -22,8 +23,11 @@ interface ProfileSidebarProps {
 }
 
 export function ProfileSidebar({ data }: ProfileSidebarProps) {
+  const { t, language } = useAccessibilityStore();
+
   const formatJoinDate = (date: string) => {
-    return new Date(date).toLocaleDateString('fr-FR', {
+    const locale = language === 'ar' ? 'ar-SA' : language === 'es' ? 'es-ES' : language === 'en' ? 'en-US' : 'fr-FR';
+    return new Date(date).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
     });
@@ -38,7 +42,7 @@ export function ProfileSidebar({ data }: ProfileSidebarProps) {
         transition={{ delay: 0.1 }}
         className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden p-6"
       >
-        <h3 className="text-lg font-bold text-[#111827] mb-4">À propos</h3>
+        <h3 className="text-lg font-bold text-[#111827] mb-4">{t('community.profileAboutTitle')}</h3>
 
         <div className="space-y-4">
           {data.bio && (
@@ -65,7 +69,7 @@ export function ProfileSidebar({ data }: ProfileSidebarProps) {
 
           <div className="flex items-center gap-3 text-sm text-[#6B7280]">
             <Calendar className="w-5 h-5 text-[#0EA5E9] flex-shrink-0" />
-            <span>Inscrit en {formatJoinDate(data.joinDate)}</span>
+            <span>{t('community.joinedIn', { date: formatJoinDate(data.joinDate) })}</span>
           </div>
         </div>
       </motion.div>
@@ -78,7 +82,7 @@ export function ProfileSidebar({ data }: ProfileSidebarProps) {
           transition={{ delay: 0.2 }}
           className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden p-6"
         >
-          <h3 className="text-lg font-bold text-[#111827] mb-4">Photos</h3>
+          <h3 className="text-lg font-bold text-[#111827] mb-4">{t('community.profilePhotosTitle')}</h3>
 
           <div className="grid grid-cols-3 gap-2">
             {data.recentPhotos.slice(0, 9).map((photo, idx) => (
@@ -100,7 +104,7 @@ export function ProfileSidebar({ data }: ProfileSidebarProps) {
             whileHover={{ scale: 1.02 }}
             className="w-full mt-4 py-2 text-sm font-semibold text-[#0EA5E9] hover:bg-[#F0F9FF] rounded-lg transition-colors"
           >
-            Voir toutes les photos
+            {t('common.seeAll')}
           </motion.button>
         </motion.div>
       )}
@@ -116,7 +120,7 @@ export function ProfileSidebar({ data }: ProfileSidebarProps) {
           <div className="flex items-center gap-2 mb-4">
             <Users className="w-5 h-5 text-[#0EA5E9]" />
             <h3 className="text-lg font-bold text-[#111827]">
-              Amis ({data.recentFriends.length})
+              {t('community.profileFriendsTitle')} ({data.recentFriends.length})
             </h3>
           </div>
 
@@ -149,7 +153,7 @@ export function ProfileSidebar({ data }: ProfileSidebarProps) {
             whileHover={{ scale: 1.02 }}
             className="w-full mt-4 py-2 text-sm font-semibold text-[#0EA5E9] hover:bg-[#F0F9FF] rounded-lg transition-colors"
           >
-            Voir tous les amis
+            {t('common.seeAll')}
           </motion.button>
         </motion.div>
       )}
