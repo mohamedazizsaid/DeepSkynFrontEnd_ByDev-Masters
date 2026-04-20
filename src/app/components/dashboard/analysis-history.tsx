@@ -12,6 +12,7 @@ import { Button } from '../button';
 import { analysisService } from '../../../lib/services/analysis.service';
 import { formatAnalysisDate } from '../../../lib/analysis-helpers';
 import type { Analysis, AnalysisListResponse } from '../../../lib/types';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 
 interface AnalysisHistoryProps {
   onClose: () => void;
@@ -58,6 +59,7 @@ const scrollbarStyles = `
 `;
 
 export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
+  const { t } = useAccessibilityStore();
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAnalysisIndex, setSelectedAnalysisIndex] = useState(0);
@@ -76,7 +78,7 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
       // Préparer les données d'évolution
       if (analysesData.length > 0) {
         const evolutionPoints: EvolutionDataPoint[] = analysesData.map(analysis => ({
-          date: formatAnalysisDate(analysis.createdAt),
+          date: new Date(analysis.createdAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short' }),
           score: analysis.results?.healthScore ?? analysis.healthScore ?? 0,
           acne: analysis.results?.detailedAnalysis?.acne?.score ?? 0,
           wrinkles: analysis.results?.detailedAnalysis?.wrinkles?.score ?? 0,
@@ -146,9 +148,9 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
                 <Activity className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">Historique des Analyses</h2>
+                <h2 className="text-2xl font-bold">{t('analysis.history.title')}</h2>
                 <p className="text-blue-100 text-sm">
-                  {analyses.length > 0 ? `${analyses.length} analyse${analyses.length > 1 ? 's' : ''} trouvée${analyses.length > 1 ? 's' : ''}` : 'Suivez l\'évolution de votre peau'}
+                  {analyses.length > 0 ? t('analysis.history.subtitleCount', { count: analyses.length }) : t('analysis.history.subtitleEmpty')}
                 </p>
               </div>
             </div>
@@ -167,7 +169,7 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
             <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Target className="w-5 h-5" />
-                <h3 className="font-semibold">Évolution des Scores</h3>
+                <h3 className="font-semibold">{t('analysis.history.evolutionTitle')}</h3>
                 <div className="flex gap-2 ml-auto">
                   {Object.entries(EVOLUTION_COLORS).map(([key, color]) => (
                     <button
@@ -179,7 +181,7 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
                           : 'bg-white/20 text-white hover:bg-white/30'
                       }`}
                     >
-                      {key === 'score' ? 'Global' : key.charAt(0).toUpperCase() + key.slice(1)}
+                      {key === 'score' ? t('analysis.history.metricGlobal') : key.charAt(0).toUpperCase() + key.slice(1)}
                     </button>
                   ))}
                 </div>
@@ -227,8 +229,8 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
           ) : !analyses || analyses.length === 0 ? (
             <div className="text-center py-12">
               <Eye className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-600 mb-2">Aucune analyse trouvée</h3>
-              <p className="text-gray-500">Commencez votre première analyse de peau !</p>
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">{t('analysis.history.emptyTitle')}</h3>
+              <p className="text-gray-500">{t('analysis.history.emptyDescription')}</p>
             </div>
           ) : (
             <>
@@ -291,7 +293,7 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
                             <span className={`text-3xl font-bold ${getScoreColor(score)}`}>{score}</span>
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold text-gray-800">Score Global</h3>
+                            <h3 className="text-xl font-bold text-gray-800">{t('analysis.history.scoreGlobal')}</h3>
                             <div className="flex items-center gap-2 text-gray-500">
                               <Calendar className="w-4 h-4" />
                               <span>{formatAnalysisDate(analysis.createdAt)}</span>
@@ -299,7 +301,7 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
                             </div>
                             <div className="flex items-center gap-1 text-gray-400 text-sm">
                               <Clock className="w-3 h-3" />
-                              {new Date(analysis.createdAt).toLocaleTimeString('fr-FR', { 
+                              {new Date(analysis.createdAt).toLocaleTimeString(undefined, { 
                                 hour: '2-digit', 
                                 minute: '2-digit' 
                               })}
@@ -322,9 +324,9 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
                         {/* Condition principale */}
                         {(analysis.results?.conditions?.length > 0 || analysis.conditions?.length > 0) && (
                           <div className="p-4 bg-gray-50 rounded-xl">
-                            <span className="text-sm text-gray-500">État Principal</span>
+                            <span className="text-sm text-gray-500">{t('analysis.history.mainState')}</span>
                             <p className="text-lg font-semibold text-gray-800 capitalize">
-                              {analysis.results?.conditions?.[0] || analysis.conditions?.[0] || 'Normal'}
+                              {analysis.results?.conditions?.[0] || analysis.conditions?.[0] || t('analysis.history.normal')}
                             </p>
                           </div>
                         )}
@@ -334,18 +336,18 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
                       <Card className="p-6">
                         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                           <Target className="w-5 h-5 text-blue-600" />
-                          Analyse Détaillée
+                          {t('analysis.history.detailed')}
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
                           {[
-                            { label: 'Acné', value: analysis.results?.detailedAnalysis?.acne?.score ?? 0, color: 'red' },
-                            { label: 'Rides', value: analysis.results?.detailedAnalysis?.wrinkles?.score ?? 0, color: 'purple' },
-                            { label: 'Taches', value: analysis.results?.detailedAnalysis?.pigmentation?.score ?? 0, color: 'amber' },
-                            { label: 'Hydratation', value: analysis.results?.detailedAnalysis?.hydration?.score ?? 0, color: 'emerald' },
-                            { label: 'Texture', value: analysis.results?.detailedAnalysis?.texture?.score ?? 0, color: 'blue' },
-                            { label: 'Pores', value: analysis.results?.detailedAnalysis?.pores?.score ?? 0, color: 'indigo' },
-                            { label: 'Rougeurs', value: analysis.results?.detailedAnalysis?.redness?.score ?? 0, color: 'rose' },
-                            { label: 'Élasticité', value: analysis.results?.detailedAnalysis?.elasticity?.score ?? 0, color: 'teal' },
+                            { label: t('dashboard.acne'), value: analysis.results?.detailedAnalysis?.acne?.score ?? 0, color: 'red' },
+                            { label: t('dashboard.wrinkles'), value: analysis.results?.detailedAnalysis?.wrinkles?.score ?? 0, color: 'purple' },
+                            { label: t('dashboard.pigmentation'), value: analysis.results?.detailedAnalysis?.pigmentation?.score ?? 0, color: 'amber' },
+                            { label: t('dashboard.hydration'), value: analysis.results?.detailedAnalysis?.hydration?.score ?? 0, color: 'emerald' },
+                            { label: t('dashboard.texture'), value: analysis.results?.detailedAnalysis?.texture?.score ?? 0, color: 'blue' },
+                            { label: t('analysis.history.pores'), value: analysis.results?.detailedAnalysis?.pores?.score ?? 0, color: 'indigo' },
+                            { label: t('analysis.history.redness'), value: analysis.results?.detailedAnalysis?.redness?.score ?? 0, color: 'rose' },
+                            { label: t('analysis.history.elasticity'), value: analysis.results?.detailedAnalysis?.elasticity?.score ?? 0, color: 'teal' },
                           ].map((metric) => (
                             <div key={metric.label} className="p-3 bg-gray-50 rounded-xl">
                               <div className="flex items-center justify-between mb-2">
@@ -371,7 +373,7 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
                         <Card className="p-6 lg:col-span-2">
                           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                             <Eye className="w-5 h-5 text-blue-600" />
-                            Images de l'analyse ({analysis.images.length})
+                            {t('analysis.history.images', { count: analysis.images.length })}
                           </h3>
                           <div className="flex flex-wrap gap-3">
                             {analysis.images.map((imageUrl, imgIndex) => (
@@ -407,7 +409,7 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
                     className="flex items-center gap-2"
                   >
                     <ChevronLeft className="w-4 h-4" />
-                    Précédente
+                    {t('common.previous')}
                   </Button>
                   <span className="text-sm font-medium text-gray-600 bg-gray-100 px-4 py-2 rounded-full">
                     {selectedAnalysisIndex + 1} / {analyses.length}
@@ -419,7 +421,7 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
                     disabled={selectedAnalysisIndex === analyses.length - 1}
                     className="flex items-center gap-2"
                   >
-                    Suivante
+                    {t('common.next')}
                     <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>

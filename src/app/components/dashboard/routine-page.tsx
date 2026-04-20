@@ -11,6 +11,7 @@ import {
   Box,
   List,
   Bell,
+  Calendar,
 } from 'lucide-react';
 import { RoutineStepCard } from '../routines/RoutineStepCard';
 import { AddStepForm } from '../routines/AddStepForm';
@@ -120,7 +121,7 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
     .sort((a, b) => a.order - b.order)[0];
 
   const formatResetDate = (value?: string | null): string => {
-    if (!value) return 'soon';
+    if (!value) return t('common.soon');
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
     return date.toLocaleString([], {
@@ -266,7 +267,7 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
   // ─── Generate AI routine ───
   const generateAIRoutine = async () => {
     if (aiRoutineLimitReached) {
-      error(`Limite des routines IA atteinte. Prochain reset: ${formatResetDate(aiRoutineResetAt)}.`);
+      error(t('routine.messages.limitReached', { date: formatResetDate(aiRoutineResetAt) }));
       return;
     }
 
@@ -291,7 +292,7 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
       if (!isPremium && aiRoutineRemaining !== null) {
         const remainingAfter = Math.max(0, aiRoutineRemaining - 1);
         if (remainingAfter === 1) {
-          error('Attention: il vous reste 1 routine IA ce mois-ci.');
+          error(t('routine.messages.oneLeft'));
         }
       }
     } catch {
@@ -382,7 +383,7 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
     const removed = currentSteps.find((s) => s.id === stepId);
     setCurrentSteps((prev) => prev.filter((s) => s.id !== stepId));
     if (removed) {
-      requestAdvice('remove_step', `Suppression de "${removed.name}" de la routine`);
+      requestAdvice('remove_step', t('routine.messages.removeStepAdvice', { name: removed.name }));
     }
   };
 
@@ -406,10 +407,10 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
       if (isOutOfOrder && nextExpectedStep) {
         requestAdvice(
           'reorder',
-          `L'utilisateur a termine "${targetStep.name}" avant "${nextExpectedStep.name}". Donne un conseil pour garder la routine dans le bon ordre.`
+          t('routine.messages.outOfOrderAdvice', { done: targetStep.name, expected: nextExpectedStep.name })
         );
       }
-      success('Etape marquee comme terminee.');
+      success(t('routine.messages.stepMarked'));
       return;
     }
 
@@ -431,17 +432,17 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
       if (isOutOfOrder && nextExpectedStep) {
         requestAdvice(
           'reorder',
-          `L'utilisateur a termine "${targetStep.name}" avant "${nextExpectedStep.name}". Donne un conseil pour garder la routine dans le bon ordre.`
+          t('routine.messages.outOfOrderAdvice', { done: targetStep.name, expected: nextExpectedStep.name })
         );
       }
 
-      success('Etape terminee avec succes.');
+      success(t('routine.messages.stepCompleted'));
     } catch {
       // Rollback UI on API failure
       setCurrentSteps((prev) =>
         prev.map((step) => (step.id === stepId ? { ...step, completed: false } : step))
       );
-      error('Impossible de marquer cette etape pour le moment.');
+      error(t('routine.messages.stepCompleteError'));
     }
   };
 
@@ -512,14 +513,14 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
   }
 
   return (
-    <div className="animate-fade-in w-full pb-12">
+    <div className="animate-fade-in w-full pb-12 px-4 sm:px-8">
       <div className="max-w-7xl mx-auto">
         {/* ═══ Header ═══ */}
-        <div className="mb-12">
+        <div className="mb-8">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center flex-shrink-0">
-                <Sparkles className="w-7 h-7 text-white" />
+                <Calendar className="w-7 h-7 text-white" />
               </div>
               <div>
                 <h1 className={`text-3xl font-bold mb-1 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -550,7 +551,7 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
                 {generating
                   ? t('routine.generating')
                   : aiRoutineLimitReached
-                    ? 'Limite atteinte'
+                    ? t('routine.messages.limitReachedShort')
                     : t('routine.regenerateAI')}
               </motion.button>
 
@@ -629,16 +630,16 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
           <div className="mb-6">
             <QuotaAlertBanner
               variant={aiRoutineLimitReached ? 'blocked' : nearAiRoutineLimit ? 'warning' : 'info'}
-              title={aiRoutineLimitReached ? 'Limite routines IA atteinte' : nearAiRoutineLimit ? 'Derniere routine disponible bientot' : 'Quota routines IA'}
+              title={aiRoutineLimitReached ? t('routine.quota.titleBlocked') : nearAiRoutineLimit ? t('routine.quota.titleWarning') : t('routine.quota.titleInfo')}
               message={aiRoutineLimitReached
-                ? `Prochaine disponibilite: ${formatResetDate(aiRoutineResetAt)}.`
+                ? t('routine.quota.messageBlocked', { date: formatResetDate(aiRoutineResetAt) })
                 : nearAiRoutineLimit
-                  ? `Attention: il vous reste ${aiRoutineRemaining} routine IA ce mois-ci.`
-                  : `Routines IA utilisees ce mois: ${aiRoutineUsed}/${aiRoutineLimit}.`}
+                  ? t('routine.quota.messageWarning', { count: aiRoutineRemaining ?? 0 })
+                  : t('routine.quota.messageInfo', { used: aiRoutineUsed, limit: aiRoutineLimit ?? 0 })}
               used={aiRoutineUsed}
               limit={aiRoutineLimit}
               onUpgrade={onUpgrade}
-              upgradeLabel="Passer Premium"
+              upgradeLabel={t('routine.quota.upgradeLabel')}
             />
           </div>
         )}
@@ -740,7 +741,7 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
             {show3D && (
               <div className="mt-6 rounded-2xl border border-cyan-100 bg-gradient-to-br from-white via-cyan-50/40 to-sky-50/70 p-5 shadow-sm">
                 <div className="flex items-center justify-between gap-3 mb-4">
-                  <h3 className="text-sm font-bold text-gray-900">Contexte intelligent de la routine</h3>
+                  <h3 className="text-sm font-bold text-gray-900">{t('routine.smartContext.title')}</h3>
                   <span className="rounded-full border border-cyan-200 bg-white/80 px-2.5 py-1 text-[10px] font-semibold text-cyan-700">
                     {activeTab === 'am' ? t('routine.morningRoutine') : t('routine.eveningRoutine')}
                   </span>
@@ -748,21 +749,21 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
 
                 <div className="grid sm:grid-cols-3 gap-3">
                   <div className="rounded-xl border border-cyan-100 bg-white/80 px-3 py-3">
-                    <p className="text-[11px] text-gray-500 mb-1">Etapes actives</p>
+                    <p className="text-[11px] text-gray-500 mb-1">{t('routine.smartContext.activeSteps')}</p>
                     <p className="text-xl font-bold text-gray-900 leading-none">{currentSteps.length}</p>
                   </div>
                   <div className="rounded-xl border border-cyan-100 bg-white/80 px-3 py-3">
-                    <p className="text-[11px] text-gray-500 mb-1">Duree estimee</p>
+                    <p className="text-[11px] text-gray-500 mb-1">{t('routine.smartContext.estimatedDuration')}</p>
                     <p className="text-xl font-bold text-gray-900 leading-none">{totalDuration}s</p>
                   </div>
                   <div className="rounded-xl border border-cyan-100 bg-white/80 px-3 py-3">
-                    <p className="text-[11px] text-gray-500 mb-1">Progression</p>
+                    <p className="text-[11px] text-gray-500 mb-1">{t('routine.smartContext.progress')}</p>
                     <p className="text-xl font-bold text-gray-900 leading-none">{completionRate}%</p>
                   </div>
                 </div>
 
                 <p className="mt-4 text-xs text-cyan-800/90 leading-relaxed">
-                  Clique sur les tags 3D pour voir les zones de soin associees et aligner l'ordre d'application avec chaque region du visage.
+                  {t('routine.smartContext.help3D')}
                 </p>
               </div>
             )}
@@ -798,20 +799,20 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
                       <span className="inline-flex h-2.5 w-2.5 rounded-full bg-[#0EA5E9] shadow-[0_0_0_4px_rgba(14,165,233,0.12)]" />
                       <p className="text-sm font-bold text-gray-900 tracking-tight">{zoneContext.label}</p>
                       <span className="ml-auto rounded-full border border-sky-200 bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-sky-700">
-                        Zone active
+                        {t('routine.zone.active')}
                       </span>
                     </div>
                     <p className="text-xs text-gray-600 leading-relaxed">{zoneContext.description}</p>
                     <p className="rounded-xl border border-sky-100 bg-white/80 px-3 py-2 text-xs font-medium text-[#0369a1]">
                       {zoneContext.matchedStepName
-                        ? `Etape associee: ${zoneContext.matchedStepName}`
-                        : 'Aucune etape de votre routine actuelle n\'est associee a cette zone.'}
+                        ? t('routine.zone.linkedStep', { step: zoneContext.matchedStepName })
+                        : t('routine.zone.noLinkedStep')}
                     </p>
                   </div>
                 ) : (
                   <div className="relative h-full flex items-center rounded-xl border border-dashed border-sky-200 bg-white/70 px-3 py-3">
                     <p className="text-xs text-gray-500 leading-relaxed">
-                      Touchez un tag sur le visage 3D pour afficher le contexte de la zone ici.
+                      {t('routine.zone.tapHint')}
                     </p>
                   </div>
                 )}
@@ -848,29 +849,29 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
               {!show3D && (
                 <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/40 to-cyan-50/60 p-5 shadow-sm min-h-[190px]">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold text-gray-900">Contexte & priorite</h3>
+                    <h3 className="text-sm font-bold text-gray-900">{t('routine.priority.title')}</h3>
                     <span className="rounded-full border border-emerald-200 bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                      Smart flow
+                      {t('routine.priority.smartFlow')}
                     </span>
                   </div>
 
                   {nextStep ? (
                     <div className="space-y-3">
                       <div className="rounded-xl border border-emerald-100 bg-white/85 px-3 py-3">
-                        <p className="text-[11px] text-gray-500 mb-1">Prochaine etape conseillee</p>
+                        <p className="text-[11px] text-gray-500 mb-1">{t('routine.priority.nextStep')}</p>
                         <p className="text-sm font-semibold text-gray-900 leading-snug">#{nextStep.order} • {nextStep.name}</p>
                       </div>
 
                       <div className="rounded-xl border border-cyan-100 bg-cyan-50/60 px-3 py-2">
                         <p className="text-[11px] text-cyan-800 leading-relaxed">
-                          Astuce IA: complete les etapes dans l'ordre pour garder une meilleure coherence d'application et recevoir des conseils plus pertinents.
+                          {t('routine.priority.aiTip')}
                         </p>
                       </div>
                     </div>
                   ) : (
                     <div className="h-full flex items-center rounded-xl border border-dashed border-emerald-200 bg-white/70 px-3 py-3">
                       <p className="text-xs text-gray-600 leading-relaxed">
-                        Routine completee. Excellent rythme, tu peux regenerer une nouvelle routine IA si besoin.
+                        {t('routine.priority.completed')}
                       </p>
                     </div>
                   )}
@@ -886,23 +887,23 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
               {show3D && (
                 <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/40 to-sky-50/70 p-5 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold text-gray-900">Insights de session</h3>
+                    <h3 className="text-sm font-bold text-gray-900">{t('routine.sessionInsights.title')}</h3>
                     <span className="rounded-full bg-indigo-100 text-indigo-700 px-2 py-0.5 text-[10px] font-semibold">
-                      Live
+                      {t('routine.sessionInsights.live')}
                     </span>
                   </div>
 
                   <div className="space-y-2 text-xs text-gray-600">
                     <div className="flex items-center justify-between rounded-lg border border-indigo-100 bg-white/80 px-3 py-2">
-                      <span>Etapes terminees</span>
+                      <span>{t('routine.sessionInsights.completedSteps')}</span>
                       <span className="font-semibold text-gray-900">{completedCount}/{currentSteps.length}</span>
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-indigo-100 bg-white/80 px-3 py-2">
-                      <span>Mode actif</span>
-                      <span className="font-semibold text-gray-900">{show3D ? 'Visualisation 3D' : 'Liste simple'}</span>
+                      <span>{t('routine.sessionInsights.activeMode')}</span>
+                      <span className="font-semibold text-gray-900">{show3D ? t('routine.sessionInsights.mode3D') : t('routine.sessionInsights.modeList')}</span>
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-indigo-100 bg-white/80 px-3 py-2">
-                      <span>Rappel principal</span>
+                      <span>{t('routine.sessionInsights.mainReminder')}</span>
                       <span className="font-semibold text-gray-900">
                         {activeTab === 'am' ? reminders.morningTime : reminders.eveningTime}
                       </span>
@@ -1007,22 +1008,22 @@ function RoutineReminderCard({
 
   const handleTestNotification = () => {
     if (!('Notification' in window)) {
-      error("Votre navigateur ne supporte pas les notifications.");
+      error(t('routine.notifications.unsupported'));
       return;
     }
 
     if (Notification.permission === 'granted') {
-      new Notification("DeepSkyn Routine", {
-        body: "C'est l'heure de votre routine skincare ! ✨",
+      new Notification(t('routine.notifications.title'), {
+        body: t('routine.notifications.body'),
         icon: "/favicon.ico"
       });
-      success("Notification de test envoyée !");
+      success(t('routine.notifications.sent'));
     } else {
       Notification.requestPermission().then(permission => {
         if (permission === 'granted') {
           handleTestNotification();
         } else {
-          error("Permission de notification refusée.");
+          error(t('routine.notifications.denied'));
         }
       });
     }
@@ -1040,7 +1041,7 @@ function RoutineReminderCard({
       });
       
       onUpdate(newReminders);
-      success("Rappels mis à jour !");
+      success(t('routine.notifications.updated'));
       
       if ((newReminders.morningEnabled || newReminders.eveningEnabled) && 'Notification' in window) {
         if (Notification.permission === 'default') {
@@ -1048,7 +1049,7 @@ function RoutineReminderCard({
         }
       }
     } catch (e) {
-      error("Erreur lors de la mise à jour.");
+      error(t('routine.notifications.updateError'));
       console.error(e);
     } finally {
       setSaving(false);

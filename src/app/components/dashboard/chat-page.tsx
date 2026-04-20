@@ -375,7 +375,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     };
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-[calc(100vh-4rem)] flex flex-col">
+        <div className="px-4 sm:px-8 pb-12 max-w-7xl mx-auto min-h-[calc(100vh-4rem)] flex flex-col">
 
             {/* Header */}
             <div className="mb-6 md:mb-8">

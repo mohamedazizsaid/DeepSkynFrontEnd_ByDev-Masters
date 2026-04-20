@@ -7,6 +7,7 @@ import { usePredictiveRoutine } from '../../hooks/usePredictiveRoutine';
 import { predictiveRoutineService } from '../../lib/services/predictive-routine.service';
 import type { AnalysisResult } from '../../lib/services/predictive-routine.service';
 import toast from 'react-hot-toast';
+import { useAccessibilityStore } from '../../stores/accessibility.store';
 
 interface PredictiveRoutineCardProps {
   analysisId: string;
@@ -16,6 +17,7 @@ interface PredictiveRoutineCardProps {
 
 export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateToRoutine }: PredictiveRoutineCardProps) {
   const { routine, routineId, loading, error } = usePredictiveRoutine(analysisId, analysisResult);
+  const { t } = useAccessibilityStore();
   const [validating, setValidating] = useState(false);
   const [validated, setValidated] = useState(false);
 
@@ -24,7 +26,7 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
     
     if (!routineId) {
       console.error('❌ No routineId available');
-      toast.error('ID de routine manquant. Veuillez réessayer.', {
+      toast.error(t('analysis.predictive.missingRoutineId'), {
         style: {
           borderRadius: '12px',
           background: '#FFFFFF',
@@ -44,7 +46,7 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
       
       if (result.success) {
         setValidated(true);
-        toast.success('✅ Routine activée avec succès ! Redirection en cours...', {
+        toast.success(t('analysis.predictive.activateSuccessRedirect'), {
           duration: 3000,
           style: {
             borderRadius: '12px',
@@ -66,7 +68,7 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
     } catch (err: any) {
       console.error('❌ Error validating routine:', err);
       console.error('Error details:', err?.response?.data);
-      toast.error(err?.response?.data?.message || 'Erreur lors de la validation de la routine', {
+      toast.error(err?.response?.data?.message || t('analysis.predictive.activateError'), {
         style: {
           borderRadius: '12px',
           background: '#FFFFFF',
@@ -96,8 +98,8 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
               <Sparkles className="w-6 h-6 text-white" />
             </div>
           </motion.div>
-          <h3 className="text-lg font-bold text-[#1F2937] mb-2">Génération de votre routine prédictive...</h3>
-          <p className="text-[#6B7280] text-sm">Analyse en cours avec l'IA dermatologique</p>
+          <h3 className="text-lg font-bold text-[#1F2937] mb-2">{t('analysis.predictive.generatingTitle')}</h3>
+          <p className="text-[#6B7280] text-sm">{t('analysis.predictive.generatingSubtitle')}</p>
         </div>
       </Card>
     );
@@ -112,12 +114,12 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
       <div className="p-6 md:p-8">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center">
+            <Lightbulb className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[#1F2937]">Routine Prédictive Personnalisée</h3>
-            <p className="text-xs text-[#6B7280]">7 jours • Basée sur votre analyse et la météo</p>
+            <h3 className="text-lg font-bold text-[#1F2937]">{t('analysis.predictive.title')}</h3>
+            <p className="text-xs text-[#6B7280]">{t('analysis.predictive.subtitle')}</p>
           </div>
         </div>
 
@@ -125,7 +127,7 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
         {routine.globalAdvice && (
           <div className="mb-6 p-4 rounded-2xl border border-[#DBEAFE] bg-[#FEFBFF]">
             <div className="flex items-start gap-2">
-              <Lightbulb className="w-5 h-5 text-[#6366F1] mt-0.5" />
+              <Sparkles className="w-5 h-5 text-[#6366F1] mt-0.5" />
               <p className="text-sm text-[#334155] leading-relaxed">{routine.globalAdvice}</p>
             </div>
           </div>
@@ -133,7 +135,7 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
 
         {/* Days grid */}
         <div className="space-y-4">
-          <h4 className="text-md font-semibold text-[#1F2937] mb-4">Programme de soins 7 jours</h4>
+          <h4 className="text-md font-semibold text-[#1F2937] mb-4">{t('analysis.predictive.programTitle')}</h4>
           <div className="overflow-x-auto scrollbar-hide">
             <div className="flex gap-4 pb-2" style={{ minWidth: 'max-content' }}>
               {routine.days.map((day, index) => (
@@ -157,7 +159,7 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
                     <div className="mb-4">
                       <div className="flex items-center gap-2 mb-2">
                         <Sun className="w-4 h-4 text-[#F59E0B]" />
-                        <span className="text-xs font-semibold text-[#6B7280] uppercase">Matin</span>
+                        <span className="text-xs font-semibold text-[#6B7280] uppercase">{t('routine.morning')}</span>
                       </div>
                       <div className="space-y-1">
                         {day.morning.map((step, i) => (
@@ -173,7 +175,7 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
                     <div className="mb-4">
                       <div className="flex items-center gap-2 mb-2">
                         <Moon className="w-4 h-4 text-[#6366F1]" />
-                        <span className="text-xs font-semibold text-[#6B7280] uppercase">Soir</span>
+                        <span className="text-xs font-semibold text-[#6B7280] uppercase">{t('routine.evening')}</span>
                       </div>
                       <div className="space-y-1">
                         {day.evening.map((step, i) => (
@@ -222,17 +224,17 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
               {validating ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Activation en cours...
+                  {t('analysis.predictive.activating')}
                 </>
               ) : !routineId ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Génération en cours...
+                  {t('analysis.predictive.generating')}
                 </>
               ) : (
                 <>
                   <Check className="w-5 h-5 mr-2" />
-                  Valider et activer cette routine
+                  {t('analysis.predictive.activateButton')}
                 </>
               )}
             </Button>
@@ -241,7 +243,7 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
           <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200">
             <div className="flex items-center justify-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              <span className="text-sm font-semibold text-emerald-700">Routine activée avec succès !</span>
+              <span className="text-sm font-semibold text-emerald-700">{t('analysis.predictive.activated')}</span>
             </div>
           </div>
         )}
@@ -249,7 +251,7 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
         {/* Footer note */}
         <div className="mt-6 p-4 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0]">
           <p className="text-xs text-[#64748B] text-center leading-relaxed">
-            ✨ Routine générée par IA dermatologique • Adaptée à votre type de peau et aux conditions météo actuelles
+            {t('analysis.predictive.footerNote')}
           </p>
         </div>
       </div>

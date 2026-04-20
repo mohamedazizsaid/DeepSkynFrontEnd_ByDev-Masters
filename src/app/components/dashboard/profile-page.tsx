@@ -49,7 +49,7 @@ interface ProfilePageProps {
 
 export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
   const { user, loadUser } = useAuthStore();
-  const { t } = useAccessibilityStore();
+  const { t, language } = useAccessibilityStore();
   const [isEditing, setIsEditing] = useState(false);
   const [skinProfile, setSkinProfile] = useState<SkinProfile | null>(null);
   const [analysisCount, setAnalysisCount] = useState(0);
@@ -69,6 +69,9 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
 
   const reportRef = useRef<HTMLDivElement>(null);
   const [isGenderOpen, setIsGenderOpen] = useState(false);
+
+  const localeForDates =
+    language === 'ar' ? 'ar-SA' : language === 'en' ? 'en-US' : language === 'es' ? 'es-ES' : 'fr-FR';
 
   // Close gender dropdown on outside click
   useEffect(() => {
@@ -127,9 +130,16 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
       if (!skinProfile) return;
       setIsGeneratingAi(true);
       try {
+        const responseLanguage =
+          language === 'ar' ? 'Arabic' : language === 'en' ? 'English' : language === 'es' ? 'Spanish' : 'French';
+
         const [tipRes, coachRes] = await Promise.all([
-          chatService.sendMessage({ message: `Génère un conseil très court (1 seule phrase) pour prendre soin d'une peau de type ${skinProfile.skinType || 'mixte'}.` }),
-          chatService.sendMessage({ message: `Un court message d'encouragement affectueux (1 phrase courte) d'un coach IA pour maintenir une belle peau.` })
+          chatService.sendMessage({
+            message: `Generate one very short skincare tip (one sentence) for skin type ${skinProfile.skinType || 'combination'}. Reply only in ${responseLanguage}.`,
+          }),
+          chatService.sendMessage({
+            message: `Generate one short and warm motivational sentence from an AI skincare coach. Reply only in ${responseLanguage}.`,
+          }),
         ]);
         if (tipRes.assistantResponse) setDailyTipMsg(tipRes.assistantResponse);
         if (coachRes.assistantResponse) setAiCoachMsg(coachRes.assistantResponse);
@@ -142,7 +152,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
     if (skinProfile && !aiCoachMsg) {
       fetchAi();
     }
-  }, [skinProfile]);
+  }, [skinProfile, language]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -172,9 +182,9 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
 
       await loadUser();
       setIsEditing(false);
-      toast.success(t('common.success') || 'Profil mis à jour');
+      toast.success(t('common.success'));
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Erreur lors de la sauvegarde');
+      toast.error(error?.response?.data?.message || t('profile.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -182,7 +192,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
 
   const handleDownloadReport = async () => {
     if (!reportRef.current) {
-        toast.error(t('profile.reportError') || 'Contenu introuvable pour le rapport.');
+        toast.error(t('profile.reportContentMissing'));
         return;
     }
     
@@ -218,7 +228,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
       pdf.setFontSize(10);
       pdf.setTextColor(107, 114, 128);
       pdf.text(t('profile.reportGeneratedAt', { 
-        date: new Date().toLocaleDateString(t('common.loading') === '...جاري التحميل' ? 'ar-SA' : 'fr-FR'), 
+        date: new Date().toLocaleDateString(localeForDates),
         user: user?.name || t('nav.profile') 
       }), pdfWidth / 2, 22, { align: 'center' });
       
@@ -227,7 +237,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
       pdf.setFontSize(8);
       pdf.text(t('profile.reportConfidential'), pdfWidth / 2, pdfHeight - 10, { align: 'center' });
       
-      pdf.save(`Rapport_De_Peau_${user?.name?.replace(/\s+/g, '_') || 'DeepSkyn'}.pdf`);
+      pdf.save(`${t('profile.reportFilePrefix')}_${user?.name?.replace(/\s+/g, '_') || 'DeepSkyn'}.pdf`);
       
       toast.success(t('profile.reportReady'), { id: toastId });
     } catch (error) {
@@ -250,8 +260,8 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
   };
 
   const memberSince = user?.createdAt
-    ? new Date(user.createdAt).toLocaleDateString(t('common.loading') === '...جاري التحميل' ? 'ar-SA' : 'fr-FR', { month: 'long', year: 'numeric' })
-    : 'N/A';
+    ? new Date(user.createdAt).toLocaleDateString(localeForDates, { month: 'long', year: 'numeric' })
+    : t('common.notSpecified');
 
   const toggleConcern = (concern: string) => {
     setEditProfileData(prev => ({
@@ -381,14 +391,14 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                     <Calendar className="w-3.5 h-3.5 text-[#0EA5E9]" />
                     {t('profile.age')}
                   </label>
-                  <p className="p-4 bg-white/60 rounded-2xl border border-gray-100/50 text-gray-800 font-bold shadow-sm text-sm">{formData.age || 'N/A'} {t('common.years')}</p>
+                  <p className="p-4 bg-white/60 rounded-2xl border border-gray-100/50 text-gray-800 font-bold shadow-sm text-sm">{formData.age || t('common.notSpecified')} {formData.age ? t('common.years') : ''}</p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 flex items-center gap-2 uppercase tracking-widest opacity-80">
                     <Activity className="w-3.5 h-3.5 text-[#0EA5E9]" />
                     {t('onboarding.gender')}
                   </label>
-                  <p className="p-4 bg-white/60 rounded-2xl border border-gray-100/50 text-gray-800 font-bold shadow-sm text-sm">{formData.gender ? (t(`settings.personal.genderOptions.${formData.gender}`) as string) || formData.gender : 'N/A'}</p>
+                  <p className="p-4 bg-white/60 rounded-2xl border border-gray-100/50 text-gray-800 font-bold shadow-sm text-sm">{formData.gender ? (t(`settings.personal.genderOptions.${formData.gender}`) as string) || formData.gender : t('common.notSpecified')}</p>
                 </div>
               </div>
             </Card>
@@ -399,9 +409,9 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
             <div className="grid grid-cols-2 gap-4 h-full">
               {[
                 { label: t('dashboard.analyses'), value: String(analysisCount || 0), icon: Scan, textColor: 'text-[#0EA5E9]', bg: 'bg-[#0EA5E9]/10' },
-                { label: t('onboarding.skinTitle'), value: (t('onboarding.skinTypesLabels') as any)[skinProfile?.skinType || ''] || 'N/A', icon: Droplets, textColor: 'text-[#8B5CF6]', bg: 'bg-[#8B5CF6]/10' },
+                { label: t('onboarding.skinTitle'), value: (t('onboarding.skinTypesLabels') as any)[skinProfile?.skinType || ''] || t('common.notSpecified'), icon: Droplets, textColor: 'text-[#8B5CF6]', bg: 'bg-[#8B5CF6]/10' },
                 { label: t('dashboard.skinHealth'), value: (skinProfile?.healthScore || 85) + '/100', icon: Heart, textColor: 'text-[#EC4899]', bg: 'bg-[#EC4899]/10' },
-                { label: t('dashboard.skinAge'), value: skinProfile?.skinAge ? `${skinProfile.skinAge} ${t('common.years')}` : 'N/A', icon: Activity, textColor: 'text-[#10B981]', bg: 'bg-[#10B981]/10' },
+                { label: t('dashboard.skinAge'), value: skinProfile?.skinAge ? `${skinProfile.skinAge} ${t('common.years')}` : t('common.notSpecified'), icon: Activity, textColor: 'text-[#10B981]', bg: 'bg-[#10B981]/10' },
               ].map((stat, i) => (
                 <div key={i} className="bg-white/70 backdrop-blur-xl p-5 rounded-[2rem] border border-white/40 shadow-xl text-center flex flex-col items-center justify-center hover:shadow-2xl transition-all hover:-translate-y-1">
                   <div className={`w-12 h-12 rounded-2xl ${stat.bg} flex items-center justify-center mb-4 shadow-inner ring-1 ring-white/20`}>
@@ -466,37 +476,37 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                  </h3>
                  <div className="bg-white/10 backdrop-blur-xl rounded-[2rem] p-8 mb-10 leading-relaxed border border-white/10 flex-grow shadow-inner">
                     <p className="text-lg font-medium italic drop-shadow-sm opacity-95">
-                      {isGeneratingAi ? <span className="flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin"/> {t('common.loading') || 'Génération...'}</span> : `"${aiCoachMsg || "Votre peau semble bien hydratée aujourd'hui. Maintenez votre routine actuelle pour préserver cet éclat !"}"`}
+                        {isGeneratingAi ? <span className="flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin"/> {t('common.loading')}</span> : `"${aiCoachMsg || t('profile.aiCoachFallback')}"`}
                     </p>
                  </div>
                  <Button onClick={() => onNavigate && onNavigate('chat')} className="w-full !bg-white !text-[#0EA5E9] font-black rounded-2xl h-16 border-none shadow-2xl hover:scale-[1.02] active:scale-95 transition-all text-lg tracking-wide uppercase">
-                   {t('chat.startConversation') || 'Discuter avec le coach'}
+                     {t('chat.startConversation')}
                  </Button>
                </div>
             </Card>
           </div>
 
-          <div className="h-full">
-            <Card className="bg-gradient-to-br from-[#8B5CF6] to-[#D8B4FE] border-none shadow-2xl p-10 text-white relative overflow-hidden group h-full flex flex-col min-h-[300px]">
+            <div className="h-full">
+              <Card className="bg-gradient-to-br from-[#FB7185] via-[#F472B6] to-[#F9A8D4] border-none shadow-2xl p-10 text-white relative overflow-hidden group h-full flex flex-col min-h-[300px]">
               <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000" />
               <div className="relative z-10 h-full flex flex-col">
                 <div className="flex items-center gap-4 mb-10">
                   <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shadow-lg backdrop-blur-md border border-white/20">
                     <Sparkles className="w-7 h-7 text-white" />
                   </div>
-                  <h3 className="text-2xl font-black tracking-tight">Conseil du Jour</h3>
+                  <h3 className="text-2xl font-black tracking-tight">{t('profile.dailyTipTitle')}</h3>
                 </div>
                 <div className="bg-white/10 backdrop-blur-xl rounded-[2rem] p-8 mb-10 border border-white/10 flex-grow shadow-inner">
                   <p className="text-lg font-medium opacity-95 leading-relaxed italic drop-shadow-sm">
-                    {isGeneratingAi ? <span className="flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin"/> {t('common.loading') || 'Génération...'}</span> : `"${dailyTipMsg || "L'application de votre sérum sur une peau légèrement humide peut augmenter l'absorption des actifs jusqu'à 30%."}"`}
+                    {isGeneratingAi ? <span className="flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin"/> {t('common.loading')}</span> : `"${dailyTipMsg || t('profile.dailyTipFallback')}"`}
                   </p>
                 </div>
                 <div className="flex items-center justify-between mt-auto">
                    <div className="flex flex-col gap-1">
-                     <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-white/20 px-5 py-2 rounded-full backdrop-blur-xl border border-white/10 shadow-sm w-fit">Astuce Pro</span>
+                     <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-white/20 px-5 py-2 rounded-full backdrop-blur-xl border border-white/10 shadow-sm w-fit">{t('profile.proTip')}</span>
                      <span className="text-[11px] font-bold text-white/70 ml-2">{t('dashboard.personalizedAdvice')}</span>
                    </div>
-                   <button onClick={() => onNavigate && onNavigate('routine')} className="w-16 h-16 rounded-[1.5rem] border-2 border-white/30 flex items-center justify-center hover:bg-white hover:text-[#8B5CF6] transition-all duration-300 cursor-pointer shadow-2xl active:scale-90 bg-white/5 backdrop-blur-md">
+                   <button onClick={() => onNavigate && onNavigate('routine')} className="w-16 h-16 rounded-[1.5rem] border-2 border-white/30 flex items-center justify-center hover:bg-white hover:text-[#F472B6] transition-all duration-300 cursor-pointer shadow-2xl active:scale-90 bg-white/5 backdrop-blur-md">
                      <ChevronRight className="w-8 h-8" />
                    </button>
                 </div>
@@ -536,7 +546,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     {[
                       { label: t('onboarding.skinTitle'), value: (t('onboarding.skinTypesLabels') as any)[skinProfile?.skinType || ''] || t('onboarding.notProvided'), color: 'text-[#111827]' },
-                      { label: t('onboarding.fitzTitle'), value: `Type ${skinProfile?.fitzpatrickType || 'N/A'}`, color: 'text-[#111827]' },
+                      { label: t('onboarding.fitzTitle'), value: `${t('profile.fitzpatrickType')} ${skinProfile?.fitzpatrickType || t('common.notSpecified')}`, color: 'text-[#111827]' },
                       { label: t('dashboard.skinHealth'), value: `${skinProfile?.healthScore || 85}/100`, color: 'text-[#10B981]' },
                       { label: t('profile.memberSince', { date: '' }).split(' ')[0], value: memberSince, color: 'text-[#8B5CF6]' }
                     ].map((item, i) => (
@@ -549,7 +559,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
 
                   <div className="grid lg:grid-cols-3 gap-8 items-stretch">
                     {/* Hero Skin Visual */}
-                    <div className="lg:col-span-1 p-10 rounded-[3.5rem] bg-gradient-to-b from-[#0EA5E9] to-[#8B5CF6] text-white flex flex-col items-center justify-center gap-8 text-center shadow-2xl relative overflow-hidden group h-full min-h-[350px]">
+                    <div className="lg:col-span-1 p-10 rounded-[3.5rem] bg-gradient-to-b from-[#0EA5E9] via-[#0284C7] to-[#0369A1] text-white flex flex-col items-center justify-center gap-8 text-center shadow-2xl relative overflow-hidden group h-full min-h-[350px]">
                        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIvPjwvc3ZnPg==')] opacity-20 mix-blend-overlay" />
                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-[80px] -mr-32 -mt-32 group-hover:scale-125 transition-transform duration-1000" />
                        
@@ -747,11 +757,11 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #0EA5E9', paddingBottom: '20px', marginBottom: '30px' }}>
             <div>
               <h1 style={{ fontSize: '28px', margin: 0, color: '#0EA5E9', fontWeight: 'bold' }}>DeepSkyn</h1>
-              <p style={{ fontSize: '14px', margin: '5px 0 0', color: '#6B7280' }}>{t('profile.reportSubtitle') || 'Rapport de Santé Cutanée Intelligent'}</p>
+              <p style={{ fontSize: '14px', margin: '5px 0 0', color: '#6B7280' }}>{t('profile.reportSubtitle')}</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ fontSize: '10px', margin: 0, color: '#9CA3AF' }}>{t('profile.reportConfidential') || 'DOCUMENT CONFIDENTIEL'}</p>
-              <p style={{ fontSize: '12px', margin: 0, fontWeight: 'bold' }}>{new Date().toLocaleDateString('fr-FR')}</p>
+              <p style={{ fontSize: '10px', margin: 0, color: '#9CA3AF' }}>{t('profile.reportConfidential')}</p>
+              <p style={{ fontSize: '12px', margin: 0, fontWeight: 'bold' }}>{new Date().toLocaleDateString(localeForDates)}</p>
             </div>
           </div>
 
@@ -761,43 +771,43 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
               {user?.avatar && <img src={user.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
             </div>
             <div>
-              <h2 style={{ fontSize: '22px', margin: '0 0 10px', fontWeight: 'bold' }}>{user?.name || 'Utilisateur'}</h2>
-              <p style={{ fontSize: '14px', margin: '2px 0', color: '#4B5563' }}><strong>Email:</strong> {user?.email}</p>
-              <p style={{ fontSize: '14px', margin: '2px 0', color: '#4B5563' }}><strong>Âge:</strong> {formData.age} {t('common.years')}</p>
-              <p style={{ fontSize: '14px', margin: '2px 0', color: '#4B5563' }}><strong>Genre:</strong> {formData.gender}</p>
+              <h2 style={{ fontSize: '22px', margin: '0 0 10px', fontWeight: 'bold' }}>{user?.name || t('common.user')}</h2>
+              <p style={{ fontSize: '14px', margin: '2px 0', color: '#4B5563' }}><strong>{t('settings.personal.email')}:</strong> {user?.email || t('common.notSpecified')}</p>
+              <p style={{ fontSize: '14px', margin: '2px 0', color: '#4B5563' }}><strong>{t('profile.age')}:</strong> {formData.age || t('common.notSpecified')} {formData.age ? t('common.years') : ''}</p>
+              <p style={{ fontSize: '14px', margin: '2px 0', color: '#4B5563' }}><strong>{t('onboarding.gender')}:</strong> {formData.gender ? (t(`settings.personal.genderOptions.${formData.gender}`) as string) || formData.gender : t('common.notSpecified')}</p>
             </div>
           </div>
 
           {/* Skin Profile Summary */}
           <div style={{ backgroundColor: '#F9FAFB', borderRadius: '20px', padding: '25px', marginBottom: '30px', border: '1px solid #E5E7EB' }}>
-            <h3 style={{ fontSize: '18px', margin: '0 0 20px', color: '#0EA5E9', fontWeight: 'bold' }}>{t('onboarding.sumTitle') || 'Synthèse du Profil de Peau'}</h3>
+            <h3 style={{ fontSize: '18px', margin: '0 0 20px', color: '#0EA5E9', fontWeight: 'bold' }}>{t('onboarding.sumTitle')}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div>
-                <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.fitzTitle') || 'Type Fitzpatrick'}</p>
-                <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{(t('onboarding.fitzTypesLabels') as any)[String(skinProfile?.fitzpatrickType || '')] || 'N/A'}</p>
+                <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.fitzTitle')}</p>
+                <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{(t('onboarding.fitzTypesLabels') as any)[String(skinProfile?.fitzpatrickType || '')] || t('common.notSpecified')}</p>
               </div>
               <div>
-                <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.skinTitle') || 'Type de Peau'}</p>
-                <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{(t('onboarding.skinTypesLabels') as any)[skinProfile?.skinType || ''] || 'N/A'}</p>
+                <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.skinTitle')}</p>
+                <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{(t('onboarding.skinTypesLabels') as any)[skinProfile?.skinType || ''] || t('common.notSpecified')}</p>
               </div>
               <div style={{ gridColumn: 'span 2' }}>
-                <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.concTitle') || 'Préoccupations'}</p>
+                <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.concTitle')}</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '5px' }}>
                   {skinProfile?.concerns?.map(id => (
                     <span key={id} style={{ fontSize: '12px', backgroundColor: '#ffffff', border: '1px solid #E5E7EB', padding: '4px 10px', borderRadius: '10px' }}>
                       {(t('onboarding.concernsLabels') as any)[id] || id}
                     </span>
-                  )) || 'N/A'}
+                  )) || t('common.notSpecified')}
                 </div>
               </div>
               <div style={{ gridColumn: 'span 2' }}>
-                <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.sensTitle') || 'Sensibilités'}</p>
+                <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.sensTitle')}</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '5px' }}>
                   {skinProfile?.sensitivities?.map(id => (
                     <span key={id} style={{ fontSize: '12px', backgroundColor: '#ffffff', border: '1px solid #E5E7EB', padding: '4px 10px', borderRadius: '10px', color: '#EF4444' }}>
                       {(t('onboarding.sensitivitiesLabels') as any)[id] || id}
                     </span>
-                  )) || 'N/A'}
+                  )) || t('common.notSpecified')}
                 </div>
               </div>
             </div>
@@ -806,11 +816,11 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
           {/* Metrics Section */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
              <div style={{ padding: '20px', borderRadius: '20px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
-                <p style={{ fontSize: '12px', color: '#6B7280', margin: '0 0 10px' }}>{t('dashboard.globalScore') || 'Score de Santé Global'}</p>
+               <p style={{ fontSize: '12px', color: '#6B7280', margin: '0 0 10px' }}>{t('dashboard.globalScore')}</p>
                 <p style={{ fontSize: '32px', fontWeight: 'bold', color: '#0EA5E9', margin: 0 }}>85 <span style={{ fontSize: '14px', color: '#9CA3AF' }}>/ 100</span></p>
              </div>
              <div style={{ padding: '20px', borderRadius: '20px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
-                <p style={{ fontSize: '12px', color: '#6B7280', margin: '0 0 10px' }}>{t('dashboard.analyses') || 'Nombre d\'Analyses'}</p>
+               <p style={{ fontSize: '12px', color: '#6B7280', margin: '0 0 10px' }}>{t('dashboard.analyses')}</p>
                 <p style={{ fontSize: '32px', fontWeight: 'bold', color: '#8B5CF6', margin: 0 }}>{analysisCount}</p>
              </div>
           </div>
@@ -818,7 +828,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
           {/* Footer Branding */}
           <div style={{ textAlign: 'center', marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #F3F4F6' }}>
             <p style={{ fontSize: '10px', color: '#9CA3AF' }}>DeepSkyn AI Platform - {t('dashboard.aiCoach')}</p>
-            <p style={{ fontSize: '10px', color: '#D1D5DB' }}>© 2026 DeepSkyn. Tous droits réservés.</p>
+            <p style={{ fontSize: '10px', color: '#D1D5DB' }}>© 2026 DeepSkyn. {t('profile.rightsReserved')}</p>
           </div>
         </div>
       </div>

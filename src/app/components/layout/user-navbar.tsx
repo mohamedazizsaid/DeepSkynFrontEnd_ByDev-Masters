@@ -530,25 +530,9 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                             <span className="font-medium">{t('dashboard.healthEvolution')}</span>
                                                         </button>
 
-                                                        <button
-                                                            onClick={() => { onNavigate('subscription'); setIsProfileOpen(false); setShowAccessibility(false); }}
-                                                            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-[#F59E0B]/5 hover:to-[#FCD34D]/5 dark:hover:from-[#F59E0B]/10 dark:hover:to-[#FCD34D]/10 hover:text-[#F59E0B] dark:hover:text-[#FBBF24] transition-all duration-200 group"
-                                                        >
-                                                            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-[#F59E0B]/10 transition-colors duration-200">
-                                                                <CreditCard className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-[#F59E0B] dark:group-hover:text-[#FBBF24] transition-colors duration-200" />
-                                                            </div>
-                                                            <span className="font-medium">{t('community.subscriptions')}</span>
-                                                        </button>
+                                                  
 
-                                                        <button
-                                                            onClick={() => { onNavigate('settings'); setIsProfileOpen(false); setShowAccessibility(false); }}
-                                                            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-[#8B5CF6]/5 hover:to-[#6366F1]/5 dark:hover:from-[#8B5CF6]/10 dark:hover:to-[#6366F1]/10 hover:text-[#8B5CF6] dark:hover:text-[#A78BFA] transition-all duration-200 group"
-                                                        >
-                                                            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-[#8B5CF6]/10 transition-colors duration-200">
-                                                                <Settings className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-[#8B5CF6] dark:group-hover:text-[#A78BFA] transition-colors duration-200" />
-                                                            </div>
-                                                            <span className="font-medium">{t('nav.settings')}</span>
-                                                        </button>
+                                                      
 
                                                         <button
                                                             onClick={() => { onNavigate('meteo'); setIsProfileOpen(false); setShowAccessibility(false); }}
@@ -560,17 +544,25 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                             <span className="font-medium">{t('nav.weather')}</span>
                                                         </button>
 
-                                                        <button
-                                                            onClick={() => setShowAccessibility(true)}
-                                                            className="flex w-full items-center justify-between px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-[#06B6D4]/5 hover:to-[#0EA5E9]/5 dark:hover:from-[#06B6D4]/10 dark:hover:to-[#0EA5E9]/10 hover:text-[#06B6D4] dark:hover:text-[#22D3EE] transition-all duration-200 group"
+                                                       
+
+      <button
+                                                            onClick={() => { onNavigate('subscription'); setIsProfileOpen(false); setShowAccessibility(false); }}
+                                                            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-[#F59E0B]/5 hover:to-[#FCD34D]/5 dark:hover:from-[#F59E0B]/10 dark:hover:to-[#FCD34D]/10 hover:text-[#F59E0B] dark:hover:text-[#FBBF24] transition-all duration-200 group"
                                                         >
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-[#06B6D4]/10 transition-colors duration-200">
-                                                                    <Monitor className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-[#06B6D4] dark:group-hover:text-[#22D3EE] transition-colors duration-200" />
-                                                                </div>
-                                                                <span className="font-medium">{t('accessibility.title')}</span>
+                                                            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-[#F59E0B]/10 transition-colors duration-200">
+                                                                <CreditCard className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-[#F59E0B] dark:group-hover:text-[#FBBF24] transition-colors duration-200" />
                                                             </div>
-                                                            <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500 -rotate-90 group-hover:text-[#06B6D4] dark:group-hover:text-[#22D3EE] transition-colors duration-200" />
+                                                            <span className="font-medium">{t('community.subscriptions')}</span>
+                                                        </button>
+                                                          <button
+                                                            onClick={() => { onNavigate('settings'); setIsProfileOpen(false); setShowAccessibility(false); }}
+                                                            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-[#8B5CF6]/5 hover:to-[#6366F1]/5 dark:hover:from-[#8B5CF6]/10 dark:hover:to-[#6366F1]/10 hover:text-[#8B5CF6] dark:hover:text-[#A78BFA] transition-all duration-200 group"
+                                                        >
+                                                            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-[#8B5CF6]/10 transition-colors duration-200">
+                                                                <Settings className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-[#8B5CF6] dark:group-hover:text-[#A78BFA] transition-colors duration-200" />
+                                                            </div>
+                                                            <span className="font-medium">{t('nav.settings')}</span>
                                                         </button>
                                                     </div>
 

@@ -17,9 +17,10 @@ interface SummaryStepProps {
     onSubmit: () => void;
     onBack: () => void;
     isSubmitting: boolean;
+    submitLabel?: string;
 }
 
-export function SummaryStep({ data, onSubmit, onBack, isSubmitting }: SummaryStepProps) {
+export function SummaryStep({ data, onSubmit, onBack, isSubmitting, submitLabel }: SummaryStepProps) {
     const { t } = useAccessibilityStore();
     const [showConfetti, setShowConfetti] = useState(false);
 
@@ -207,7 +208,7 @@ export function SummaryStep({ data, onSubmit, onBack, isSubmitting }: SummarySte
                         </>
                     ) : (
                         <>
-                            {t('onboarding.sumConfirm')}
+                            {submitLabel || t('onboarding.sumConfirm')}
                             <ArrowRight className="w-5 h-5" />
                         </>
                     )}

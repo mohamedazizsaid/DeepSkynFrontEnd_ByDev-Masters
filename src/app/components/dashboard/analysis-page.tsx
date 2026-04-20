@@ -95,7 +95,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
   const [showAnalysisHistory, setShowAnalysisHistory] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-  const { theme, contrastMode } = useAccessibilityStore();
+  const { theme, contrastMode, t } = useAccessibilityStore();
 
   // Load face-api models on mount
   useEffect(() => {
@@ -103,7 +103,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
   }, [loadModels]);
 
   const formatResetDate = (value?: string | null): string => {
-    if (!value) return 'soon';
+    if (!value) return t('common.soon');
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
     return date.toLocaleString([], {
@@ -220,7 +220,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
               .slice(0, 10)
               .reverse()
               .map((a: Analysis) => ({
-                date: new Date(a.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }),
+                date: new Date(a.createdAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short' }),
                 score: a.healthScore || 0,
               })),
           );
@@ -232,7 +232,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
         requestAdvice(selectedAnalysis);
       });
     } catch {
-      toast.error('Failed to load analysis data.');
+      toast.error(t('analysis.messages.loadError'));
     } finally {
       if (loadRunIdRef.current !== runId) return;
       setLoading(false);
@@ -315,11 +315,11 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
       );
       setAnalysis(result);
       setLastSelectedPreocupent(zones);
-      toast.success('Analysis started! Results will appear shortly.');
+      toast.success(t('analysis.messages.started'));
       await refreshUsage();
       setTimeout(() => loadData(), 5000);
     } catch {
-      toast.error('Upload failed. Please try again.');
+      toast.error(t('analysis.messages.uploadFailed'));
       await refreshUsage();
     } finally {
       setUploading(false);
@@ -335,11 +335,11 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
     const files = e.target.files;
     if (!files?.length) return;
     if (analysisLimitReached) {
-      toast.error(`Monthly analysis limit reached. Try again after ${formatResetDate(analysisResetAt)}.`);
+      toast.error(t('analysis.messages.limitReachedTryAfter', { date: formatResetDate(analysisResetAt) }));
       return;
     }
     if (files.length > 5) {
-      toast.error('Maximum 5 images allowed.');
+      toast.error(t('analysis.messages.maxImages'));
       return;
     }
 
@@ -356,7 +356,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
         
         await new Promise<void>((resolve, reject) => {
           img.onload = () => resolve();
-          img.onerror = () => reject(new Error('Impossible de charger l\'image'));
+          img.onerror = () => reject(new Error(t('analysis.messages.faceImageLoadError')));
           img.src = imageUrl;
         });
 
@@ -365,7 +365,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
         URL.revokeObjectURL(imageUrl);
 
         if (!descriptor) {
-          toast.error('Aucun visage détecté dans l\'image. Veuillez utiliser une photo montrant clairement votre visage.', {
+          toast.error(t('analysis.messages.noFaceDetected'), {
             duration: 5000,
             icon: '👤',
           });
@@ -402,7 +402,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
         toast.success(verification.message, { duration: 2000, icon: '✅' });
       } catch (err) {
         console.error('Face verification error:', err);
-        toast.error('Erreur lors de la vérification faciale. Veuillez réessayer.');
+        toast.error(t('analysis.messages.faceVerifyError'));
         setVerifyingUpload(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
         return;
@@ -432,25 +432,25 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
   const getRadarBadge = (value: number) => {
     if (value > 75) {
       return {
-        label: 'Excellent',
+        label: t('analysis.radar.badgeExcellent'),
         className: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
       };
     }
     if (value >= 50) {
       return {
-        label: 'Moyen',
+        label: t('analysis.radar.badgeMedium'),
         className: 'bg-amber-100 text-amber-700 border border-amber-200',
       };
     }
     return {
-      label: 'Faible',
+      label: t('analysis.radar.badgeLow'),
       className: 'bg-red-100 text-red-700 border border-red-200',
     };
   };
 
   const selectedImageSrc = analysis?.images?.[selectedImageIndex] || null;
   const analysisThumbDate = analysis?.createdAt
-    ? new Date(analysis.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+    ? new Date(analysis.createdAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })
     : '';
 
   // ─── Dynamic accessibility colors ───
@@ -512,7 +512,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
           >
             <Sparkles className="w-12 h-12 text-[#D4AF37] mx-auto" />
           </motion.div>
-          <p className="text-[#6B7280] mt-4">Chargement...</p>
+          <p className="text-[#6B7280] mt-4">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -521,21 +521,21 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
   // ─── Empty state ───
   if (!hasAnalysis) {
     return (
-      <div className="p-8 max-w-7xl mx-auto">
+      <div className="px-4 sm:px-8 pb-12 max-w-7xl mx-auto">
         {!isPremium && analysisRemaining !== null && (
           <div className="mb-6">
             <QuotaAlertBanner
               variant={analysisLimitReached ? 'blocked' : nearAnalysisLimit ? 'warning' : 'info'}
-              title={analysisLimitReached ? 'Analysis limit reached' : nearAnalysisLimit ? 'Almost at monthly limit' : 'Monthly analysis quota'}
+              title={analysisLimitReached ? t('analysis.quota.titleBlocked') : nearAnalysisLimit ? t('analysis.quota.titleWarning') : t('analysis.quota.titleInfo')}
               message={analysisLimitReached
-                ? `Reset date: ${formatResetDate(analysisResetAt)}.`
+                ? t('analysis.quota.resetDate', { date: formatResetDate(analysisResetAt) })
                 : nearAnalysisLimit
-                  ? `Only ${analysisRemaining} analysis left this month.`
-                  : `Analyses used this month: ${analysisUsed}/${analysisLimit}.`}
+                  ? t('analysis.quota.onlyLeft', { count: analysisRemaining ?? 0 })
+                  : t('analysis.quota.usedThisMonth', { used: analysisUsed, limit: analysisLimit ?? 0 })}
               used={analysisUsed}
               limit={analysisLimit}
               onUpgrade={onUpgrade}
-              upgradeLabel="Upgrade"
+              upgradeLabel={t('analysis.quota.upgrade')}
             />
           </div>
         )}
@@ -545,9 +545,9 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
             <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center mb-6 shadow-lg shadow-[#0EA5E9]/30">
               <Microscope className="w-11 h-11 text-white" />
             </div>
-            <h2 className="text-3xl font-bold mb-2 text-[#0F172A]">No Analysis Yet</h2>
+            <h2 className="text-3xl font-bold mb-2 text-[#0F172A]">{t('analysis.empty.title')}</h2>
             <p className="text-[#64748B] mb-8 max-w-md leading-relaxed">
-              Upload photos of your skin or use the live camera scan to get your first AI-powered skin analysis.
+              {t('analysis.empty.description')}
             </p>
             <div className="flex gap-3">
               <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
@@ -555,46 +555,46 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                 {verifyingUpload ? (
                   <>
                     <ShieldX className="w-5 h-5 animate-pulse" />
-                    Vérification...
+                    {t('analysis.actions.verifying')}
                   </>
                 ) : uploading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Uploading...
+                    {t('analysis.actions.uploading')}
                   </>
                 ) : (
                   <>
                     <Upload className="w-5 h-5" />
-                    {analysisLimitReached ? 'Limit reached' : 'Upload Photos'}
+                    {analysisLimitReached ? t('analysis.actions.limitReached') : t('analysis.actions.uploadPhotos')}
                   </>
                 )}
               </Button>
               <Button onClick={() => setScanOpen(true)} className="bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4]">
                 <Camera className="w-5 h-5" />
-                Live Scan
+                {t('analysis.actions.liveScan')}
               </Button>
             </div>
             {analysis?.status === 'processing' && (
               <div className="mt-8 flex items-center gap-2 text-[#0EA5E9]">
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="font-medium">Analysis in progress...</span>
+                <span className="font-medium">{t('analysis.status.processing')}</span>
               </div>
             )}
             {analysis?.status === 'failed' && (
               <div className="mt-8 flex items-center gap-2 text-[#EF4444]">
                 <AlertTriangle className="w-5 h-5" />
-                <span className="font-medium">Analysis failed.</span>
+                <span className="font-medium">{t('analysis.status.failed')}</span>
                 <button
                   onClick={async () => {
                     try {
                       await analysisService.retry(analysis.id);
-                      toast.success('Retrying analysis...');
+                      toast.success(t('analysis.status.retrying'));
                       setTimeout(() => loadData(), 5000);
-                    } catch { toast.error('Retry failed.'); }
+                    } catch { toast.error(t('analysis.status.retryFailed')); }
                   }}
                   className="underline ml-1"
                 >
-                  Retry
+                  {t('analysis.status.retry')}
                 </button>
               </div>
             )}
@@ -605,7 +605,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
           onClose={() => setScanOpen(false)}
           onAnalysisSaved={loadData}
           canSaveAnalysis={!analysisLimitReached}
-          analysisBlockedMessage={`Monthly analysis limit reached. Reset: ${formatResetDate(analysisResetAt)}.`}
+          analysisBlockedMessage={t('analysis.messages.limitReachedReset', { date: formatResetDate(analysisResetAt) })}
           onUpgrade={onUpgrade}
           onNavigateToSettings={onNavigateToSettings}
         />
@@ -615,7 +615,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
           onClose={closeUploadPreocupentModal}
           onConfirm={submitUploadWithPreocupent}
           loading={uploadPreocupentSubmitting}
-          confirmLabel="Lancer l analyse"
+          confirmLabel={t('analysis.actions.startAnalysis')}
         />
       </div>
     );
@@ -623,7 +623,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
 
   // ─── Main analysis view ─── PROFESSIONAL UI/UX
   return (
-    <div className="min-h-screen bg-transparent">
+    <div className="min-h-screen bg-transparent px-4 sm:px-8 pb-12">
       {/* Animated background elements */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <motion.div 
@@ -646,7 +646,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
         />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto p-4 md:p-8">
+      <div className="relative z-10 max-w-7xl mx-auto">
         {/* Premium Header */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
@@ -665,11 +665,11 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                 </motion.div>
                 <div>
                   <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-white dark:via-slate-200 dark:to-white bg-clip-text text-transparent mb-1">
-                    Analyse Dermatologique
+                    {t('analysis.header.title')}
                   </h1>
                   <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                     <Clock className="w-4 h-4" />
-                    <span>Analysée le {formatAnalysisDate(analysis.createdAt)}</span>
+                    <span>{t('analysis.header.analyzedOn', { date: formatAnalysisDate(analysis.createdAt) })}</span>
                   </div>
                 </div>
               </div>
@@ -683,7 +683,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                   className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all flex items-center gap-2"
                 >
                   <Camera className="w-5 h-5" />
-                  <span>Scan Live</span>
+                  <span>{t('analysis.actions.liveScan')}</span>
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
@@ -695,17 +695,17 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                   {verifyingUpload ? (
                     <>
                       <ShieldX className="w-5 h-5 animate-pulse" />
-                      <span>Vérif...</span>
+                      <span>{t('analysis.actions.verifyingShort')}</span>
                     </>
                   ) : uploading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Analyse...</span>
+                      <span>{t('analysis.actions.analyzingShort')}</span>
                     </>
                   ) : (
                     <>
                       <Upload className="w-5 h-5" />
-                      <span>{analysisLimitReached ? 'Limite' : 'Nouvelle'}</span>
+                      <span>{analysisLimitReached ? t('analysis.actions.limitShort') : t('analysis.actions.newShort')}</span>
                     </>
                   )}
                 </motion.button>
@@ -722,16 +722,16 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
           >
             <QuotaAlertBanner
               variant={analysisLimitReached ? 'blocked' : nearAnalysisLimit ? 'warning' : 'info'}
-              title={analysisLimitReached ? 'Analysis limit reached' : nearAnalysisLimit ? 'Almost at monthly limit' : 'Monthly analysis quota'}
+              title={analysisLimitReached ? t('analysis.quota.titleBlocked') : nearAnalysisLimit ? t('analysis.quota.titleWarning') : t('analysis.quota.titleInfo')}
               message={analysisLimitReached
-                ? `Reset date: ${formatResetDate(analysisResetAt)}.`
+                ? t('analysis.quota.resetDate', { date: formatResetDate(analysisResetAt) })
                 : nearAnalysisLimit
-                  ? `Only ${analysisRemaining} analysis left this month.`
-                  : `Analyses used this month: ${analysisUsed}/${analysisLimit}.`}
+                  ? t('analysis.quota.onlyLeft', { count: analysisRemaining ?? 0 })
+                  : t('analysis.quota.usedThisMonth', { used: analysisUsed, limit: analysisLimit ?? 0 })}
             used={analysisUsed}
             limit={analysisLimit}
             onUpgrade={onUpgrade}
-            upgradeLabel="Upgrade"
+            upgradeLabel={t('analysis.quota.upgrade')}
           />
           </motion.div>
         )}
@@ -774,7 +774,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                   transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
                 >
                   <h2 className="text-xl font-semibold text-slate-600 dark:text-slate-400 mb-4">
-                    Score Global de Santé Cutanée
+                    {t('analysis.score.globalHealth')}
                   </h2>
                   
                   {/* Circular progress score */}
@@ -842,7 +842,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                       <TrendingDown className="w-5 h-5" />
                     )}
                     <span>
-                      {scoreChange > 0 ? '+' : ''}{scoreChange} pts vs dernière analyse
+                      {t('analysis.score.deltaVsLast', { delta: `${scoreChange > 0 ? '+' : ''}${scoreChange}` })}
                     </span>
                   </motion.div>
                 )}
@@ -856,13 +856,13 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                 >
                   <div className="px-4 py-2 rounded-xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-blue-200/50 dark:border-slate-600/50 shadow-lg">
                     <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats?.totalAnalyses || 0}</div>
-                    <div className="text-xs text-slate-600 dark:text-slate-400">Analyses totales</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400">{t('analysis.score.totalAnalyses')}</div>
                   </div>
                   <div className="px-4 py-2 rounded-xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-purple-200/50 dark:border-slate-600/50 shadow-lg">
                     <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                       {(stats?.averageHealthScore ?? overallScore)}
                     </div>
-                    <div className="text-xs text-slate-600 dark:text-slate-400">Score moyen</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400">{t('analysis.score.averageScore')}</div>
                   </div>
                   <button
                     onClick={() => setShowAnalysisHistory(true)}
@@ -874,12 +874,12 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                         {stats?.totalAnalyses || 0}
                       </span>
                     </div>
-                    <div className="text-xs text-slate-600 dark:text-slate-400">Voir historique</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400">{t('analysis.score.viewHistory')}</div>
                   </button>
                   {skinAge !== null && (
                     <div className="px-4 py-2 rounded-xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-cyan-200/50 dark:border-slate-600/50 shadow-lg">
                       <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{skinAge}</div>
-                      <div className="text-xs text-slate-600 dark:text-slate-400">Âge cutané</div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400">{t('analysis.score.skinAge')}</div>
                     </div>
                   )}
                 </motion.div>
@@ -892,7 +892,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                     transition={{ delay: 0.8 }}
                     className="text-sm text-slate-600 dark:text-slate-400 mt-4"
                   >
-                    Type de peau: <span className="font-bold text-slate-900 dark:text-white capitalize">{results.skinType}</span>
+                    {t('analysis.score.skinType')}: <span className="font-bold text-slate-900 dark:text-white capitalize">{results.skinType}</span>
                   </motion.p>
                 )}
               </div>
@@ -941,7 +941,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                       <Sun className="w-6 h-6" />
                     </motion.div>
                     <div>
-                      <h3 className="font-bold text-xl mb-1">Conditions Environnementales</h3>
+                      <h3 className="font-bold text-xl mb-1">{t('analysis.weather.title')}</h3>
                       {weatherData?.location.city && (
                         <div className="flex items-center gap-1.5 text-sm text-white/90">
                           <MapPin className="w-4 h-4" />
@@ -963,7 +963,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                 {weatherLoading ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <Loader2 className="w-12 h-12 animate-spin mb-3" />
-                    <span className="text-lg font-medium">Chargement des données météo...</span>
+                    <span className="text-lg font-medium">{t('analysis.weather.loading')}</span>
                   </div>
                 ) : weatherData ? (
                   <>
@@ -978,7 +978,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                       >
                         <Sun className="w-8 h-8 mx-auto mb-2" />
                         <div className="text-3xl font-bold">{weatherData.weather.uvIndex.toFixed(1)}</div>
-                        <div className="text-sm text-white/80 mt-1">Indice UV</div>
+                        <div className="text-sm text-white/80 mt-1">{t('analysis.weather.uvIndex')}</div>
                       </motion.div>
                       
                       {weatherData.weather.aqi !== null && (
@@ -991,7 +991,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                         >
                           <Wind className="w-8 h-8 mx-auto mb-2" />
                           <div className="text-3xl font-bold">{weatherData.weather.aqi}</div>
-                          <div className="text-sm text-white/80 mt-1">Qualité Air (AQI)</div>
+                          <div className="text-sm text-white/80 mt-1">{t('analysis.weather.airQuality')}</div>
                         </motion.div>
                       )}
                       
@@ -1005,7 +1005,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                         >
                           <Droplets className="w-8 h-8 mx-auto mb-2" />
                           <div className="text-3xl font-bold">{weatherData.weather.humidity}%</div>
-                          <div className="text-sm text-white/80 mt-1">Humidité</div>
+                          <div className="text-sm text-white/80 mt-1">{t('analysis.weather.humidity')}</div>
                         </motion.div>
                       )}
                       
@@ -1019,7 +1019,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                         >
                           <Thermometer className="w-8 h-8 mx-auto mb-2" />
                           <div className="text-3xl font-bold">{weatherData.weather.temperature.toFixed(0)}°</div>
-                          <div className="text-sm text-white/80 mt-1">Température</div>
+                          <div className="text-sm text-white/80 mt-1">{t('analysis.weather.temperature')}</div>
                         </motion.div>
                       )}
                     </div>
@@ -1037,7 +1037,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                             <div className="p-2 bg-yellow-400/30 rounded-xl">
                               <Sparkles className="w-5 h-5 text-yellow-200" />
                             </div>
-                            <span className="font-bold text-lg">Conseil IA Personnalisé</span>
+                            <span className="font-bold text-lg">{t('analysis.weather.aiAdviceTitle')}</span>
                           </div>
                           <motion.span 
                             whileHover={{ scale: 1.05 }}
@@ -1048,9 +1048,9 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                               'bg-gradient-to-r from-green-500 to-emerald-600'
                             }`}
                           >
-                            Protection {weatherData.aiAdvice.protectionLevel === 'extreme' ? 'Maximale ⚠️' :
-                            weatherData.aiAdvice.protectionLevel === 'high' ? 'Élevée 🛡️' :
-                            weatherData.aiAdvice.protectionLevel === 'medium' ? 'Modérée ☀️' : 'Légère ✓'}
+                            {t('analysis.weather.protectionPrefix')} {weatherData.aiAdvice.protectionLevel === 'extreme' ? t('analysis.weather.protectionExtreme') :
+                            weatherData.aiAdvice.protectionLevel === 'high' ? t('analysis.weather.protectionHigh') :
+                            weatherData.aiAdvice.protectionLevel === 'medium' ? t('analysis.weather.protectionMedium') : t('analysis.weather.protectionLow')}
                           </motion.span>
                         </div>
                         
@@ -1060,7 +1060,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                         
                         {weatherData.aiAdvice.skinCareRoutine.length > 0 && (
                           <div className="space-y-2 mb-4">
-                            <div className="text-sm font-semibold text-white/90 mb-2">Routine recommandée:</div>
+                            <div className="text-sm font-semibold text-white/90 mb-2">{t('analysis.weather.recommendedRoutine')}</div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                               {weatherData.aiAdvice.skinCareRoutine.slice(0, 4).map((tip, i) => (
                                 <motion.div 
@@ -1114,8 +1114,8 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                           </motion.div>
                           <div className="flex-1">
                             <div className="font-bold text-base mb-1">
-                              {weatherData.alert.severity === 'high' ? '⚠️ ALERTE IMPORTANTE' : 
-                               weatherData.alert.severity === 'medium' ? '⚡ ATTENTION' : 'ℹ️ Information'}
+                              {weatherData.alert.severity === 'high' ? t('analysis.weather.alertHigh') : 
+                               weatherData.alert.severity === 'medium' ? t('analysis.weather.alertMedium') : t('analysis.weather.alertInfo')}
                             </div>
                             <p className="text-sm text-white/95 leading-relaxed">{weatherData.alert.message}</p>
                           </div>
@@ -1146,8 +1146,8 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                     <TrendingUp className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Évolution de Votre Peau</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">Historique des {analysisHistory.length} dernières analyses</p>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t('analysis.evolution.title')}</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">{t('analysis.evolution.subtitleCount', { count: analysisHistory.length })}</p>
                   </div>
                 </div>
                 
@@ -1181,7 +1181,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                           boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
                           backdropFilter: 'blur(10px)'
                         }}
-                        formatter={(value: number) => [`${value}/100`, 'Score de santé']}
+                        formatter={(value: number) => [`${value}/100`, t('analysis.evolution.healthScore')]}
                         labelStyle={{ color: '#0f172a', fontWeight: 600, marginBottom: '4px' }}
                       />
                       <Area 
@@ -1207,7 +1207,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
             <Card className={insightCardClass}>
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#378ADD] via-[#60A5FA] to-[#22D3EE]" />
             <div className="absolute -right-12 -top-10 w-32 h-32 rounded-full bg-[#378ADD]/10 blur-2xl" />
-            <h3 className={insightTitleClass}>Skin Profile Overview</h3>
+            <h3 className={insightTitleClass}>{t('analysis.radar.title')}</h3>
             {radarData.length > 0 ? (
               <div className="h-[340px] flex items-center justify-center">
                 <div className="w-full max-w-[430px] mx-auto">
@@ -1231,7 +1231,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                       stroke={getGridStroke()}
                     />
                     <Radar
-                      name="Score"
+                      name={t('analysis.radar.score')}
                       dataKey="value"
                       stroke={isHcHigh ? '#00ffff' : '#378ADD'}
                       fill={isHcHigh ? 'rgba(0,255,255,0.18)' : 'rgba(56, 138, 221, 0.25)'}
@@ -1264,7 +1264,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
               </div>
             ) : (
               <div className="h-[340px] flex items-center justify-center text-[#6B7280]">
-                No detailed metrics available
+                {t('analysis.radar.noMetrics')}
               </div>
             )}
           </Card>
@@ -1275,7 +1275,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
           <Card className={insightCardClass}>
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#378ADD] via-[#60A5FA] to-[#22D3EE]" />
             <div className="absolute -left-12 -bottom-12 w-36 h-36 rounded-full bg-[#378ADD]/10 blur-2xl" />
-            <h3 className={insightTitleClass}>Historique des analyses</h3>
+            <h3 className={insightTitleClass}>{t('analysis.imagesHistory.title')}</h3>
             {analysis.images.length > 0 ? (
               <>
                 <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -1291,7 +1291,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                     >
                       <img
                         src={imgSrc}
-                        alt={`Analyse du ${analysisThumbDate}`}
+                        alt={t('analysis.imagesHistory.imageAlt', { date: analysisThumbDate })}
                         className="w-full h-[140px] object-cover block"
                       />
                       <span className={`block text-[11px] text-center py-1.5 ${thumbDateClass} ${selectedImageIndex === idx ? 'text-[#378ADD] font-semibold' : 'font-medium'}`}>
@@ -1307,7 +1307,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                       <motion.img
                         key={selectedImageSrc}
                         src={selectedImageSrc}
-                        alt={`Analyse du ${analysisThumbDate}`}
+                        alt={t('analysis.imagesHistory.imageAlt', { date: analysisThumbDate })}
                         className="w-full max-h-[280px] object-cover"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -1320,7 +1320,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
               </>
             ) : (
               <div className="w-full h-80 bg-[#F3F4F6] rounded-xl flex items-center justify-center text-[#6B7280]">
-                No image available
+                {t('analysis.imagesHistory.noImage')}
               </div>
             )}
           </Card>
@@ -1335,7 +1335,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] flex items-center justify-center">
                 <Microscope className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-lg font-bold text-[#1F2937]">Analyse Détaillée</h3>
+              <h3 className="text-lg font-bold text-[#1F2937]">{t('analysis.detailed.title')}</h3>
             </div>
             
             {/* Grid layout compact pour économiser l'espace */}
@@ -1411,14 +1411,14 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
       {analysis.recommendations && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="mb-8">
           <Card className="border-[#E2E8F0] shadow-md">
-            <h3 className="text-lg font-bold mb-6">Personalized Recommendations</h3>
+            <h3 className="text-lg font-bold mb-6">{t('analysis.recommendations.title')}</h3>
             <div className="grid md:grid-cols-3 gap-6">
               {/* Products */}
               {analysis.recommendations.products?.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <Package className="w-5 h-5 text-[#0EA5E9]" />
-                    <h4 className="font-bold text-sm">Recommended Products</h4>
+                    <h4 className="font-bold text-sm">{t('analysis.recommendations.products')}</h4>
                   </div>
                   <ul className="space-y-2">
                     {analysis.recommendations.products.map((p, i) => (
@@ -1435,7 +1435,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <Leaf className="w-5 h-5 text-[#10B981]" />
-                    <h4 className="font-bold text-sm">Key Ingredients</h4>
+                    <h4 className="font-bold text-sm">{t('analysis.recommendations.ingredients')}</h4>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {analysis.recommendations.ingredients.map((ing, i) => (
@@ -1451,7 +1451,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <Shield className="w-5 h-5 text-[#F59E0B]" />
-                    <h4 className="font-bold text-sm">Lifestyle Tips</h4>
+                    <h4 className="font-bold text-sm">{t('analysis.recommendations.lifestyle')}</h4>
                   </div>
                   <ul className="space-y-2">
                     {analysis.recommendations.lifestyle.map((tip, i) => (
@@ -1469,7 +1469,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
               <div className="mt-6 p-4 bg-[#FEF2F2] rounded-xl">
                 <div className="flex items-center gap-2 mb-2">
                   <AlertTriangle className="w-5 h-5 text-[#EF4444]" />
-                  <h4 className="font-bold text-sm text-[#EF4444]">Warnings</h4>
+                  <h4 className="font-bold text-sm text-[#EF4444]">{t('analysis.recommendations.warnings')}</h4>
                 </div>
                 <ul className="space-y-1">
                   {analysis.recommendations.warnings.map((w, i) => (
@@ -1490,15 +1490,15 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-bold">AI-Generated Insights</h3>
-              <p className="text-xs text-[#6B7280]">Powered by Gemini AI</p>
+              <h3 className="text-lg font-bold">{t('analysis.aiInsights.title')}</h3>
+              <p className="text-xs text-[#6B7280]">{t('analysis.aiInsights.subtitle')}</p>
             </div>
           </div>
           <div className="prose prose-sm max-w-none text-[#334155]">
             {adviceLoading ? (
               <div className="flex items-center gap-2 text-[#6B7280]">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Generating personalized advice...</span>
+                <span>{t('analysis.aiInsights.generating')}</span>
               </div>
             ) : advice ? (
               <div className="rounded-2xl border border-[#DBEAFE] bg-white p-4">
@@ -1509,19 +1509,19 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                 <p className="whitespace-pre-line">{results.summary}</p>
               </div>
             ) : (
-              <p className="text-[#6B7280]">No AI insights available for this analysis.</p>
+              <p className="text-[#6B7280]">{t('analysis.aiInsights.empty')}</p>
             )}
           </div>
         </Card>
       </motion.div>
-
-      {/* Predictive Routine - NEW */}
+<div style={{ height: "30px" }}></div>   
+   {/* Predictive Routine - NEW */}
       {hasAnalysis && analysis.id && results && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
           <PredictiveRoutineCard
             analysisId={analysis.id}
             analysisResult={{
-              condition: results.conditions?.[0] || 'état cutané normal',
+              condition: results.conditions?.[0] || t('analysis.defaultCondition'),
               detectedIssues: analysis.conditions || [],
               skinType: results.skinType || 'normal',
             }}
@@ -1543,7 +1543,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
         onClose={() => setScanOpen(false)}
         onAnalysisSaved={loadData}
         canSaveAnalysis={!analysisLimitReached}
-        analysisBlockedMessage={`Monthly analysis limit reached. Reset: ${formatResetDate(analysisResetAt)}.`}
+        analysisBlockedMessage={t('analysis.messages.limitReachedReset', { date: formatResetDate(analysisResetAt) })}
         onUpgrade={onUpgrade}
         onNavigateToSettings={onNavigateToSettings}
       />
@@ -1553,7 +1553,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
         onClose={closeUploadPreocupentModal}
         onConfirm={submitUploadWithPreocupent}
         loading={uploadPreocupentSubmitting}
-        confirmLabel="Lancer l analyse"
+        confirmLabel={t('analysis.actions.startAnalysis')}
       />
       </div>
     </div>

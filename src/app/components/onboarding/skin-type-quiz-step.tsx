@@ -51,9 +51,9 @@ const skinTypes = [
         icon: <Layers className="w-8 h-8" />,
         description: 'Zone T grasse et joues sèches ou normales',
         details: 'Front, nez et menton gras, joues normales à sèches',
-        gradient: 'from-[#8B5CF6] to-[#A78BFA]',
+        gradient: 'from-[#F59E0B] to-[#FBBF24]',
         lightBg: '#F5F3FF',
-        color: '#8B5CF6',
+        color: '#F59E0B',
     },
     {
         id: 'sensitive',
