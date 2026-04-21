@@ -995,7 +995,7 @@ export function CameraScanModal({
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={startCamera}
-                      className="px-6 py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white shadow-lg shadow-[#0EA5E9]/20"
+                      className="px-6 py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#0EA5E9] text-white shadow-lg shadow-[#0EA5E9]/20"
                     >
                       Retry
                     </motion.button>
@@ -1106,7 +1106,7 @@ export function CameraScanModal({
                       className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-sm text-white shadow-lg transition-all ${
                         isAutoCapturing
                           ? 'bg-gray-400 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] shadow-[#0EA5E9]/20'
+                          : 'bg-gradient-to-r from-[#0EA5E9] to-[#0EA5E9] shadow-[#0EA5E9]/20'
                       }`}
                     >
                       {isAutoCapturing ? (
@@ -1596,7 +1596,7 @@ export function CameraScanModal({
                         resetVerification();
                         startCamera();
                       }}
-                      className="px-6 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white shadow-lg shadow-[#0EA5E9]/20"
+                      className="px-6 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#0EA5E9] text-white shadow-lg shadow-[#0EA5E9]/20"
                     >
                       <RotateCcw className="w-4 h-4 inline mr-2" />
                       Réessayer
@@ -1657,7 +1657,7 @@ export function CameraScanModal({
                       }}
                     >
                       <p className="text-xs text-gray-500 mb-1">Overall Health Score</p>
-                      <div className="text-4xl font-bold bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] bg-clip-text text-transparent">
+                      <div className="text-4xl font-bold bg-gradient-to-r from-[#0EA5E9] to-[#0EA5E9] bg-clip-text text-transparent">
                         {result.healthScore}
                       </div>
                       <p className="text-xs text-gray-500 mt-2">

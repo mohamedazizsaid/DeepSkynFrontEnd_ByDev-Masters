@@ -111,7 +111,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           icon: <ReceiptText className="w-5 h-5" />,
           label: t('settings.tabs.paymentHistory'),
           description: t('settings.paymentHistory.subtitle'),
-          color: 'from-[#0EA5E9] to-[#8B5CF6]',
+          color: 'from-[#0EA5E9] to-[#0EA5E9]',
           iconBg: 'bg-[#0EA5E9]/10',
           iconColor: 'text-[#0EA5E9]',
         },

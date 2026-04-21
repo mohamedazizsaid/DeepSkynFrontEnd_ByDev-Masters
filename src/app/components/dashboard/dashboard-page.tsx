@@ -87,7 +87,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     return age;
   })();
 
-  const gaugeData = [{ name: 'Score', value: skinHealthScore, fill: '#0EA5E9' }];
+  const gaugeData = [{ name: 'Score', value: skinHealthScore, fill: 'var(--primary)' }];
 
   const evolutionData = useMemo(() => {
     if (!stats?.healthScoreHistory?.length) return [];
@@ -127,15 +127,15 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
 
   const detailed = latestAnalysis?.results?.detailedAnalysis;
   const skinMetrics = [
-    { label: t('dashboard.hydration'), value: detailed?.hydration?.score ?? 0, color: '#06B6D4', icon: <Droplets className="w-4 h-4" /> },
-    { label: t('dashboard.texture'), value: detailed?.texture?.score ?? 0, color: '#0EA5E9', icon: <Fingerprint className="w-4 h-4" /> },
+    { label: t('dashboard.hydration'), value: detailed?.hydration?.score ?? 0, color: 'var(--accent-secondary)', icon: <Droplets className="w-4 h-4" /> },
+    { label: t('dashboard.texture'), value: detailed?.texture?.score ?? 0, color: 'var(--primary)', icon: <Fingerprint className="w-4 h-4" /> },
     { label: t('dashboard.pigmentation'), value: detailed?.pigmentation?.score ?? 0, color: '#F9A8D4', icon: <Sun className="w-4 h-4" /> },
     { label: t('dashboard.wrinkles'), value: detailed?.wrinkles?.score ?? 0, color: '#FBBF24', icon: <Activity className="w-4 h-4" /> },
   ];
 
   const getScoreLevel = (score: number) => {
     if (score >= 80) return { label: t('dashboard.scoreLevel.excellent'), emoji: '🌟', color: '#10B981' };
-    if (score >= 60) return { label: t('dashboard.scoreLevel.good'), emoji: '✨', color: '#0EA5E9' };
+    if (score >= 60) return { label: t('dashboard.scoreLevel.good'), emoji: '✨', color: 'var(--primary)' };
     if (score >= 40) return { label: t('dashboard.scoreLevel.average'), emoji: '💪', color: '#F59E0B' };
     return { label: t('dashboard.scoreLevel.needsImprovement'), emoji: '🔥', color: '#EF4444' };
   };
@@ -255,7 +255,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       label: t('dashboard.skinHealth'),
       value: `${skinHealthScore}`,
       icon: <Shield className="w-5 h-5" />,
-      color: '#0EA5E9',
+      color: 'var(--primary)',
       suffix: `/${100}`,
     },
     {
@@ -269,14 +269,14 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       label: t('dashboard.analyses'),
       value: `${stats?.totalAnalyses ?? 0}`,
       icon: <Eye className="w-5 h-5" />,
-      color: '#06B6D4',
+      color: 'var(--accent-secondary)',
       suffix: '',
     },
     {
       label: t('dashboard.averageScore'),
       value: `${stats?.averageHealthScore ?? 0}`,
       icon: <Star className="w-5 h-5" />,
-      color: '#38BDF8',
+      color: 'var(--accent-secondary)',
       suffix: '%',
     },
   ];
@@ -321,7 +321,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       ? 'rounded-2xl border p-6 mb-8 border-[#334155] bg-gradient-to-br from-[#0f1d2d] via-[#11263a] to-[#0f1d2d] shadow-[0_16px_32px_rgba(14,165,233,0.18)]'
       : 'rounded-2xl border p-6 mb-8 border-[#E2E8F0] bg-gradient-to-br from-[#F3FAFF] via-[#FFFFFF] to-[#F3FAFF] shadow-[0_14px_30px_rgba(14,165,233,0.10)]';
 
-  const evolutionChartLineColor = isHcHigh ? '#111827' : '#0EA5E9';
+  const evolutionChartLineColor = isHcHigh ? '#111827' : 'var(--primary)';
   const evolutionChartGridColor = isHcHigh ? (isDark ? '#334155' : '#E5E7EB') : isDark ? 'rgba(148,163,184,0.24)' : 'rgba(148,163,184,0.28)';
   const evolutionChartAxisColor = isHcHigh ? (isDark ? '#E2E8F0' : '#374151') : isDark ? 'rgba(226,232,240,0.88)' : 'rgba(71,85,105,0.85)';
   const evolutionTitleClass = isHcHigh ? textPrimary : isDark ? 'text-white' : 'text-[#0F172A]';
@@ -671,10 +671,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
             className={`relative overflow-hidden rounded-2xl border p-4 shadow-sm transition-all hover:shadow-lg ${topStatCardClass}`}
           >
             {!isHcHigh && (
-              <div
-                className="absolute inset-x-0 top-0 h-1.5"
-                style={{ background: `linear-gradient(90deg, ${stat.color}, ${stat.color}99)` }}
-              />
+              <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#38BDF8] via-[#22D3EE] to-[#0EA5E9]" />
             )}
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-xl" style={{ backgroundColor: stat.color + '15' }}>

@@ -677,7 +677,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
                   onClick={handleRegisterFace}
                   disabled={isRegisteringFace || !isModelLoaded}
                   size="sm"
-                  className="bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6]"
+                  className="bg-gradient-to-r from-[#0EA5E9] to-[#0EA5E9]"
                 >
                   {isRegisteringFace ? (
                     <>

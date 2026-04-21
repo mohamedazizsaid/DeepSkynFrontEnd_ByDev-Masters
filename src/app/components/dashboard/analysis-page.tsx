@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   ArrowLeft, Download, Sparkles, TrendingUp, TrendingDown,
   Upload, Camera, Loader2, RefreshCw, AlertTriangle,
@@ -93,9 +93,46 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [analysisHistory, setAnalysisHistory] = useState<Array<{ date: string; score: number }>>([]);
   const [showAnalysisHistory, setShowAnalysisHistory] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-
   const { theme, contrastMode, t } = useAccessibilityStore();
+  const shouldReduceMotion = useReducedMotion();
+
+  const fullTitle = t('analysis.header.title');
+  const [visibleTitleText, setVisibleTitleText] = useState('');
+  const [titleLoopKey, setTitleLoopKey] = useState(0);
+  
+  const titleWords = fullTitle.split(' ');
+  const titlePrefix = titleWords.length > 1 
+      ? titleWords.slice(0, -1).join(' ') + ' ' 
+      : '';
+
+  useEffect(() => {
+      if (shouldReduceMotion) {
+          setVisibleTitleText(fullTitle);
+          return;
+      }
+
+      setVisibleTitleText('');
+      const charDelay = 45;
+      const holdDelay = 10000; // 10s pour ne pas être trop répétitif
+      const timeouts: NodeJS.Timeout[] = [];
+
+      const type = (index: number) => {
+          if (index <= fullTitle.length) {
+              setVisibleTitleText(fullTitle.slice(0, index));
+              timeouts.push(setTimeout(() => type(index + 1), charDelay));
+          } else {
+              timeouts.push(setTimeout(() => {
+                  setTitleLoopKey(prev => prev + 1);
+              }, holdDelay));
+          }
+      };
+
+      timeouts.push(setTimeout(() => type(1), 150));
+
+      return () => timeouts.forEach(clearTimeout);
+  }, [fullTitle, shouldReduceMotion, titleLoopKey]);
+
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   // Load face-api models on mount
   useEffect(() => {
@@ -665,7 +702,27 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                 </motion.div>
                 <div>
                   <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-white dark:via-slate-200 dark:to-white bg-clip-text text-transparent mb-1">
-                    {t('analysis.header.title')}
+                    <motion.span
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        {visibleTitleText.slice(0, titlePrefix.length)}
+                        <span className={isHcHigh ? 'text-cyan-400' : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent'}>
+                            {visibleTitleText.length > titlePrefix.length
+                                ? visibleTitleText.slice(titlePrefix.length)
+                                : ''}
+                        </span>
+                        {visibleTitleText.length < fullTitle.length && !shouldReduceMotion && (
+                            <motion.span
+                                className="inline-block ml-0.5 text-[#0EA5E9]"
+                                animate={{ opacity: [0, 1, 0] }}
+                                transition={{ duration: 0.8, repeat: Infinity }}
+                            >
+                                |
+                            </motion.span>
+                        )}
+                    </motion.span>
                   </h1>
                   <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                     <Clock className="w-4 h-4" />

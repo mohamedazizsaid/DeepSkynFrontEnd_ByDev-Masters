@@ -31,7 +31,7 @@ const concerns = [
     id: 'dryness',
     label: 'Dryness',
     icon: <Droplets className="w-6 h-6" />,
-    color: '#06B6D4'
+    color: 'var(--accent-secondary)'
   },
   {
     id: 'sensitivity',

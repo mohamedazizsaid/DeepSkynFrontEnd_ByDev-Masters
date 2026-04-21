@@ -155,7 +155,7 @@ function FaceTag({ zone, matchedProducts, isActive, onClick }: FaceTagProps) {
           flexShrink: 0,
           background: isActive ? '#0EA5E9' : '#fff',
           boxShadow: isActive ? '0 0 8px rgba(14,165,233,0.8)' : '0 1px 3px rgba(0,0,0,0.2)',
-          border: `2px solid ${isActive ? '#fff' : '#0EA5E9'}`,
+          border: `2px solid ${isActive ? '#fff' : 'var(--primary)'}`,
           transition: 'all 0.2s ease',
         }} />
         
@@ -216,7 +216,7 @@ function LoadingFallback() {
         flexDirection: 'column',
         alignItems: 'center',
         gap: '8px',
-        color: '#0EA5E9',
+        color: 'var(--primary)',
       }}>
         <div style={{
           width: '32px',

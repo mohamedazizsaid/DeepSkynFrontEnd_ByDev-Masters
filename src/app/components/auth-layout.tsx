@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useEffect } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from './button';
@@ -14,6 +14,76 @@ interface AuthLayoutProps {
 export function AuthLayout({ children, title, subtitle, imageSrc }: AuthLayoutProps) {
     const navigate = useNavigate();
     const [imageError, setImageError] = useState(false);
+    const shouldReduceMotion = useReducedMotion();
+
+    // Logo Animation State
+    const fullLogoText = 'DeepSkyn';
+    const [visibleLogoText, setVisibleLogoText] = useState('');
+    const [logoLoopKey, setLogoLoopKey] = useState(0);
+    const [isNavIconShifted, setIsNavIconShifted] = useState(false);
+
+    useEffect(() => {
+        if (shouldReduceMotion) {
+            setVisibleLogoText(fullLogoText);
+            setIsNavIconShifted(true);
+            return;
+        }
+
+        setVisibleLogoText('');
+        setIsNavIconShifted(false);
+        const charDelay = 60;
+        const holdDelay = 5000;
+        const timeouts: NodeJS.Timeout[] = [];
+
+        const type = (index: number) => {
+            if (index <= fullLogoText.length) {
+                setVisibleLogoText(fullLogoText.slice(0, index));
+                timeouts.push(setTimeout(() => type(index + 1), charDelay));
+            } else {
+                timeouts.push(setTimeout(() => {
+                    setLogoLoopKey(prev => prev + 1);
+                }, holdDelay));
+            }
+        };
+
+        timeouts.push(setTimeout(() => {
+            setIsNavIconShifted(true);
+            timeouts.push(setTimeout(() => type(1), 500));
+        }, 1000));
+
+        return () => timeouts.forEach(clearTimeout);
+    }, [logoLoopKey, shouldReduceMotion]);
+
+    // Title Animation State
+    const [visibleTitleText, setVisibleTitleText] = useState('');
+    const [titleLoopKey, setTitleLoopKey] = useState(0);
+
+    useEffect(() => {
+        if (shouldReduceMotion) {
+            setVisibleTitleText(title);
+            return;
+        }
+
+        setVisibleTitleText('');
+        const charDelay = 45;
+        const holdDelay = 5000;
+        const timeouts: NodeJS.Timeout[] = [];
+
+        const type = (index: number) => {
+            if (index <= title.length) {
+                setVisibleTitleText(title.slice(0, index));
+                timeouts.push(setTimeout(() => type(index + 1), charDelay));
+            } else {
+                timeouts.push(setTimeout(() => {
+                    setTitleLoopKey(prev => prev + 1);
+                }, holdDelay));
+            }
+        };
+
+        timeouts.push(setTimeout(() => type(1), 150));
+
+        return () => timeouts.forEach(clearTimeout);
+    }, [title, shouldReduceMotion, titleLoopKey]);
 
     const defaultImage = "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=2574&auto=format&fit=crop&crop=entropy&cs=tinysrgb";
 
@@ -63,13 +133,39 @@ export function AuthLayout({ children, title, subtitle, imageSrc }: AuthLayoutPr
                 <div className="max-w-7xl mx-auto px-6 py-2.5 flex items-center justify-between">
                     <button
                         onClick={() => navigate('/')}
-                        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                        className="flex items-center gap-2 cursor-pointer min-w-[150px] hover:opacity-90 transition-opacity"
                     >
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center shadow-lg shadow-[#3BBDF4]/30">
-                            <Sparkles className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="text-2xl font-bold bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent tracking-tight">
-                            DeepSkyn
+                        <motion.div 
+                            animate={{ x: isNavIconShifted ? 0 : 40 }}
+                            transition={{ duration: 0.8, ease: "easeInOut" }}
+                            className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center shadow-lg shadow-[#0EA5E9]/20 overflow-hidden"
+                        >
+                            <motion.div
+                                animate={{ 
+                                    rotate: [-10, 10, -10, 10, 0],
+                                    scale: [1, 1.1, 1, 1.1, 1]
+                                }}
+                                transition={{ 
+                                    duration: 1.5,
+                                    repeat: Infinity,
+                                    repeatDelay: 2,
+                                    ease: "easeInOut"
+                                }}
+                            >
+                                <Sparkles className="w-5 h-5 text-white" />
+                            </motion.div>
+                        </motion.div>
+                        <span className="text-2xl font-extrabold bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent flex items-center">
+                            {visibleLogoText}
+                            {visibleLogoText.length > 0 && visibleLogoText.length < fullLogoText.length && (
+                                <motion.span
+                                    animate={{ opacity: [0, 1, 0] }}
+                                    transition={{ duration: 0.8, repeat: Infinity }}
+                                    className="inline-block ml-0.5 text-[#0EA5E9]"
+                                >
+                                    |
+                                </motion.span>
+                            )}
                         </span>
                     </button>
 
@@ -92,7 +188,18 @@ export function AuthLayout({ children, title, subtitle, imageSrc }: AuthLayoutPr
                 >
                     <div className="bg-white/92 dark:bg-[#1a2844]/92 rounded-3xl shadow-[0_30px_70px_-35px_rgba(59,189,244,0.45)] dark:shadow-[0_30px_70px_-35px_rgba(14,165,233,0.15)] border border-white/60 dark:border-white/10 p-8 sm:p-10 backdrop-blur-xl">
                         <div className="mb-8 text-center sm:text-left">
-                            <h1 className="text-3xl font-extrabold text-[#1A1A2E] dark:text-white mb-3 tracking-tight leading-[1.2]">{title}</h1>
+                            <h1 className="text-3xl font-extrabold text-[#1A1A2E] dark:text-white mb-3 tracking-tight leading-[1.2] min-h-[36px]">
+                                {visibleTitleText}
+                                {visibleTitleText.length < title.length && !shouldReduceMotion && (
+                                    <motion.span
+                                        animate={{ opacity: [0, 1, 0] }}
+                                        transition={{ duration: 0.8, repeat: Infinity }}
+                                        className="inline-block ml-1 text-[#0EA5E9]"
+                                    >
+                                        |
+                                    </motion.span>
+                                )}
+                            </h1>
                             <p className="text-[#475569] dark:text-gray-400 leading-relaxed">{subtitle}</p>
                         </div>
                         {children}

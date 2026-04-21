@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
     Send,
     Sparkles,
@@ -131,6 +131,43 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     const [historyItems, setHistoryItems] = useState<ChatHistory[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
+    const shouldReduceMotion = useReducedMotion();
+
+    const fullTitle = t('chatPage.header.title');
+    const [visibleTitleText, setVisibleTitleText] = useState('');
+    const [titleLoopKey, setTitleLoopKey] = useState(0);
+    
+    const titleWords = fullTitle.split(' ');
+    const titlePrefix = titleWords.length > 1 
+        ? titleWords.slice(0, -1).join(' ') + ' ' 
+        : '';
+
+    useEffect(() => {
+        if (shouldReduceMotion) {
+            setVisibleTitleText(fullTitle);
+            return;
+        }
+
+        setVisibleTitleText('');
+        const charDelay = 45;
+        const holdDelay = 10000; // 10s
+        const timeouts: NodeJS.Timeout[] = [];
+
+        const type = (index: number) => {
+            if (index <= fullTitle.length) {
+                setVisibleTitleText(fullTitle.slice(0, index));
+                timeouts.push(setTimeout(() => type(index + 1), charDelay));
+            } else {
+                timeouts.push(setTimeout(() => {
+                    setTitleLoopKey(prev => prev + 1);
+                }, holdDelay));
+            }
+        };
+
+        timeouts.push(setTimeout(() => type(1), 150));
+
+        return () => timeouts.forEach(clearTimeout);
+    }, [fullTitle, shouldReduceMotion, titleLoopKey]);
 
     const isDark = theme === 'dark';
     const isHcHigh = contrastMode === 'high';
@@ -385,7 +422,29 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                             <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-bold text-[#0F172A]">{t('chatPage.header.title')}</h1>
+                            <h1 className={`text-2xl md:text-3xl font-bold mb-1 tracking-tight ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+                                <motion.span
+                                    initial={{ opacity: 0, y: 4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    {visibleTitleText.slice(0, titlePrefix.length)}
+                                    <span className={isHcHigh ? 'text-cyan-400' : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent'}>
+                                        {visibleTitleText.length > titlePrefix.length
+                                            ? visibleTitleText.slice(titlePrefix.length)
+                                            : ''}
+                                    </span>
+                                    {visibleTitleText.length < fullTitle.length && !shouldReduceMotion && (
+                                        <motion.span
+                                            className="inline-block ml-0.5 text-[#0EA5E9]"
+                                            animate={{ opacity: [0, 1, 0] }}
+                                            transition={{ duration: 0.8, repeat: Infinity }}
+                                        >
+                                            |
+                                        </motion.span>
+                                    )}
+                                </motion.span>
+                            </h1>
                             <div className="flex items-center gap-2 text-sm text-[#64748B]">
                                 <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></div>
                                 <span>{t('chatPage.header.online')}</span>

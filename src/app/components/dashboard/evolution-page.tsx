@@ -106,13 +106,13 @@ export function EvolutionPage({ onBack }: EvolutionPageProps) {
         name: t('evolution.overallScore'),
         current: overview.current,
         change: overview.change,
-        color: '#0EA5E9',
+        color: 'var(--primary)',
       },
     ];
 
     if (detailed) {
       if (detailed.hydration) {
-        items.push({ name: t('evolution.hydration'), current: detailed.hydration.score, change: 0, color: '#06B6D4' });
+        items.push({ name: t('evolution.hydration'), current: detailed.hydration.score, change: 0, color: 'var(--accent-secondary)' });
       }
       if (detailed.texture) {
         items.push({ name: t('evolution.texture'), current: detailed.texture.score, change: 0, color: '#F9A8D4' });
@@ -292,7 +292,7 @@ export function EvolutionPage({ onBack }: EvolutionPageProps) {
                         boxShadow: '0 10px 30px rgba(15, 23, 42, 0.12)',
                       }}
                     />
-                    <Area type="monotone" dataKey="score" stroke="#0EA5E9" strokeWidth={3} fill="url(#colorScore)" name={t('evolution.healthScore')} />
+                    <Area type="monotone" dataKey="score" stroke="var(--primary)" strokeWidth={3} fill="url(#colorScore)" name={t('evolution.healthScore')} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

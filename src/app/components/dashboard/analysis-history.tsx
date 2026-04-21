@@ -141,7 +141,7 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
           style={{ maxHeight: 'calc(100vh - 6rem)' }}
         >
         {/* Header - Fixed */}
-        <div className="bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white p-6 flex-shrink-0 rounded-t-3xl">
+        <div className="bg-gradient-to-r from-[#0EA5E9] to-[#0EA5E9] text-white p-6 flex-shrink-0 rounded-t-3xl">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">

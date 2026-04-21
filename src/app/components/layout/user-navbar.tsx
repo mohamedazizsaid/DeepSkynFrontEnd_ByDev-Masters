@@ -159,6 +159,46 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
         t,
     } = useAccessibilityStore();
 
+    const fullLogoText = 'DeepSkyn';
+    const [visibleLogoText, setVisibleLogoText] = useState('');
+    const [logoLoopKey, setLogoLoopKey] = useState(0);
+    const [isIconShifted, setIsIconShifted] = useState(false);
+
+    useEffect(() => {
+        if (reduceMotion) {
+            setVisibleLogoText(fullLogoText);
+            setIsIconShifted(true);
+            return;
+        }
+
+        setVisibleLogoText('');
+        setIsIconShifted(false);
+        const charDelay = 60;
+        const holdDelay = 5000;
+        const timeouts: NodeJS.Timeout[] = [];
+
+        const type = (index: number) => {
+            if (index <= fullLogoText.length) {
+                setVisibleLogoText(fullLogoText.slice(0, index));
+                timeouts.push(setTimeout(() => type(index + 1), charDelay));
+            } else {
+                timeouts.push(setTimeout(() => {
+                    setLogoLoopKey(prev => prev + 1);
+                }, holdDelay));
+            }
+        };
+
+        // 1. L'icône s'affiche simplement au milieu (x: default offset)
+        // 2. Après 1s, elle se translate à gauche
+        timeouts.push(setTimeout(() => {
+            setIsIconShifted(true);
+            // 3. Après la translation (0.5s), on commence à taper le texte
+            timeouts.push(setTimeout(() => type(1), 500));
+        }, 1000));
+
+        return () => timeouts.forEach(clearTimeout);
+    }, [logoLoopKey, reduceMotion]);
+
     useEffect(() => {
         let mounted = true;
 
@@ -372,12 +412,38 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                 <div className="flex justify-between h-[74px]">
                     <div className="flex">
                         {/* Logo */}
-                        <div data-tour="navbar-logo" className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => onNavigate('dashboard')}>
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center mr-2 shadow-lg shadow-[#0EA5E9]/20">
-                                <Sparkles className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="text-xl font-bold bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent hidden sm:block">
-                                DeepSkyn
+                        <div data-tour="navbar-logo" className="flex-shrink-0 flex items-center gap-2 cursor-pointer min-w-[150px]" onClick={() => onNavigate('dashboard')}>
+                            <motion.div 
+                                animate={{ x: isIconShifted ? 0 : 40 }}
+                                transition={{ duration: 0.8, ease: "easeInOut" }}
+                                className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center shadow-lg shadow-[#0EA5E9]/20 overflow-hidden"
+                            >
+                                <motion.div
+                                    animate={{ 
+                                        rotate: [-10, 10, -10, 10, 0],
+                                        scale: [1, 1.1, 1, 1.1, 1]
+                                    }}
+                                    transition={{ 
+                                        duration: 1.5,
+                                        repeat: Infinity,
+                                        repeatDelay: 2,
+                                        ease: "easeInOut"
+                                    }}
+                                >
+                                    <Sparkles className="w-5 h-5 text-white" />
+                                </motion.div>
+                            </motion.div>
+                            <span className="text-2xl font-extrabold bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent flex items-center min-h-[1.5em]">
+                                {visibleLogoText}
+                                {visibleLogoText.length > 0 && visibleLogoText.length < fullLogoText.length && (
+                                    <motion.span
+                                        animate={{ opacity: [0, 1, 0] }}
+                                        transition={{ duration: 0.8, repeat: Infinity }}
+                                        className="inline-block ml-0.5 text-[#0EA5E9]"
+                                    >
+                                        |
+                                    </motion.span>
+                                )}
                             </span>
                         </div>
 
@@ -448,7 +514,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                 }}
                                 className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100"
                             >
-                                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#8B5CF6] p-[2px]">
+                                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#0EA5E9] p-[2px]">
                                     <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
                                         {user?.avatar ? (
                                             <img src={user.avatar} alt="Profile" className="h-full w-full object-cover" />
@@ -485,7 +551,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                                     {/* User Header */}
                                                     <div className="px-5 pt-5 pb-4">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="h-11 w-11 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#8B5CF6] p-[2px] shadow-lg shadow-[#0EA5E9]/20">
+                                                            <div className="h-11 w-11 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#0EA5E9] p-[2px] shadow-lg shadow-[#0EA5E9]/20">
                                                                 <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
                                                                     {user?.avatar ? (
                                                                         <img src={user.avatar} alt="Profile" className="h-full w-full object-cover" />

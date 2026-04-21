@@ -33,9 +33,9 @@ const ratingConfig = {
   },
   good: {
     label: 'Bon choix',
-    color: '#0EA5E9',
-    bgColor: 'rgba(14,165,233,0.08)',
-    borderColor: 'rgba(14,165,233,0.25)',
+    color: 'var(--primary)',
+    bgColor: 'rgba(var(--accent-primary-rgb),0.08)',
+    borderColor: 'rgba(var(--accent-primary-rgb),0.25)',
     icon: <Star className="w-5 h-5" />,
     stars: 4,
   },
@@ -117,7 +117,7 @@ export function AIProductRecommendModal({
               <div
                 className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full opacity-5 pointer-events-none"
                 style={{
-                  background: 'radial-gradient(circle, #0EA5E9, transparent)',
+                  background: 'radial-gradient(circle, var(--primary), transparent)',
                   filter: 'blur(50px)',
                 }}
               />
@@ -144,7 +144,7 @@ export function AIProductRecommendModal({
                         className="absolute inset-0 rounded-full"
                         style={{
                           border: '3px solid transparent',
-                          borderTopColor: '#0EA5E9',
+                          borderTopColor: 'var(--primary)',
                           borderRightColor: '#8B5CF6',
                         }}
                       />
@@ -170,7 +170,7 @@ export function AIProductRecommendModal({
                         <motion.div
                           key={i}
                           className="w-2.5 h-2.5 rounded-full"
-                          style={{ backgroundColor: '#0EA5E9' }}
+                          style={{ backgroundColor: 'var(--primary)' }}
                           animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }}
                           transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.15 }}
                         />
@@ -189,7 +189,7 @@ export function AIProductRecommendModal({
                           className="p-2.5 rounded-2xl flex-shrink-0"
                           style={{
                             background: 'linear-gradient(135deg, rgba(14,165,233,0.1), rgba(139,92,246,0.1))',
-                            border: '1px solid rgba(14,165,233,0.2)',
+                            border: '1px solid rgba(var(--accent-primary-rgb),0.2)',
                           }}
                         >
                           <Sparkles className="w-6 h-6 text-[#0EA5E9]" />
@@ -421,7 +421,7 @@ export function AIProductRecommendModal({
                             rel="noopener noreferrer"
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white shadow-lg shadow-[#0EA5E9]/20 hover:shadow-xl hover:shadow-[#0EA5E9]/30 transition-all text-center no-underline"
+                            className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#0EA5E9] text-white shadow-lg shadow-[#0EA5E9]/20 hover:shadow-xl hover:shadow-[#0EA5E9]/30 transition-all text-center no-underline"
                           >
                             <ShoppingBag className="w-5 h-5" />
                             Acheter maintenant

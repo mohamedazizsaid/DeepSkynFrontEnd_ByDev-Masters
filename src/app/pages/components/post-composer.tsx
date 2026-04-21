@@ -1,8 +1,10 @@
 import React, { useState, useRef, DragEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Image as ImageIcon, Smile, MapPin, Send, X, Loader2, Navigation, Video, FileVideo } from 'lucide-react';
+import { Image as ImageIcon, Smile, MapPin, Send, X, Loader2, Navigation, Video, FileVideo, AtSign } from 'lucide-react';
 import { Button } from '../../components/button';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
+import { usersService } from '../../../lib/services/users.service';
+import type { CommunityProfile } from '../../../lib/types';
 import toast from 'react-hot-toast';
 
 interface PostComposerProps {
@@ -51,6 +53,17 @@ export function PostComposer({
   const [showFeelings, setShowFeelings] = useState(false);
   const [showLocations, setShowLocations] = useState(false);
   const [gettingLoc, setGettingLoc] = useState(false);
+
+  // Mentions
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionResults, setMentionResults] = useState<CommunityProfile[]>([]);
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionLoading, setMentionLoading] = useState(false);
+  const [cursorPos, setCursorPos] = useState(0);
+  const [mentionCoords, setMentionCoords] = useState({ top: 0, left: 0 });
+  const [mentionsMap, setMentionsMap] = useState<Record<string, string>>({});
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mirrorRef = useRef<HTMLDivElement>(null);
 
   // --- Geolocation ---
   const handleGetCurrentLocation = () => {
@@ -166,8 +179,18 @@ export function PostComposer({
 
     try {
       if (onSubmit) {
-        // Construct final text with feeling/location appended elegantly
+        // Construct final text with feeling/location
         let finalContent = content;
+        
+        // Transform plain @Name to @[Name](ID) using the mentionsMap
+        Object.entries(mentionsMap).forEach(([name, id]) => {
+          // Replace @Name with @[Name](ID), being careful with spaces/boundaries
+          // This regex finds @Name but only if it's not already transformed
+          const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`@${escapedName}\\b`, 'g');
+          finalContent = finalContent.replace(regex, `@[${name}](${id})`);
+        });
+        
         if (feeling || location) {
           finalContent += '\n\n— ';
           if (feeling) finalContent += `Se sent ${feeling.emoji} ${feeling.label} `;
@@ -188,9 +211,100 @@ export function PostComposer({
       setIsExpanded(false);
       setShowFeelings(false);
       setShowLocations(false);
+      setShowMentions(false);
     } catch (error) {
       toast.error('Erreur lors de la publication');
       console.error(error);
+    }
+  };
+
+  // --- Mentions Logic ---
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    const pos = e.target.selectionStart;
+    setContent(val);
+    setCursorPos(pos);
+
+    // Look back from cursor to find @
+    const textBeforeCursor = val.substring(0, pos);
+    const words = textBeforeCursor.split(/\s/);
+    const lastWord = words[words.length - 1];
+
+    if (lastWord.startsWith('@')) {
+      const query = lastWord.slice(1);
+      setMentionQuery(query);
+      setShowMentions(true);
+      handleSearchMentions(query);
+      
+      // Calculate coordinates
+      if (textareaRef.current && mirrorRef.current) {
+        const textBeforeCaret = val.substring(0, pos);
+        const lastAtIndex = textBeforeCaret.lastIndexOf('@');
+        const textToAt = textBeforeCaret.substring(0, lastAtIndex);
+        
+        // Update mirror and measure
+        setMirrorContent(textToAt);
+        setTimeout(() => {
+          if (mirrorRef.current) {
+            const span = mirrorRef.current.querySelector('span');
+            if (span) {
+              setMentionCoords({
+                top: span.offsetTop,
+                left: Math.min(span.offsetLeft, (textareaRef.current?.clientWidth || 300) - 280)
+              });
+            }
+          }
+        }, 0);
+      }
+    } else {
+      setShowMentions(false);
+    }
+  };
+
+  const [mirrorContent, setMirrorContent] = useState('');
+
+  const handleSearchMentions = async (q: string) => {
+    setMentionLoading(true);
+    try {
+      const result = await usersService.searchCommunityProfiles(q, 1, 5);
+      setMentionResults(result.data || []);
+    } catch (error) {
+      console.error('Mention search error:', error);
+    } finally {
+      setMentionLoading(false);
+    }
+  };
+
+  const insertMention = (user: CommunityProfile) => {
+    const textBeforeCursor = content.substring(0, cursorPos);
+    const textAfterCursor = content.substring(cursorPos);
+    
+    const words = textBeforeCursor.split(/\s/);
+    words.pop(); // remove the @query
+    
+    // Insert just the visible name in the textarea
+    const visibleName = user.name || 'Utilisateur';
+    const mentionTag = `@${visibleName} `;
+    
+    // Store the ID mapping for later processing on submit
+    setMentionsMap(prev => ({ ...prev, [visibleName]: user.id }));
+    
+    const prefix = words.join(' ');
+    const newContent = prefix + (prefix.length > 0 ? ' ' : '') + mentionTag + textAfterCursor;
+    
+    setContent(newContent);
+    setShowMentions(false);
+    
+    // Focus back and set cursor
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+      const newPos = prefix.length + (prefix.length > 0 ? 1 : 0) + mentionTag.length;
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.selectionStart = newPos;
+          textareaRef.current.selectionEnd = newPos;
+        }
+      }, 0);
     }
   };
 
@@ -258,13 +372,78 @@ export function PostComposer({
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                 >
-                  <textarea
-                    autoFocus
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder={placeholder || t?.('community.postPlaceholder') || `Exprimez-vous, demandez conseil...`}
-                    className={`w-full p-4 rounded-xl resize-none min-h-[120px] focus:outline-none focus:ring-2 focus:ring-[#0EA5E9]/20 transition-all ${inputBg} ${textColor} placeholder:${subText}`}
-                  />
+                  <div className="relative">
+                    {/* Mirror for caret calculation */}
+                    <div 
+                      ref={mirrorRef}
+                      className="absolute inset-0 p-4 invisible whitespace-pre-wrap break-words pointer-events-none text-sm leading-relaxed"
+                      style={{ 
+                        fontFamily: 'inherit',
+                        fontSize: 'inherit',
+                        lineHeight: 'inherit',
+                      }}
+                    >
+                      {mirrorContent}
+                      <span>@</span>
+                    </div>
+
+                    <textarea
+                      ref={textareaRef}
+                      autoFocus
+                      value={content}
+                      onChange={handleContentChange}
+                      onSelect={(e: any) => setCursorPos(e.target.selectionStart)}
+                      placeholder={placeholder || t?.('community.postPlaceholder') || `Exprimez-vous, demandez conseil...`}
+                      className={`w-full p-4 rounded-xl resize-none min-h-[140px] focus:outline-none focus:ring-2 focus:ring-[#0EA5E9]/20 transition-all ${inputBg} ${textColor} placeholder:${subText}`}
+                    />
+
+                    {/* Mentions Dropdown - Fixed to cursor position */}
+                    <AnimatePresence>
+                      {showMentions && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          style={{ 
+                            top: mentionCoords.top + 25, 
+                            left: mentionCoords.left 
+                          }}
+                          className={`absolute w-72 rounded-2xl border shadow-2xl z-[60] overflow-hidden backdrop-blur-xl ${isHcHigh ? 'bg-black border-yellow-400' : isDark ? 'bg-[#1e293b]/95 border-white/10' : 'bg-white/95 border-gray-100'}`}
+                        >
+                          <div className={`p-3 border-b flex items-center gap-2 ${isHcHigh ? 'border-yellow-400/30' : isDark ? 'border-white/5 bg-white/5' : 'border-gray-50 bg-gray-50/50'}`}>
+                            <AtSign className="w-4 h-4 text-[#0EA5E9]" />
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${subText}`}>Mentionner quelqu'un</span>
+                          </div>
+                          
+                          <div className="p-1.5 max-h-64 overflow-y-auto">
+                            {mentionLoading && mentionResults.length === 0 ? (
+                               <div className="p-4 flex items-center justify-center">
+                                 <Loader2 className="w-5 h-5 animate-spin text-[#0EA5E9]" />
+                               </div>
+                            ) : mentionResults.length > 0 ? (
+                              mentionResults.map((user) => (
+                                <button
+                                  key={user.id}
+                                  onClick={() => insertMention(user)}
+                                  className={`w-full p-2.5 rounded-xl flex items-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] ${isDark ? 'hover:bg-white/10' : 'hover:bg-gray-50'}`}
+                                >
+                                  <div className={`w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xs ${isHcHigh ? 'bg-black border border-yellow-400 text-cyan-400' : 'bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] text-white'}`}>
+                                    {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover rounded-full" /> : (user.name || 'U').charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="flex-1 text-left min-w-0">
+                                    <p className={`text-sm font-bold truncate ${textColor}`}>{user.name}</p>
+                                    <p className={`text-[10px] font-medium truncate ${subText}`}>@{user.name?.replace(/\s+/g, '').toLowerCase()}</p>
+                                  </div>
+                                </button>
+                              ))
+                            ) : (
+                               <p className={`p-4 text-center text-xs italic ${subText}`}>Aucun utilisateur trouvé</p>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
 
                   {/* Media Preview or Drag/Drop prompt */}
                   {mediaPreview ? (

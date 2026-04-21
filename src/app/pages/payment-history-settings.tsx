@@ -110,7 +110,7 @@ export function PaymentHistorySettings({ onBack }: PaymentHistorySettingsProps) 
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-3"
       >
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#8B5CF6] flex items-center justify-center shadow-lg shadow-[#0EA5E9]/20">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#0EA5E9] flex items-center justify-center shadow-lg shadow-[#0EA5E9]/20">
           <ReceiptText className="w-5 h-5 text-white" />
         </div>
         <div>

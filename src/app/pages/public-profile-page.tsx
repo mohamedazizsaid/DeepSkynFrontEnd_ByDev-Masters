@@ -399,7 +399,7 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
                <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#8B5CF6]/5 rounded-full blur-3xl -ml-32 -mb-32 transition-transform duration-1000 group-hover:scale-150" />
                
                <div className="flex items-center gap-5 mb-10 overflow-hidden relative">
-                 <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-[#0EA5E9] to-[#8B5CF6] flex items-center justify-center shadow-xl text-white transform -rotate-3 hover:rotate-2 transition-transform">
+                 <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-[#0EA5E9] to-[#0EA5E9] flex items-center justify-center shadow-xl text-white transform -rotate-3 hover:rotate-2 transition-transform">
                    <Activity className="w-8 h-8" />
                  </div>
                  <div>

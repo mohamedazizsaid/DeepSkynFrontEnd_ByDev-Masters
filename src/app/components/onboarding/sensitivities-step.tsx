@@ -71,7 +71,7 @@ const sensitivities = [
         icon: <Beaker className="w-6 h-6" />,
         description: 'Agents moussants agressifs',
         gradient: 'from-[#06B6D4] to-[#22D3EE]',
-        color: '#06B6D4',
+        color: 'var(--accent-secondary)',
         lightBg: '#ECFEFF',
     },
     {

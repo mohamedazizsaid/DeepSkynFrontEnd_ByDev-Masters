@@ -40,7 +40,7 @@ export function SummaryStep({ data, onSubmit, onBack, isSubmitting, submitLabel 
             label: categories[0],
             value: data.skinType ? skinTypeLabels[data.skinType] || data.skinType : t('onboarding.notProvided'),
             gradient: 'from-[#0EA5E9] to-[#06B6D4]',
-            color: '#0EA5E9',
+            color: 'var(--primary)',
         },
         {
             icon: <Sun className="w-5 h-5" />,

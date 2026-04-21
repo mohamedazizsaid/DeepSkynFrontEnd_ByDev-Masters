@@ -48,7 +48,7 @@ const concerns = [
         emoji: '🏜️',
         icon: <Droplets className="w-6 h-6" />,
         gradient: 'from-[#06B6D4] to-[#22D3EE]',
-        color: '#06B6D4',
+        color: 'var(--accent-secondary)',
         lightBg: '#ECFEFF',
     },
     {
@@ -120,7 +120,7 @@ const concerns = [
         emoji: '💧',
         icon: <Droplets className="w-6 h-6" />,
         gradient: 'from-[#0EA5E9] to-[#38BDF8]',
-        color: '#0EA5E9',
+        color: 'var(--primary)',
         lightBg: '#F0F9FF',
     },
 ];

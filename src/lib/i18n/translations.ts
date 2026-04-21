@@ -518,7 +518,7 @@ const fr = {
       retryFailed: 'La relance a échoué.',
     },
     header: {
-      title: 'Analyse Dermatologique',
+      title: 'Analyse Dermatologique IA',
       analyzedOn: 'Analysée le {date}',
     },
     messages: {
@@ -881,7 +881,7 @@ const fr = {
   },
   // Auth
   auth: {
-    loginTitle: 'Bienvenue 👋',
+    loginTitle: 'Bienvenue',
     loginSubtitle: 'Connectez-vous pour accéder à votre tableau de bord.',
     email: 'Email',
     password: 'Mot de passe',
@@ -2519,7 +2519,7 @@ const en: TranslationKeys = {
   },
   // Auth
   auth: {
-    loginTitle: 'Welcome 👋',
+    loginTitle: 'Welcome ',
     loginSubtitle: 'Log in to access your dashboard.',
     email: 'Email',
     password: 'Password',
@@ -3987,7 +3987,7 @@ const ar: TranslationKeys = {
   },
   // Auth
   auth: {
-    loginTitle: 'مرحباً بك 👋',
+    loginTitle: 'مرحباً بك ',
     loginSubtitle: 'تسجيل الدخول للوصول إلى لوحة القيادة',
     email: 'البريد الإلكتروني',
     password: 'كلمة المرور',
@@ -5455,7 +5455,7 @@ const es: TranslationKeys = {
   },
   // Auth
   auth: {
-    loginTitle: 'Bienvenido 👋',
+    loginTitle: 'Bienvenido ',
     loginSubtitle: 'Inicia sesión para acceder a tu panel.',
     email: 'Correo electrónico',
     password: 'Contraseña',

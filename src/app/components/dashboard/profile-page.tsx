@@ -114,7 +114,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
           });
         }
         if (stats.status === 'fulfilled') {
-          setAnalysisCount(stats.value.totalAnalyses  );
+          setAnalysisCount(stats.value.totalAnalyses);
         }
       } catch (error) {
         console.error('Error loading profile data:', error);
@@ -192,53 +192,53 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
 
   const handleDownloadReport = async () => {
     if (!reportRef.current) {
-        toast.error(t('profile.reportContentMissing'));
-        return;
+      toast.error(t('profile.reportContentMissing'));
+      return;
     }
-    
+
     setIsSaving(true);
     const toastId = toast.loading(t('profile.generatingReport'));
-    
+
     try {
       const element = reportRef.current;
-      
+
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         backgroundColor: '#ffffff',
       });
-      
+
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      
+
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
-      
+
       const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
       const finalWidth = imgWidth * ratio;
       const finalHeight = imgHeight * ratio;
-      
+
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(22);
       pdf.setTextColor(14, 165, 233);
       pdf.text(t('profile.reportTitle'), pdfWidth / 2, 15, { align: 'center' });
-      
+
       pdf.setFontSize(10);
       pdf.setTextColor(107, 114, 128);
-      pdf.text(t('profile.reportGeneratedAt', { 
+      pdf.text(t('profile.reportGeneratedAt', {
         date: new Date().toLocaleDateString(localeForDates),
-        user: user?.name || t('nav.profile') 
+        user: user?.name || t('nav.profile')
       }), pdfWidth / 2, 22, { align: 'center' });
-      
+
       pdf.addImage(imgData, 'PNG', (pdfWidth - finalWidth) / 2, 30, finalWidth, finalHeight);
-      
+
       pdf.setFontSize(8);
       pdf.text(t('profile.reportConfidential'), pdfWidth / 2, pdfHeight - 10, { align: 'center' });
-      
+
       pdf.save(`${t('profile.reportFilePrefix')}_${user?.name?.replace(/\s+/g, '_') || 'DeepSkyn'}.pdf`);
-      
+
       toast.success(t('profile.reportReady'), { id: toastId });
     } catch (error) {
       console.error('PDF Generation Error:', error);
@@ -311,7 +311,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
           <Button
             onClick={handleDownloadReport}
             disabled={isSaving}
-            className="w-full sm:w-auto rounded-2xl px-8 py-4 bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white shadow-xl shadow-[#0EA5E9]/20 hover:shadow-2xl hover:shadow-[#0EA5E9]/30 hover:-translate-y-1 active:scale-95 transition-all duration-500 gap-3 font-bold border-none"
+            className="w-full sm:w-auto rounded-2xl px-8 py-4 bg-gradient-to-r from-[#0EA5E9] to-[#0EA5E9] text-white shadow-xl shadow-[#0EA5E9]/20 hover:shadow-2xl hover:shadow-[#0EA5E9]/30 hover:-translate-y-1 active:scale-95 transition-all duration-500 gap-3 font-bold border-none"
           >
             {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileText className="w-6 h-6 text-white" />}
             <span className="whitespace-nowrap drop-shadow-md text-white">{t('profile.downloadReport')}</span>
@@ -333,23 +333,23 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                 {user?.coverPhoto ? (
                   <img src={user.coverPhoto} alt="Cover" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#0EA5E9] to-[#8B5CF6]" />
+                  <div className="w-full h-full bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] rounded-t-2xl" />
                 )}
               </div>
-              
+
               <div className="relative pt-20 pb-8 px-6 text-center flex-grow flex flex-col items-center justify-center">
-                <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-32 h-32 rounded-[2.5rem] border-[6px] border-white shadow-2xl overflow-hidden z-30 ring-1 ring-black/5 bg-gradient-to-br from-[#0EA5E9] to-[#8B5CF6] flex items-center justify-center">
-                   {user?.avatar ? (
-                     <img 
-                        src={user.avatar} 
-                        alt="Avatar" 
-                        className="w-full h-full object-cover"
-                     />
-                   ) : (
-                     <span className="text-4xl font-bold text-white uppercase leading-none">{user?.name?.charAt(0) || 'U'}</span>
-                   )}
+                <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-32 h-32 rounded-[2.5rem] border-[6px] border-white shadow-2xl overflow-hidden z-30 ring-1 ring-black/5 bg-gradient-to-br from-[#0EA5E9] to-[#0EA5E9] flex items-center justify-center">
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-4xl font-bold text-white uppercase leading-none">{user?.name?.charAt(0) || 'U'}</span>
+                  )}
                 </div>
-                
+
                 <h2 className="text-2xl font-bold text-[#111827] mb-2">{user?.name}</h2>
                 <div className="flex items-center justify-center gap-2 text-xs font-bold text-gray-400">
                   <span className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100/80 rounded-full border border-gray-100 shadow-sm">
@@ -370,7 +370,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                 </div>
                 <h3 className="text-xl font-bold text-[#111827]">{t('settings.personal.title')}</h3>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-grow">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 flex items-center gap-2 uppercase tracking-widest opacity-80">
@@ -433,7 +433,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                 </div>
                 <h3 className="text-xl font-bold text-[#111827]">{t('profile.activityTitle')}</h3>
               </div>
-              
+
               <div className="space-y-3.5 flex-grow">
                 {[
                   { action: t('profile.activityActions.analysis'), date: t('profile.times.hoursAgo', { count: 2 }), icon: Scan, color: 'text-[#0EA5E9]', bg: 'bg-[#0EA5E9]/10' },
@@ -460,34 +460,34 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
 
         {/* AI & TIPS ALIGNED ROW */}
         <motion.div
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8"
         >
           <div className="h-full">
             <Card className="bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] border-none shadow-2xl p-10 text-white text-left relative overflow-hidden group h-full flex flex-col min-h-[300px]">
-               <div className="absolute -right-10 -top-10 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000" />
-               <div className="relative z-10 h-full flex flex-col">
-                 <h3 className="text-2xl font-black mb-10 flex items-center gap-4">
-                   <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shadow-lg backdrop-blur-md border border-white/20">
-                     <MessageCircle className="w-7 h-7" />
-                   </div>
-                   {t('dashboard.aiCoach') || 'Coach IA'}
-                 </h3>
-                 <div className="bg-white/10 backdrop-blur-xl rounded-[2rem] p-8 mb-10 leading-relaxed border border-white/10 flex-grow shadow-inner">
-                    <p className="text-lg font-medium italic drop-shadow-sm opacity-95">
-                        {isGeneratingAi ? <span className="flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin"/> {t('common.loading')}</span> : `"${aiCoachMsg || t('profile.aiCoachFallback')}"`}
-                    </p>
-                 </div>
-                 <Button onClick={() => onNavigate && onNavigate('chat')} className="w-full !bg-white !text-[#0EA5E9] font-black rounded-2xl h-16 border-none shadow-2xl hover:scale-[1.02] active:scale-95 transition-all text-lg tracking-wide uppercase">
-                     {t('chat.startConversation')}
-                 </Button>
-               </div>
+              <div className="absolute -right-10 -top-10 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000" />
+              <div className="relative z-10 h-full flex flex-col">
+                <h3 className="text-2xl font-black mb-10 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shadow-lg backdrop-blur-md border border-white/20">
+                    <MessageCircle className="w-7 h-7" />
+                  </div>
+                  {t('dashboard.aiCoach') || 'Coach IA'}
+                </h3>
+                <div className="bg-white/10 backdrop-blur-xl rounded-[2rem] p-8 mb-10 leading-relaxed border border-white/10 flex-grow shadow-inner">
+                  <p className="text-lg font-medium italic drop-shadow-sm opacity-95">
+                    {isGeneratingAi ? <span className="flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin" /> {t('common.loading')}</span> : `"${aiCoachMsg || t('profile.aiCoachFallback')}"`}
+                  </p>
+                </div>
+                <Button onClick={() => onNavigate && onNavigate('chat')} className="w-full !bg-white !text-[#0EA5E9] font-black rounded-2xl h-16 border-none shadow-2xl hover:scale-[1.02] active:scale-95 transition-all text-lg tracking-wide uppercase">
+                  {t('chat.startConversation')}
+                </Button>
+              </div>
             </Card>
           </div>
 
-            <div className="h-full">
-              <Card className="bg-gradient-to-br from-[#FB7185] via-[#F472B6] to-[#F9A8D4] border-none shadow-2xl p-10 text-white relative overflow-hidden group h-full flex flex-col min-h-[300px]">
+          <div className="h-full">
+            <Card className="bg-gradient-to-br from-[#FB7185] via-[#F472B6] to-[#F9A8D4] border-none shadow-2xl p-10 text-white relative overflow-hidden group h-full flex flex-col min-h-[300px]">
               <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000" />
               <div className="relative z-10 h-full flex flex-col">
                 <div className="flex items-center gap-4 mb-10">
@@ -498,17 +498,17 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                 </div>
                 <div className="bg-white/10 backdrop-blur-xl rounded-[2rem] p-8 mb-10 border border-white/10 flex-grow shadow-inner">
                   <p className="text-lg font-medium opacity-95 leading-relaxed italic drop-shadow-sm">
-                    {isGeneratingAi ? <span className="flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin"/> {t('common.loading')}</span> : `"${dailyTipMsg || t('profile.dailyTipFallback')}"`}
+                    {isGeneratingAi ? <span className="flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin" /> {t('common.loading')}</span> : `"${dailyTipMsg || t('profile.dailyTipFallback')}"`}
                   </p>
                 </div>
                 <div className="flex items-center justify-between mt-auto">
-                   <div className="flex flex-col gap-1">
-                     <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-white/20 px-5 py-2 rounded-full backdrop-blur-xl border border-white/10 shadow-sm w-fit">{t('profile.proTip')}</span>
-                     <span className="text-[11px] font-bold text-white/70 ml-2">{t('dashboard.personalizedAdvice')}</span>
-                   </div>
-                   <button onClick={() => onNavigate && onNavigate('routine')} className="w-16 h-16 rounded-[1.5rem] border-2 border-white/30 flex items-center justify-center hover:bg-white hover:text-[#F472B6] transition-all duration-300 cursor-pointer shadow-2xl active:scale-90 bg-white/5 backdrop-blur-md">
-                     <ChevronRight className="w-8 h-8" />
-                   </button>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-white/20 px-5 py-2 rounded-full backdrop-blur-xl border border-white/10 shadow-sm w-fit">{t('profile.proTip')}</span>
+                    <span className="text-[11px] font-bold text-white/70 ml-2">{t('dashboard.personalizedAdvice')}</span>
+                  </div>
+                  <button onClick={() => onNavigate && onNavigate('routine')} className="w-16 h-16 rounded-[1.5rem] border-2 border-white/30 flex items-center justify-center hover:bg-white hover:text-[#F472B6] transition-all duration-300 cursor-pointer shadow-2xl active:scale-90 bg-white/5 backdrop-blur-md">
+                    <ChevronRight className="w-8 h-8" />
+                  </button>
                 </div>
               </div>
             </Card>
@@ -517,26 +517,26 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
 
         {/* FULL WIDTH SKIN PROFILE */}
         <motion.div
-           initial={{ opacity: 0, scale: 0.98 }}
-           animate={{ opacity: 1, scale: 1 }}
-           className="lg:col-span-3 pb-10"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="lg:col-span-3 pb-10"
         >
           <Card className="bg-white/70 backdrop-blur-xl border-white/40 shadow-2xl overflow-hidden min-h-[400px]">
             <div className="flex items-center justify-between p-8 border-b border-white/40">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#F9A8D4] to-[#FED7AA] flex items-center justify-center shadow-lg">
-                    <Sun className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black text-[#111827]">{t('onboarding.sumTitle')}</h3>
-                    <p className="text-xs font-bold text-blue-500 uppercase tracking-tighter">{t('profile.skinIdentity')}</p>
-                  </div>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#F9A8D4] to-[#FED7AA] flex items-center justify-center shadow-lg">
+                  <Sun className="w-6 h-6 text-white" />
                 </div>
-                {!isEditing && (
-                  <Button onClick={() => setIsEditing(true)} variant="ghost" className="text-[#0EA5E9] font-black hover:bg-[#0EA5E9]/5 px-6 rounded-2xl h-12 shadow-sm border border-transparent hover:border-[#0EA5E9]/20 transition-all">
-                    <Edit2 className="w-4 h-4 mr-2" /> {t('common.edit')}
-                  </Button>
-                )}
+                <div>
+                  <h3 className="text-xl font-black text-[#111827]">{t('onboarding.sumTitle')}</h3>
+                  <p className="text-xs font-bold text-blue-500 uppercase tracking-tighter">{t('profile.skinIdentity')}</p>
+                </div>
+              </div>
+              {!isEditing && (
+                <Button onClick={() => setIsEditing(true)} variant="ghost" className="text-[#0EA5E9] font-black hover:bg-[#0EA5E9]/5 px-6 rounded-2xl h-12 shadow-sm border border-transparent hover:border-[#0EA5E9]/20 transition-all">
+                  <Edit2 className="w-4 h-4 mr-2" /> {t('common.edit')}
+                </Button>
+              )}
             </div>
 
             <div className="p-8">
@@ -560,27 +560,27 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                   <div className="grid lg:grid-cols-3 gap-8 items-stretch">
                     {/* Hero Skin Visual */}
                     <div className="lg:col-span-1 p-10 rounded-[3.5rem] bg-gradient-to-b from-[#0EA5E9] via-[#0284C7] to-[#0369A1] text-white flex flex-col items-center justify-center gap-8 text-center shadow-2xl relative overflow-hidden group h-full min-h-[350px]">
-                       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIvPjwvc3ZnPg==')] opacity-20 mix-blend-overlay" />
-                       <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-[80px] -mr-32 -mt-32 group-hover:scale-125 transition-transform duration-1000" />
-                       
-                       <div className="relative z-10 flex flex-col items-center">
-                         {(() => {
-                            const skinType = skinProfile?.skinType || 'normal';
-                            const label = (t('onboarding.skinTypesLabels') as any)[skinType] || skinType;
-                            return (
-                              <>
-                                <div className="w-32 h-32 bg-white/10 rounded-[2.5rem] backdrop-blur-2xl flex items-center justify-center mb-8 shadow-2xl group-hover:rotate-6 group-hover:scale-110 transition-all duration-700 mx-auto border border-white/30 rotate-3">
-                                  <Sparkles className="w-14 h-14 text-white" />
-                                </div>
-                                <h4 className="text-4xl font-black tracking-tighter mb-5 drop-shadow-xl">{label}</h4>
-                                <div className="px-8 py-3 bg-white/20 backdrop-blur-md rounded-full inline-flex items-center gap-3 border border-white/20 shadow-lg group-hover:bg-white/30 transition-colors">
-                                  <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_12px_rgba(74,222,128,1)]" />
-                                  <span className="text-xs font-black uppercase tracking-[0.2em] text-white">{t('profile.skinIdentity')}</span>
-                                </div>
-                              </>
-                            );
-                         })()}
-                       </div>
+                      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIvPjwvc3ZnPg==')] opacity-20 mix-blend-overlay" />
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-[80px] -mr-32 -mt-32 group-hover:scale-125 transition-transform duration-1000" />
+
+                      <div className="relative z-10 flex flex-col items-center">
+                        {(() => {
+                          const skinType = skinProfile?.skinType || 'normal';
+                          const label = (t('onboarding.skinTypesLabels') as any)[skinType] || skinType;
+                          return (
+                            <>
+                              <div className="w-32 h-32 bg-white/10 rounded-[2.5rem] backdrop-blur-2xl flex items-center justify-center mb-8 shadow-2xl group-hover:rotate-6 group-hover:scale-110 transition-all duration-700 mx-auto border border-white/30 rotate-3">
+                                <Sparkles className="w-14 h-14 text-white" />
+                              </div>
+                              <h4 className="text-4xl font-black tracking-tighter mb-5 drop-shadow-xl">{label}</h4>
+                              <div className="px-8 py-3 bg-white/20 backdrop-blur-md rounded-full inline-flex items-center gap-3 border border-white/20 shadow-lg group-hover:bg-white/30 transition-colors">
+                                <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_12px_rgba(74,222,128,1)]" />
+                                <span className="text-xs font-black uppercase tracking-[0.2em] text-white">{t('profile.skinIdentity')}</span>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
                     </div>
 
                     {/* Detailed Analysis Columns */}
@@ -593,7 +593,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                           </div>
                           <h4 className="text-xl font-black text-[#111827]">{t('onboarding.concernTitle')}</h4>
                         </div>
-                        
+
                         <div className="flex flex-wrap gap-3 flex-grow content-start">
                           {skinProfile?.concerns?.length ? skinProfile.concerns.map(c => {
                             const label = (t('onboarding.concernsLabels') as any)[c] || c;
@@ -619,9 +619,9 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                           </div>
                           <h4 className="text-xl font-black text-[#111827]">{t('onboarding.sensTitle')}</h4>
                         </div>
-                        
+
                         <div className="flex flex-wrap gap-3 flex-grow content-start">
-                           {skinProfile?.sensitivities?.length ? skinProfile.sensitivities.map(s => {
+                          {skinProfile?.sensitivities?.length ? skinProfile.sensitivities.map(s => {
                             const label = (t('onboarding.sensitivitiesLabels') as any)[s] || s;
                             return (
                               <span key={s} className="inline-flex items-center px-5 py-3 rounded-2xl bg-[#EF4444]/5 border border-[#EF4444]/10 text-xs font-bold text-[#EF4444] shadow-sm hover:bg-[#EF4444] hover:text-white hover:border-transparent transition-all cursor-default">
@@ -644,30 +644,30 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                   {/* Fitzpatrick Selector */}
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                     <div className="flex items-center justify-between mb-8">
-                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest">{t('onboarding.fitzTitle')}</label>
-                       <span className="text-sm font-black text-[#0EA5E9] bg-[#0EA5E9]/10 px-4 py-2 rounded-full">Type {editProfileData.fitzpatrickType}</span>
+                      <label className="text-xs font-black text-gray-400 uppercase tracking-widest">{t('onboarding.fitzTitle')}</label>
+                      <span className="text-sm font-black text-[#0EA5E9] bg-[#0EA5E9]/10 px-4 py-2 rounded-full">Type {editProfileData.fitzpatrickType}</span>
                     </div>
                     <div className="grid grid-cols-6 gap-4">
-                       {[1, 2, 3, 4, 5, 6].map((num) => {
-                         const colors = ['#FDF2F0', '#F9E5D9', '#F2D7B4', '#D8B48F', '#A67C52', '#4B3621'];
-                         const isSelected = editProfileData.fitzpatrickType === num;
-                         return (
-                           <button
-                             key={num}
-                             onClick={() => setEditProfileData(p => ({ ...p, fitzpatrickType: num }))}
-                             className={`h-24 rounded-[2rem] border-4 transition-all duration-500 relative group overflow-hidden ${isSelected ? 'border-[#0EA5E9] scale-105 shadow-2xl' : 'border-transparent hover:scale-105 hover:border-gray-200'}`}
-                             style={{ backgroundColor: colors[num-1] }}
-                           >
-                              {isSelected && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-                                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#0EA5E9] shadow-lg">
-                                    <Check className="w-6 h-6" />
-                                  </div>
+                      {[1, 2, 3, 4, 5, 6].map((num) => {
+                        const colors = ['#FDF2F0', '#F9E5D9', '#F2D7B4', '#D8B48F', '#A67C52', '#4B3621'];
+                        const isSelected = editProfileData.fitzpatrickType === num;
+                        return (
+                          <button
+                            key={num}
+                            onClick={() => setEditProfileData(p => ({ ...p, fitzpatrickType: num }))}
+                            className={`h-24 rounded-[2rem] border-4 transition-all duration-500 relative group overflow-hidden ${isSelected ? 'border-[#0EA5E9] scale-105 shadow-2xl' : 'border-transparent hover:scale-105 hover:border-gray-200'}`}
+                            style={{ backgroundColor: colors[num - 1] }}
+                          >
+                            {isSelected && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#0EA5E9] shadow-lg">
+                                  <Check className="w-6 h-6" />
                                 </div>
-                              )}
-                           </button>
-                         );
-                       })}
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </motion.div>
 
@@ -675,21 +675,21 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-10 block">{t('onboarding.skinTitle')}</label>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-5">
-                       {Object.entries(t('onboarding.skinTypesLabels') as any).map(([id, label]: any) => {
-                         const isSelected = editProfileData.skinType === id;
-                         return (
-                           <button
-                             key={id}
-                             onClick={() => setEditProfileData(p => ({ ...p, skinType: id }))}
-                             className={`p-6 rounded-[2rem] font-black text-xs transition-all border-2 flex flex-col items-center gap-3 ${isSelected ? 'bg-[#0EA5E9] border-[#0EA5E9] text-white shadow-2xl scale-105' : 'bg-white/50 border-gray-100 text-gray-500 hover:border-[#0EA5E9]/50 hover:bg-white'}`}
-                           >
-                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isSelected ? 'bg-white/20' : 'bg-gray-100'}`}>
-                                <Droplets className={`w-5 h-5 ${isSelected ? 'text-white' : 'text-gray-400'}`} />
-                             </div>
-                             {label}
-                           </button>
-                         );
-                       })}
+                      {Object.entries(t('onboarding.skinTypesLabels') as any).map(([id, label]: any) => {
+                        const isSelected = editProfileData.skinType === id;
+                        return (
+                          <button
+                            key={id}
+                            onClick={() => setEditProfileData(p => ({ ...p, skinType: id }))}
+                            className={`p-6 rounded-[2rem] font-black text-xs transition-all border-2 flex flex-col items-center gap-3 ${isSelected ? 'bg-[#0EA5E9] border-[#0EA5E9] text-white shadow-2xl scale-105' : 'bg-white/50 border-gray-100 text-gray-500 hover:border-[#0EA5E9]/50 hover:bg-white'}`}
+                          >
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isSelected ? 'bg-white/20' : 'bg-gray-100'}`}>
+                              <Droplets className={`w-5 h-5 ${isSelected ? 'text-white' : 'text-gray-400'}`} />
+                            </div>
+                            {label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </motion.div>
 
@@ -697,18 +697,18 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-10 block">{t('onboarding.concernTitle')}</label>
                     <div className="flex flex-wrap gap-4">
-                       {Object.entries(t('onboarding.concernsLabels') as any).map(([id, label]: any) => {
-                         const isSelected = editProfileData.concerns.includes(id);
-                         return (
-                           <button
-                             key={id}
-                             onClick={() => toggleConcern(id)}
-                             className={`px-8 py-4 rounded-[1.5rem] font-black text-sm transition-all border-2 ${isSelected ? 'bg-[#0EA5E9] border-[#0EA5E9] text-white shadow-xl scale-105' : 'bg-white/50 border-gray-100 text-gray-600 hover:border-[#0EA5E9]/30 hover:bg-white'}`}
-                           >
-                             {label}
-                           </button>
-                         );
-                       })}
+                      {Object.entries(t('onboarding.concernsLabels') as any).map(([id, label]: any) => {
+                        const isSelected = editProfileData.concerns.includes(id);
+                        return (
+                          <button
+                            key={id}
+                            onClick={() => toggleConcern(id)}
+                            className={`px-8 py-4 rounded-[1.5rem] font-black text-sm transition-all border-2 ${isSelected ? 'bg-[#0EA5E9] border-[#0EA5E9] text-white shadow-xl scale-105' : 'bg-white/50 border-gray-100 text-gray-600 hover:border-[#0EA5E9]/30 hover:bg-white'}`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </motion.div>
 
@@ -716,18 +716,18 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-10 block">{t('onboarding.sensTitle')}</label>
                     <div className="flex flex-wrap gap-4">
-                       {Object.entries(t('onboarding.sensitivitiesLabels') as any).map(([id, label]: any) => {
-                         const isSelected = editProfileData.sensitivities.includes(id);
-                         return (
-                           <button
-                             key={id}
-                             onClick={() => toggleSensitivity(id)}
-                             className={`px-8 py-4 rounded-[1.5rem] font-black text-sm transition-all border-2 ${isSelected ? 'bg-[#EF4444] border-[#EF4444] text-white shadow-xl scale-105' : 'bg-white/50 border-gray-100 text-gray-600 hover:border-[#EF4444]/30 hover:bg-white'}`}
-                           >
-                             {label}
-                           </button>
-                         );
-                       })}
+                      {Object.entries(t('onboarding.sensitivitiesLabels') as any).map(([id, label]: any) => {
+                        const isSelected = editProfileData.sensitivities.includes(id);
+                        return (
+                          <button
+                            key={id}
+                            onClick={() => toggleSensitivity(id)}
+                            className={`px-8 py-4 rounded-[1.5rem] font-black text-sm transition-all border-2 ${isSelected ? 'bg-[#EF4444] border-[#EF4444] text-white shadow-xl scale-105' : 'bg-white/50 border-gray-100 text-gray-600 hover:border-[#EF4444]/30 hover:bg-white'}`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </motion.div>
 
@@ -747,92 +747,92 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
           </Card>
         </motion.div>
 
-      {/* ═══════════════════════════════════════════════════════
+        {/* ═══════════════════════════════════════════════════════
           HIDDEN REPORT TEMPLATE (FOR PDF CAPTURE)
           Uses standard CSS only for html2canvas compatibility
           ═══════════════════════════════════════════════════════ */}
-      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-        <div ref={reportRef} style={{ width: '800px', padding: '40px', backgroundColor: '#ffffff', color: '#111827', fontFamily: 'sans-serif' }}>
-          {/* PDF Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #0EA5E9', paddingBottom: '20px', marginBottom: '30px' }}>
-            <div>
-              <h1 style={{ fontSize: '28px', margin: 0, color: '#0EA5E9', fontWeight: 'bold' }}>DeepSkyn</h1>
-              <p style={{ fontSize: '14px', margin: '5px 0 0', color: '#6B7280' }}>{t('profile.reportSubtitle')}</p>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ fontSize: '10px', margin: 0, color: '#9CA3AF' }}>{t('profile.reportConfidential')}</p>
-              <p style={{ fontSize: '12px', margin: 0, fontWeight: 'bold' }}>{new Date().toLocaleDateString(localeForDates)}</p>
-            </div>
-          </div>
-
-          {/* User Info Section */}
-          <div style={{ display: 'flex', gap: '30px', marginBottom: '30px' }}>
-            <div style={{ width: '120px', height: '120px', borderRadius: '20px', backgroundColor: '#F3F4F6', overflow: 'hidden' }}>
-              {user?.avatar && <img src={user.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-            </div>
-            <div>
-              <h2 style={{ fontSize: '22px', margin: '0 0 10px', fontWeight: 'bold' }}>{user?.name || t('common.user')}</h2>
-              <p style={{ fontSize: '14px', margin: '2px 0', color: '#4B5563' }}><strong>{t('settings.personal.email')}:</strong> {user?.email || t('common.notSpecified')}</p>
-              <p style={{ fontSize: '14px', margin: '2px 0', color: '#4B5563' }}><strong>{t('profile.age')}:</strong> {formData.age || t('common.notSpecified')} {formData.age ? t('common.years') : ''}</p>
-              <p style={{ fontSize: '14px', margin: '2px 0', color: '#4B5563' }}><strong>{t('onboarding.gender')}:</strong> {formData.gender ? (t(`settings.personal.genderOptions.${formData.gender}`) as string) || formData.gender : t('common.notSpecified')}</p>
-            </div>
-          </div>
-
-          {/* Skin Profile Summary */}
-          <div style={{ backgroundColor: '#F9FAFB', borderRadius: '20px', padding: '25px', marginBottom: '30px', border: '1px solid #E5E7EB' }}>
-            <h3 style={{ fontSize: '18px', margin: '0 0 20px', color: '#0EA5E9', fontWeight: 'bold' }}>{t('onboarding.sumTitle')}</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+          <div ref={reportRef} style={{ width: '800px', padding: '40px', backgroundColor: '#ffffff', color: '#111827', fontFamily: 'sans-serif' }}>
+            {/* PDF Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--primary)', paddingBottom: '20px', marginBottom: '30px' }}>
               <div>
-                <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.fitzTitle')}</p>
-                <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{(t('onboarding.fitzTypesLabels') as any)[String(skinProfile?.fitzpatrickType || '')] || t('common.notSpecified')}</p>
+                <h1 style={{ fontSize: '28px', margin: 0, color: 'var(--primary)', fontWeight: 'bold' }}>DeepSkyn</h1>
+                <p style={{ fontSize: '14px', margin: '5px 0 0', color: '#6B7280' }}>{t('profile.reportSubtitle')}</p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ fontSize: '10px', margin: 0, color: '#9CA3AF' }}>{t('profile.reportConfidential')}</p>
+                <p style={{ fontSize: '12px', margin: 0, fontWeight: 'bold' }}>{new Date().toLocaleDateString(localeForDates)}</p>
+              </div>
+            </div>
+
+            {/* User Info Section */}
+            <div style={{ display: 'flex', gap: '30px', marginBottom: '30px' }}>
+              <div style={{ width: '120px', height: '120px', borderRadius: '20px', backgroundColor: '#F3F4F6', overflow: 'hidden' }}>
+                {user?.avatar && <img src={user.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
               </div>
               <div>
-                <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.skinTitle')}</p>
-                <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{(t('onboarding.skinTypesLabels') as any)[skinProfile?.skinType || ''] || t('common.notSpecified')}</p>
+                <h2 style={{ fontSize: '22px', margin: '0 0 10px', fontWeight: 'bold' }}>{user?.name || t('common.user')}</h2>
+                <p style={{ fontSize: '14px', margin: '2px 0', color: '#4B5563' }}><strong>{t('settings.personal.email')}:</strong> {user?.email || t('common.notSpecified')}</p>
+                <p style={{ fontSize: '14px', margin: '2px 0', color: '#4B5563' }}><strong>{t('profile.age')}:</strong> {formData.age || t('common.notSpecified')} {formData.age ? t('common.years') : ''}</p>
+                <p style={{ fontSize: '14px', margin: '2px 0', color: '#4B5563' }}><strong>{t('onboarding.gender')}:</strong> {formData.gender ? (t(`settings.personal.genderOptions.${formData.gender}`) as string) || formData.gender : t('common.notSpecified')}</p>
               </div>
-              <div style={{ gridColumn: 'span 2' }}>
-                <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.concTitle')}</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '5px' }}>
-                  {skinProfile?.concerns?.map(id => (
-                    <span key={id} style={{ fontSize: '12px', backgroundColor: '#ffffff', border: '1px solid #E5E7EB', padding: '4px 10px', borderRadius: '10px' }}>
-                      {(t('onboarding.concernsLabels') as any)[id] || id}
-                    </span>
-                  )) || t('common.notSpecified')}
+            </div>
+
+            {/* Skin Profile Summary */}
+            <div style={{ backgroundColor: '#F9FAFB', borderRadius: '20px', padding: '25px', marginBottom: '30px', border: '1px solid #E5E7EB' }}>
+              <h3 style={{ fontSize: '18px', margin: '0 0 20px', color: 'var(--primary)', fontWeight: 'bold' }}>{t('onboarding.sumTitle')}</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div>
+                  <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.fitzTitle')}</p>
+                  <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{(t('onboarding.fitzTypesLabels') as any)[String(skinProfile?.fitzpatrickType || '')] || t('common.notSpecified')}</p>
                 </div>
-              </div>
-              <div style={{ gridColumn: 'span 2' }}>
-                <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.sensTitle')}</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '5px' }}>
-                  {skinProfile?.sensitivities?.map(id => (
-                    <span key={id} style={{ fontSize: '12px', backgroundColor: '#ffffff', border: '1px solid #E5E7EB', padding: '4px 10px', borderRadius: '10px', color: '#EF4444' }}>
-                      {(t('onboarding.sensitivitiesLabels') as any)[id] || id}
-                    </span>
-                  )) || t('common.notSpecified')}
+                <div>
+                  <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.skinTitle')}</p>
+                  <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{(t('onboarding.skinTypesLabels') as any)[skinProfile?.skinType || ''] || t('common.notSpecified')}</p>
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.concTitle')}</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '5px' }}>
+                    {skinProfile?.concerns?.map(id => (
+                      <span key={id} style={{ fontSize: '12px', backgroundColor: '#ffffff', border: '1px solid #E5E7EB', padding: '4px 10px', borderRadius: '10px' }}>
+                        {(t('onboarding.concernsLabels') as any)[id] || id}
+                      </span>
+                    )) || t('common.notSpecified')}
+                  </div>
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <p style={{ fontSize: '10px', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>{t('onboarding.sensTitle')}</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '5px' }}>
+                    {skinProfile?.sensitivities?.map(id => (
+                      <span key={id} style={{ fontSize: '12px', backgroundColor: '#ffffff', border: '1px solid #E5E7EB', padding: '4px 10px', borderRadius: '10px', color: '#EF4444' }}>
+                        {(t('onboarding.sensitivitiesLabels') as any)[id] || id}
+                      </span>
+                    )) || t('common.notSpecified')}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Metrics Section */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
-             <div style={{ padding: '20px', borderRadius: '20px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
-               <p style={{ fontSize: '12px', color: '#6B7280', margin: '0 0 10px' }}>{t('dashboard.globalScore')}</p>
-                <p style={{ fontSize: '32px', fontWeight: 'bold', color: '#0EA5E9', margin: 0 }}>85 <span style={{ fontSize: '14px', color: '#9CA3AF' }}>/ 100</span></p>
-             </div>
-             <div style={{ padding: '20px', borderRadius: '20px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
-               <p style={{ fontSize: '12px', color: '#6B7280', margin: '0 0 10px' }}>{t('dashboard.analyses')}</p>
+            {/* Metrics Section */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+              <div style={{ padding: '20px', borderRadius: '20px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
+                <p style={{ fontSize: '12px', color: '#6B7280', margin: '0 0 10px' }}>{t('dashboard.globalScore')}</p>
+                <p style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--primary)', margin: 0 }}>85 <span style={{ fontSize: '14px', color: '#9CA3AF' }}>/ 100</span></p>
+              </div>
+              <div style={{ padding: '20px', borderRadius: '20px', border: '1px solid #E5E7EB', textAlign: 'center' }}>
+                <p style={{ fontSize: '12px', color: '#6B7280', margin: '0 0 10px' }}>{t('dashboard.analyses')}</p>
                 <p style={{ fontSize: '32px', fontWeight: 'bold', color: '#8B5CF6', margin: 0 }}>{analysisCount}</p>
-             </div>
-          </div>
+              </div>
+            </div>
 
-          {/* Footer Branding */}
-          <div style={{ textAlign: 'center', marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #F3F4F6' }}>
-            <p style={{ fontSize: '10px', color: '#9CA3AF' }}>DeepSkyn AI Platform - {t('dashboard.aiCoach')}</p>
-            <p style={{ fontSize: '10px', color: '#D1D5DB' }}>© 2026 DeepSkyn. {t('profile.rightsReserved')}</p>
+            {/* Footer Branding */}
+            <div style={{ textAlign: 'center', marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #F3F4F6' }}>
+              <p style={{ fontSize: '10px', color: '#9CA3AF' }}>DeepSkyn AI Platform - {t('dashboard.aiCoach')}</p>
+              <p style={{ fontSize: '10px', color: '#D1D5DB' }}>© 2026 DeepSkyn. {t('profile.rightsReserved')}</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
   );
 }

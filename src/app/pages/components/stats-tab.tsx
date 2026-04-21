@@ -210,7 +210,7 @@ export function StatsTab({ stats }: { stats: CommunityStats | null }) {
               </span>
             </div>
           </div>
-          <MiniBarChart data={currentActivity} color={isHcHigh ? '#FACC15' : '#0EA5E9'} />
+          <MiniBarChart data={currentActivity} color={isHcHigh ? '#FACC15' : 'var(--primary)'} />
           <div className="flex justify-between mt-2">
             {[t('stats.days.mon'), t('stats.days.tue'), t('stats.days.wed'), t('stats.days.thu'), t('stats.days.fri'), t('stats.days.sat'), t('stats.days.sun')].map((d) => (
               <span key={d} className={`text-[9px] font-medium ${subText} flex-1 text-center`}>{d}</span>
@@ -238,7 +238,7 @@ export function StatsTab({ stats }: { stats: CommunityStats | null }) {
 
           <div className="space-y-3">
             {[
-              { label: t('stats.organicReach'), value: 72, color: '#0EA5E9' },
+              { label: t('stats.organicReach'), value: 72, color: 'var(--primary)' },
               { label: t('stats.clickRate'), value: 45, color: '#8B5CF6' },
               { label: t('stats.storyRetention'), value: 61, color: '#EC4899' },
             ].map((m, i) => (

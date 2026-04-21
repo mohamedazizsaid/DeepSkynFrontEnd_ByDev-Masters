@@ -45,7 +45,7 @@ const StackedAvatars = ({ avatars, extraCount, className = "" }: { avatars: stri
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3, delay: 0.3 }}
-      className="flex items-center justify-center w-7 h-7 rounded-full border-2 border-white dark:border-[#1e293b] bg-gradient-to-tr from-[#0EA5E9] to-[#8B5CF6] text-[8px] font-black text-white shadow-sm"
+      className="flex items-center justify-center w-7 h-7 rounded-full border-2 border-white dark:border-[#1e293b] bg-gradient-to-tr from-[#0EA5E9] to-[#0EA5E9] text-[8px] font-black text-white shadow-sm"
     >
       +{extraCount}
     </motion.div>

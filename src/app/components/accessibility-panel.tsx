@@ -56,8 +56,8 @@ function ToggleSwitch({
         relative inline-flex h-[24px] w-[44px] shrink-0 cursor-pointer items-center rounded-full
         transition-colors duration-300 ease-in-out
         focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:ring-offset-2
-        ${checked
-                    ? 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4]'
+                ${checked
+                    ? 'bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)]'
                     : 'bg-[var(--switch-background,#D1D5DB)]'
                 }
       `}
@@ -256,6 +256,7 @@ export function AccessibilityPanel() {
     const {
         language,
         theme,
+        accentTheme,
         contrastMode,
         zoomLevel,
         reduceMotion,
@@ -274,6 +275,7 @@ export function AccessibilityPanel() {
         eyeTracking,
         setLanguage,
         toggleTheme,
+        setAccentTheme,
         setContrastMode,
         resetContrastMode,
         toggleReduceMotion,
@@ -326,6 +328,10 @@ export function AccessibilityPanel() {
             clearTranscript: 'Effacer le texte dicté',
             voiceToggleOn: "Arrêter l'écoute",
             voiceToggleOff: "Démarrer l'écoute (Alt+M)",
+            colorThemeTitle: 'Couleur du thème',
+            colorThemeDesc: "Choisissez la couleur principale de l'interface",
+            colorThemeBlue: 'Bleu',
+            colorThemePink: 'Rose',
         },
         en: {
             openPanel: 'Open accessibility panel (Alt+A)',
@@ -339,6 +345,10 @@ export function AccessibilityPanel() {
             clearTranscript: 'Clear dictated text',
             voiceToggleOn: 'Stop listening',
             voiceToggleOff: 'Start listening (Alt+M)',
+            colorThemeTitle: 'Theme color',
+            colorThemeDesc: 'Choose the main interface color',
+            colorThemeBlue: 'Blue',
+            colorThemePink: 'Pink',
         },
         ar: {
             openPanel: 'فتح لوحة إمكانية الوصول (Alt+A)',
@@ -352,6 +362,10 @@ export function AccessibilityPanel() {
             clearTranscript: 'مسح النص المملى',
             voiceToggleOn: 'إيقاف الاستماع',
             voiceToggleOff: 'بدء الاستماع (Alt+M)',
+            colorThemeTitle: 'لون النمط',
+            colorThemeDesc: 'اختر اللون الرئيسي للواجهة',
+            colorThemeBlue: 'أزرق',
+            colorThemePink: 'وردي',
         },
         es: {
             openPanel: 'Abrir panel de accesibilidad (Alt+A)',
@@ -365,6 +379,10 @@ export function AccessibilityPanel() {
             clearTranscript: 'Borrar texto dictado',
             voiceToggleOn: 'Detener escucha',
             voiceToggleOff: 'Iniciar escucha (Alt+M)',
+            colorThemeTitle: 'Color del tema',
+            colorThemeDesc: 'Elige el color principal de la interfaz',
+            colorThemeBlue: 'Azul',
+            colorThemePink: 'Rosa',
         },
     }[language] ?? {
         openPanel: "Ouvrir le panneau d'accessibilité (Alt+A)",
@@ -378,6 +396,10 @@ export function AccessibilityPanel() {
         clearTranscript: 'Effacer le texte dicté',
         voiceToggleOn: "Arrêter l'écoute",
         voiceToggleOff: "Démarrer l'écoute (Alt+M)",
+        colorThemeTitle: 'Couleur du thème',
+        colorThemeDesc: "Choisissez la couleur principale de l'interface",
+        colorThemeBlue: 'Bleu',
+        colorThemePink: 'Rose',
     };
 
     const toggle = (key: keyof typeof openSections) =>
@@ -405,13 +427,14 @@ export function AccessibilityPanel() {
         if (isListening) stopListening();
         clearSpokenText();
         if (theme === 'dark') toggleTheme();
+        if (accentTheme !== 'blue') setAccentTheme('blue');
         setSpeechRate(1);
     }, [
         resetZoom, resetContrastMode, reduceMotion, toggleReduceMotion, dyslexiaFont,
         toggleDyslexiaFont, linkHighlight, toggleLinkHighlight, bigCursor, toggleBigCursor,
         textSpacing, toggleTextSpacing, focusHighlight, toggleFocusHighlight, readingGuide,
         toggleReadingGuide, colorBlindFilter, setColorBlindFilter, isSpeaking, stopSpeaking,
-        isListening, stopListening, clearSpokenText, theme, toggleTheme, setSpeechRate,
+        isListening, stopListening, clearSpokenText, theme, toggleTheme, accentTheme, setAccentTheme, setSpeechRate,
     ]);
 
     // ── Keyboard shortcuts ──────────────────────────────────────────────
@@ -481,12 +504,12 @@ export function AccessibilityPanel() {
           fixed bottom-[24px] right-[24px] z-[9999]
           flex items-center justify-center w-[56px] h-[56px]
           rounded-full shadow-xl
-          bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4]
+          bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)]
           text-white
           hover:scale-110 hover:shadow-2xl
           active:scale-95
           transition-all duration-300 ease-out
-          focus:outline-none focus:ring-4 focus:ring-[#0EA5E9]/40
+          focus:outline-none focus:ring-4 focus:ring-[var(--accent-primary)]/40
           animate-pulse-glow
         "
             >
@@ -515,7 +538,7 @@ export function AccessibilityPanel() {
             {/* ── Header ──────────────────────────────────────────────────── */}
             <div className="flex items-center justify-between px-[20px] pt-[20px] pb-[16px]">
                 <div className="flex items-center gap-[12px]">
-                    <div className="flex items-center justify-center w-[36px] h-[36px] rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] shadow-md">
+                    <div className="flex items-center justify-center w-[36px] h-[36px] rounded-xl bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] shadow-md">
                         <Accessibility size={18} className="text-white" />
                     </div>
                     <div>
@@ -621,6 +644,41 @@ export function AccessibilityPanel() {
                                     />
                                 }
                             />
+
+                            {/* Accent color theme */}
+                            <div className="mt-[10px] p-[14px] rounded-xl bg-[var(--card)] border border-[var(--border)]">
+                                <div className="flex items-center gap-[8px] mb-[12px]">
+                                    <div className="flex items-center justify-center w-[28px] h-[28px] rounded-lg bg-[var(--primary)]/10">
+                                        <Palette size={15} className="text-[var(--primary)]" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <span className="text-[14px] font-semibold text-[var(--foreground)]">{quickLabels.colorThemeTitle}</span>
+                                        <p className="text-[10px] text-[var(--muted-foreground)] leading-snug mt-[1px]">{quickLabels.colorThemeDesc}</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-[6px]">
+                                    <button
+                                        onClick={() => setAccentTheme('blue')}
+                                        aria-pressed={accentTheme === 'blue'}
+                                        className={`py-[8px] px-[10px] rounded-lg text-[11px] font-semibold border transition-all duration-200 ${accentTheme === 'blue'
+                                            ? 'bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)] shadow-sm'
+                                            : 'bg-[var(--secondary)] text-[var(--muted-foreground)] border-[var(--border)] hover:text-[var(--foreground)] hover:bg-[var(--border)]'
+                                            }`}
+                                    >
+                                        {quickLabels.colorThemeBlue}
+                                    </button>
+                                    <button
+                                        onClick={() => setAccentTheme('pink')}
+                                        aria-pressed={accentTheme === 'pink'}
+                                        className={`py-[8px] px-[10px] rounded-lg text-[11px] font-semibold border transition-all duration-200 ${accentTheme === 'pink'
+                                            ? 'bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)] shadow-sm'
+                                            : 'bg-[var(--secondary)] text-[var(--muted-foreground)] border-[var(--border)] hover:text-[var(--foreground)] hover:bg-[var(--border)]'
+                                            }`}
+                                    >
+                                        {quickLabels.colorThemePink}
+                                    </button>
+                                </div>
+                            </div>
 
                             {/* ── Contrast for low vision ─────────────────────────── */}
                             <div className="mt-[10px] p-[14px] rounded-xl bg-[var(--card)] border border-[var(--border)]">
@@ -731,7 +789,7 @@ export function AccessibilityPanel() {
                                     {/* Progress bar */}
                                     <div className="flex-1 relative h-[8px] rounded-full bg-[var(--secondary)] overflow-hidden">
                                         <div
-                                            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] transition-all duration-300 ease-out"
+                                            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] transition-all duration-300 ease-out"
                                             style={{ width: `${((zoomLevel - 75) / 75) * 100}%` }}
                                         />
                                     </div>

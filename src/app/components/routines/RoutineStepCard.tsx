@@ -20,7 +20,7 @@ interface RoutineStepCardProps {
 }
 
 const categoryColors: Record<string, string> = {
-  cleanser: '#06B6D4',
+  cleanser: 'var(--accent-secondary)',
   toner: '#F9A8D4',
   serum: '#8B5CF6',
   moisturizer: '#FBBF24',
@@ -29,7 +29,7 @@ const categoryColors: Record<string, string> = {
   night_cream: '#6366F1',
   exfoliant: '#10B981',
   makeup_remover: '#F472B6',
-  mask: '#22D3EE',
+  mask: 'var(--accent-secondary)',
   deep_cleanser: '#14B8A6',
   treatment: '#A78BFA',
 };

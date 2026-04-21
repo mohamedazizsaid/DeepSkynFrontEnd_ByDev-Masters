@@ -24,6 +24,78 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
   const [selectedPlanName, setSelectedPlanName] = useState('');
   const shouldReduceMotion = useReducedMotion();
 
+  const fullTitle = `${t('landing.heroTitle1')}${t('landing.heroTitleGradient')}${t('landing.heroTitle2')}`;
+  const [visibleTitleText, setVisibleTitleText] = useState('');
+  const [titleLoopKey, setTitleLoopKey] = useState(0);
+
+  const part1 = t('landing.heroTitle1');
+  const part2 = t('landing.heroTitleGradient');
+
+  // Navbar logo animation state
+  const fullLogoText = 'DeepSkyn';
+  const [visibleLogoText, setVisibleLogoText] = useState('');
+  const [logoLoopKey, setLogoLoopKey] = useState(0);
+  const [isNavIconShifted, setIsNavIconShifted] = useState(false);
+
+  useEffect(() => {
+    if (shouldReduceMotion) {
+      setVisibleLogoText(fullLogoText);
+      setIsNavIconShifted(true);
+      return;
+    }
+
+    setVisibleLogoText('');
+    setIsNavIconShifted(false);
+    const charDelay = 60;
+    const holdDelay = 5000;
+    const timeouts: NodeJS.Timeout[] = [];
+
+    const type = (index: number) => {
+      if (index <= fullLogoText.length) {
+        setVisibleLogoText(fullLogoText.slice(0, index));
+        timeouts.push(setTimeout(() => type(index + 1), charDelay));
+      } else {
+        timeouts.push(setTimeout(() => {
+          setLogoLoopKey(prev => prev + 1);
+        }, holdDelay));
+      }
+    };
+
+    timeouts.push(setTimeout(() => {
+      setIsNavIconShifted(true);
+      timeouts.push(setTimeout(() => type(1), 500));
+    }, 1000));
+
+    return () => timeouts.forEach(clearTimeout);
+  }, [logoLoopKey, shouldReduceMotion]);
+
+  useEffect(() => {
+    if (shouldReduceMotion) {
+      setVisibleTitleText(fullTitle);
+      return;
+    }
+
+    setVisibleTitleText('');
+    const charDelay = 45;
+    const holdDelay = 5000; // 5s loop
+    const timeouts: NodeJS.Timeout[] = [];
+
+    const type = (index: number) => {
+      if (index <= fullTitle.length) {
+        setVisibleTitleText(fullTitle.slice(0, index));
+        timeouts.push(setTimeout(() => type(index + 1), charDelay));
+      } else {
+        timeouts.push(setTimeout(() => {
+          setTitleLoopKey(prev => prev + 1);
+        }, holdDelay));
+      }
+    };
+
+    timeouts.push(setTimeout(() => type(1), 150));
+
+    return () => timeouts.forEach(clearTimeout);
+  }, [fullTitle, shouldReduceMotion, titleLoopKey]);
+
   const baseViewport = { once: true, amount: 0.2, margin: '0px 0px -80px 0px' } as const;
   const heroTransition = shouldReduceMotion ? { duration: 0 } : { duration: 0.55, ease: 'easeOut' as const };
   const sectionTransition = (delay = 0) => (shouldReduceMotion ? { duration: 0 } : { duration: 0.45, delay, ease: 'easeOut' as const });
@@ -311,16 +383,42 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-[#E5E7EB]">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <motion.div 
-            className="flex items-center gap-2 transform-gpu will-change-transform"
+            className="flex items-center gap-2 transform-gpu will-change-transform min-w-[150px]"
             initial={shouldReduceMotion ? false : { opacity: 0, x: -20 }}
             animate={shouldReduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }}
             transition={sectionTransition()}
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent">
-              DeepSkyn
+            <motion.div 
+                animate={{ x: isNavIconShifted ? 0 : 40 }}
+                transition={{ duration: 0.8, ease: "easeInOut" }}
+                className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center overflow-hidden shadow-lg shadow-[#0EA5E9]/20"
+            >
+                <motion.div
+                    animate={{ 
+                        rotate: [-10, 10, -10, 10, 0],
+                        scale: [1, 1.1, 1, 1.1, 1]
+                    }}
+                    transition={{ 
+                        duration: 1.5,
+                        repeat: Infinity,
+                        repeatDelay: 2,
+                        ease: "easeInOut"
+                    }}
+                >
+                    <Sparkles className="w-5 h-5 text-white" />
+                </motion.div>
+            </motion.div>
+            <span className="text-2xl font-extrabold bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent flex items-center">
+              {visibleLogoText}
+              {visibleLogoText.length > 0 && visibleLogoText.length < fullLogoText.length && (
+                <motion.span
+                    animate={{ opacity: [0, 1, 0] }}
+                    transition={{ duration: 0.8, repeat: Infinity }}
+                    className="inline-block ml-0.5 text-[#0EA5E9]"
+                >
+                    |
+                </motion.span>
+              )}
             </span>
           </motion.div>
           
@@ -355,12 +453,21 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
                 <span className="text-sm text-[#0EA5E9] font-medium">{t('landing.heroTag')}</span>
               </div>
               
-              <h1 className="text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                {t('landing.heroTitle1')}
+              <h1 className="text-5xl lg:text-6xl font-bold mb-6 leading-tight min-h-[160px] lg:min-h-[192px]">
+                {visibleTitleText.slice(0, part1.length)}
                 <span className="block bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent">
-                  {t('landing.heroTitleGradient')}
+                  {visibleTitleText.slice(part1.length, part1.length + part2.length)}
                 </span>
-                {t('landing.heroTitle2')}
+                {visibleTitleText.slice(part1.length + part2.length)}
+                {visibleTitleText.length < fullTitle.length && !shouldReduceMotion && (
+                  <motion.span
+                    animate={{ opacity: [0, 1, 0] }}
+                    transition={{ duration: 0.8, repeat: Infinity }}
+                    className="inline-block ml-1 text-[#0EA5E9]"
+                  >
+                    |
+                  </motion.span>
+                )}
               </h1>
               
               <p
@@ -627,11 +734,10 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
                   viewport={baseViewport}
                   transition={sectionTransition(index * 0.08)}
                 >
-                  <Card className={`h-full relative transition-all duration-300 ${
-                    plan.highlighted
+                  <Card className={`h-full relative transition-all duration-300 ${plan.highlighted
                       ? 'border-2 border-[#0EA5E9] bg-gradient-to-b from-white to-[#F0F9FF] shadow-xl shadow-[#38BDF8]/20 md:-translate-y-1'
                       : 'border border-[#D7EBFF] bg-gradient-to-b from-white to-[#F7FCFF] shadow-md hover:shadow-xl'
-                  }`}>
+                    }`}>
                     {plan.highlighted && (
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white text-sm font-medium rounded-full">
                         {t('landing.mostPopular')}
@@ -760,9 +866,9 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             <p className="text-xl text-white/90 mb-8">
               {t('landing.joinThousands')}
             </p>
-            <Button 
-              size="lg" 
-              variant="outline" 
+            <Button
+              size="lg"
+              variant="outline"
               className="bg-white text-[#0EA5E9] hover:bg-gray-50 border-0"
               onClick={onGetStarted}
             >

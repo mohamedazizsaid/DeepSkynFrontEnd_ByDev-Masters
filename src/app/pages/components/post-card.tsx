@@ -194,17 +194,42 @@ export function PostCard({
     }
   };
 
-  // Helper function to render content with hashtag styling
-  const renderContentWithHashtags = (content: string) => {
+  // Helper function to render content with hashtags and mentions styling
+  const renderContentWithEntities = (content: string) => {
     if (!content) return null;
 
-    // Split content by hashtags and render with styling
-    const parts = content.split(/(\#\w+)/g);
+    // Split content by:
+    // 1. Mentions with ID: @[Name](ID)
+    // 2. Simple Mentions: @name
+    // 3. Hashtags: #word
+    const parts = content.split(/(@\[[^\]]+\]\([^)]+\)|@\w+|#[a-zA-Z0-9_]+)/g);
     
     return (
       <p className={`${textColor} text-sm whitespace-pre-wrap leading-relaxed`}>
         {parts.map((part, idx) => {
-          if (part?.startsWith('#')) {
+          if (!part) return null;
+
+          // Check for complex mention: @[Name](ID)
+          const complexMentionMatch = part.match(/^@\[([^\]]+)\]\(([^)]+)\)$/);
+          if (complexMentionMatch) {
+            const [_, name, id] = complexMentionMatch;
+            return (
+              <span
+                key={idx}
+                className={`font-bold ${isHcHigh ? 'text-yellow-400' : isDark ? 'text-[#0EA5E9]' : 'text-[#0EA5E9]'} hover:underline cursor-pointer transition-colors px-1 rounded-md ${isDark ? 'bg-[#0EA5E9]/10' : 'bg-[#e0f2fe]'}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onProfileClick) onProfileClick(id);
+                  else toast(`Profil de ${name}`, { icon: '👤' });
+                }}
+              >
+                @{name}
+              </span>
+            );
+          }
+
+          // Check for simple hashtag
+          if (part.startsWith('#')) {
             return (
               <span
                 key={idx}
@@ -214,6 +239,23 @@ export function PostCard({
               </span>
             );
           }
+
+          // Check for simple mention (backward compatibility or manual typing)
+          if (part.startsWith('@')) {
+            return (
+              <span
+                key={idx}
+                className={`font-bold ${isHcHigh ? 'text-yellow-400' : isDark ? 'text-[#0EA5E9]' : 'text-[#0EA5E9]'} hover:underline cursor-pointer transition-colors px-1 rounded-md ${isDark ? 'bg-[#0EA5E9]/10' : 'bg-[#e0f2fe]'}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toast(`Profil de ${part}`, { icon: '👤' });
+                }}
+              >
+                {part}
+              </span>
+            );
+          }
+
           return <span key={idx}>{part}</span>;
         })}
       </p>
@@ -249,7 +291,7 @@ export function PostCard({
 
       return (
         <>
-          {renderContentWithHashtags(mainText)}
+          {renderContentWithEntities(mainText)}
           <div className={`mt-3 flex flex-wrap gap-2`}>
             {feelingPart.trim() && (
               <div className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${isHcHigh ? 'bg-yellow-400 text-black' : isDark ? 'bg-[#0f172a] text-[#0EA5E9] border border-[#334155]' : 'bg-[#e0f2fe] text-[#0284c7]'}`}>
@@ -270,7 +312,7 @@ export function PostCard({
         </>
       );
     }
-    return renderContentWithHashtags(post.content);
+    return renderContentWithEntities(post.content);
   };
 
 

@@ -24,9 +24,9 @@ export function AccessibilityOverlays() {
             height: 40px;
             pointer-events: none;
             z-index: 99998;
-            background: rgba(14, 165, 233, 0.08);
-            border-top: 2px solid rgba(14, 165, 233, 0.3);
-            border-bottom: 2px solid rgba(14, 165, 233, 0.3);
+            background: rgba(var(--accent-primary-rgb), 0.08);
+            border-top: 2px solid rgba(var(--accent-primary-rgb), 0.3);
+            border-bottom: 2px solid rgba(var(--accent-primary-rgb), 0.3);
             transition: top 0.05s ease;
             display: none;
         `;

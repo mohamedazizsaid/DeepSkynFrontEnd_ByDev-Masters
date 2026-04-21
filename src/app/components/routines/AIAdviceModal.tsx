@@ -31,9 +31,9 @@ export function AIAdviceModal({ isOpen, onClose, advice, isLoading }: AIAdviceMo
     },
     neutral: {
       icon: <Info className="w-6 h-6" />,
-      color: '#0EA5E9',
-      bgColor: 'rgba(14,165,233,0.1)',
-      borderColor: 'rgba(14,165,233,0.3)',
+      color: 'var(--primary)',
+      bgColor: 'rgba(var(--accent-primary-rgb),0.1)',
+      borderColor: 'rgba(var(--accent-primary-rgb),0.3)',
       label: 'Information',
     },
     caution: {
@@ -184,7 +184,7 @@ export function AIAdviceModal({ isOpen, onClose, advice, isLoading }: AIAdviceMo
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={onClose}
-                    className="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white shadow-lg shadow-[#0EA5E9]/20 hover:shadow-xl hover:shadow-[#0EA5E9]/30 transition-all"
+                    className="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#0EA5E9] text-white shadow-lg shadow-[#0EA5E9]/20 hover:shadow-xl hover:shadow-[#0EA5E9]/30 transition-all"
                   >
                     Compris ✨
                   </motion.button>

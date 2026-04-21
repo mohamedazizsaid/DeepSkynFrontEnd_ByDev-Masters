@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { motion, AnimatePresence, Reorder } from 'motion/react';
+import { motion, AnimatePresence, Reorder, useReducedMotion } from 'motion/react';
 import {
   ArrowLeft,
   Sun,
@@ -100,9 +100,42 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
   const isHcHigh = contrastMode === 'high';
   const isHcMedium = contrastMode === 'medium';
   const isDark = theme === 'dark';
+  const shouldReduceMotion = useReducedMotion();
 
   const [amSteps, setAmSteps] = useState<StepItem[]>([]);
   const [pmSteps, setPmSteps] = useState<StepItem[]>([]);
+  
+  const fullTitle = `${t('routine.title')} ${t('routine.skincare')}`;
+  const [visibleTitleText, setVisibleTitleText] = useState('');
+  const [titleLoopKey, setTitleLoopKey] = useState(0);
+  const titlePrefix = `${t('routine.title')} `;
+
+  useEffect(() => {
+    if (shouldReduceMotion) {
+      setVisibleTitleText(fullTitle);
+      return;
+    }
+
+    setVisibleTitleText('');
+    const charDelay = 45;
+    const holdDelay = 10000; // 10s
+    const timeouts: NodeJS.Timeout[] = [];
+
+    const type = (index: number) => {
+      if (index <= fullTitle.length) {
+        setVisibleTitleText(fullTitle.slice(0, index));
+        timeouts.push(setTimeout(() => type(index + 1), charDelay));
+      } else {
+        timeouts.push(setTimeout(() => {
+          setTitleLoopKey(prev => prev + 1);
+        }, holdDelay));
+      }
+    };
+
+    timeouts.push(setTimeout(() => type(1), 100));
+
+    return () => timeouts.forEach(clearTimeout);
+  }, [fullTitle, shouldReduceMotion, titleLoopKey]);
 
   const [reminders, setReminders] = useState({
     morningEnabled: false,
@@ -524,10 +557,27 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
               </div>
               <div>
                 <h1 className={`text-3xl font-bold mb-1 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {t('routine.title')}{' '}
-                  <span className={isHcHigh ? 'text-cyan-400' : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent'}>
-                    {t('routine.skincare')}
-                  </span>
+                  <motion.span
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {visibleTitleText.slice(0, titlePrefix.length)}
+                    <span className={isHcHigh ? 'text-cyan-400' : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent'}>
+                      {visibleTitleText.length > titlePrefix.length
+                        ? visibleTitleText.slice(titlePrefix.length)
+                        : ''}
+                    </span>
+                    {visibleTitleText.length < fullTitle.length && !shouldReduceMotion && (
+                      <motion.span
+                        className="inline-block ml-0.5 text-[#0EA5E9]"
+                        animate={{ opacity: [0, 1, 0] }}
+                        transition={{ duration: 0.8, repeat: Infinity }}
+                      >
+                        |
+                      </motion.span>
+                    )}
+                  </motion.span>
                 </h1>
                 <p className="text-gray-500 text-sm">
                   {t('routine.subtitle')}
