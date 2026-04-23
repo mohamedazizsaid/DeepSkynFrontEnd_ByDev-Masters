@@ -1676,8 +1676,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                 <p className={`text-sm ${textSecondary}`}>{currentPrediction?.basedOnDays || 7} jours • Confiance: {Math.round((currentPrediction.confidence || 0.1) * 100)}%</p>
               </div>
             </div>
-            
-            <div className="space-y-4 overflow-y-auto pr-1">
+            <div className="space-y-4 overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {latestAnalysis?.images?.[0] && predictionVisualFilters && (
                 <div className={`p-3 rounded-xl ${isDark ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
                   <SkinSimulationCanvas

@@ -5,7 +5,7 @@ import {
   Upload, Camera, Loader2, RefreshCw, AlertTriangle,
   Droplets, Eye, CircleDot, Sun, Smile, Flame, Heart, Zap,
   Package, Leaf, Shield, Microscope, MapPin, Wind, Thermometer,
-  Calendar, Clock, ChevronRight, Activity, Target, Award, ShieldX,
+  Calendar, Clock, ChevronRight, Activity, Target, Award, ShieldX, GitCompare,
 } from 'lucide-react';
 import { Button } from '../button';
 import { Card } from '../card';
@@ -30,6 +30,7 @@ import {
 import type { Analysis, AnalysisStats, GeminiAnalysisResult } from '../../../lib/types';
 import type { DetailedScoreItem } from '../../../lib/analysis-helpers';
 import { CameraScanModal } from './camera-scan-modal';
+import { AnalysisCompareModal } from './analysis-compare-modal';
 import {
   PreocupentSelectorModal,
   type PreocupentZoneKey,
@@ -93,6 +94,8 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [analysisHistory, setAnalysisHistory] = useState<Array<{ date: string; score: number }>>([]);
   const [showAnalysisHistory, setShowAnalysisHistory] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [allAnalysesForCompare, setAllAnalysesForCompare] = useState<Analysis[]>([]);
   const { theme, contrastMode, t } = useAccessibilityStore();
   const shouldReduceMotion = useReducedMotion();
 
@@ -249,6 +252,9 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
 
         const selectedAnalysis = selectBestAnalysis(latestAnalysis, historyAnalyses);
         setAnalysis(selectedAnalysis);
+
+        // Store full list for comparator
+        setAllAnalysesForCompare(historyAnalyses.filter((a: Analysis) => a.status === 'completed'));
 
         if (historyAnalyses.length > 0) {
           setAnalysisHistory(
@@ -766,6 +772,17 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                     </>
                   )}
                 </motion.button>
+                {allAnalysesForCompare.length >= 2 && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setCompareOpen(true)}
+                    className="px-6 py-3 rounded-xl bg-violet-600 dark:bg-violet-500 text-white font-semibold ring-2 ring-violet-400/60 dark:ring-violet-300/40 shadow-lg shadow-violet-500/40 hover:bg-violet-700 dark:hover:bg-violet-400 hover:shadow-xl transition-all flex items-center gap-2"
+                  >
+                    <GitCompare className="w-5 h-5" />
+                    <span>{t('analysis.compare.btnOpen')}</span>
+                  </motion.button>
+                )}
               </div>
             </div>
           </div>
@@ -1611,6 +1628,12 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
         onConfirm={submitUploadWithPreocupent}
         loading={uploadPreocupentSubmitting}
         confirmLabel={t('analysis.actions.startAnalysis')}
+      />
+      <AnalysisCompareModal
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        allAnalyses={allAnalysesForCompare}
+        initialA={analysis}
       />
       </div>
     </div>
