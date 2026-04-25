@@ -492,7 +492,9 @@ const fr = {
     startAnalysis: 'Lancer l\'analyse',
     results: 'Résultats',
     skinScore: 'Score de peau',
-    recommendations: 'Recommandations',
+    recommendations: {
+      title: 'Recommandations',
+    },
     defaultCondition: 'état cutané normal',
     actions: {
       verifying: 'Vérification...',
@@ -1992,7 +1994,9 @@ const en: TranslationKeys = {
     startAnalysis: 'Start analysis',
     results: 'Results',
     skinScore: 'Skin score',
-    recommendations: 'Recommendations',
+    recommendations: {
+      title: 'Recommendations',
+    },
     defaultCondition: 'normal skin condition',
     actions: {
       verifying: 'Verifying...',
@@ -3487,7 +3491,9 @@ const ar: TranslationKeys = {
     startAnalysis: 'بدء التحليل',
     results: 'النتائج',
     skinScore: 'نتيجة البشرة',
-    recommendations: 'التوصيات',
+    recommendations: {
+      title: 'التوصيات',
+    },
     defaultCondition: 'حالة جلد طبيعية',
     actions: {
       verifying: 'جارٍ التحقق...',
@@ -4982,7 +4988,9 @@ const es: TranslationKeys = {
     startAnalysis: 'Iniciar análisis',
     results: 'Resultados',
     skinScore: 'Puntuación de piel',
-    recommendations: 'Recomendaciones',
+    recommendations: {
+      title: 'Recomendaciones',
+    },
     defaultCondition: 'estado cutáneo normal',
     actions: {
       verifying: 'Verificando...',

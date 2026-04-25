@@ -9,15 +9,20 @@ import {
     MessageSquare,
     Clock3,
     History,
-    ChevronRight
+    ChevronRight,
+    UserRound,
+    Target,
+    Gauge,
+    ShieldCheck
 } from 'lucide-react';
 import { Button } from '../button';
 import { Card } from '../card';
 import { QuotaAlertBanner } from './quota-alert-banner';
 import { chatService } from '../../../lib/services/chat.service';
 import { subscriptionService } from '../../../lib/services/subscription.service';
+import { skinProfileService } from '../../../lib/services/skin-profile.service';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
-import type { ChatHistory } from '../../../lib/types';
+import type { ChatHistory, SkinProfile } from '../../../lib/types';
 import toast from 'react-hot-toast';
 
 interface ChatPageProps {
@@ -37,6 +42,36 @@ interface PersistedChatMessage {
     content?: string;
     timestamp?: string;
 }
+
+interface ChatSkinProfileContext {
+    skinType?: string | null;
+    fitzpatrickType?: number | null;
+    concerns?: string[];
+    healthScore?: number | null;
+    skinAge?: number | null;
+}
+
+const compactText = (value: string, max = 36): string => {
+    const normalized = value.replace(/\s+/g, ' ').trim();
+    if (!normalized) return '';
+    return normalized.length > max ? `${normalized.slice(0, max - 1)}…` : normalized;
+};
+
+const normalizeSkinTypeKey = (value: unknown): 'normal' | 'oily' | 'dry' | 'combination' | 'sensitive' | null => {
+    if (typeof value !== 'string') return null;
+    const v = value.trim().toLowerCase();
+
+    if (v.includes('comb') || v.includes('mixte')) return 'combination';
+    if (v.includes('oily') || v.includes('gras')) return 'oily';
+    if (v.includes('dry') || v.includes('sech')) return 'dry';
+    if (v.includes('sens')) return 'sensitive';
+    if (v.includes('normal')) return 'normal';
+
+    if (['normal', 'oily', 'dry', 'combination', 'sensitive'].includes(v)) {
+        return v as 'normal' | 'oily' | 'dry' | 'combination' | 'sensitive';
+    }
+    return null;
+};
 
 const premiumButtonClass = 'bg-gradient-to-r from-[#FACC15] to-[#F59E0B] text-white border border-[#FCD34D] hover:from-[#FBBF24] hover:to-[#D97706] shadow-md hover:shadow-lg';
 
@@ -111,7 +146,7 @@ const getConversationTitle = (chat: ChatHistory, fallbackTitle: string): string 
 };
 
 export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
-    const { t, language, theme, contrastMode } = useAccessibilityStore();
+    const { t, language, theme, contrastMode, reduceMotion } = useAccessibilityStore();
     const welcomeMessage: Message = {
         id: 'welcome',
         type: 'ai',
@@ -130,8 +165,10 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     const [chatResetAt, setChatResetAt] = useState<string | null>(null);
     const [historyItems, setHistoryItems] = useState<ChatHistory[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
+    const [skinProfile, setSkinProfile] = useState<SkinProfile | null>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
-    const shouldReduceMotion = useReducedMotion();
+    const browserReducedMotion = useReducedMotion();
+    const shouldReduceMotion = reduceMotion || browserReducedMotion;
 
     const fullTitle = t('chatPage.header.title');
     const [visibleTitleText, setVisibleTitleText] = useState('');
@@ -219,6 +256,95 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     const contextValueTextClass = isHcHigh ? 'text-cyan-200' : isDark ? 'text-white' : 'text-[#0F172A]';
     const contextScoreLabelClass = isHcHigh ? 'text-yellow-200' : isDark ? 'text-[#93c5fd]' : 'text-[#0369A1]';
     const contextScoreValueClass = isHcHigh ? 'text-cyan-200' : isDark ? 'text-[#67e8f9]' : 'text-[#0284C7]';
+    const contextSoftBadgeClass = isHcHigh
+        ? 'bg-yellow-400/20 border-yellow-400 text-yellow-200'
+        : isDark
+            ? 'bg-white/10 border-[#3B82F6]/40 text-[#bfdbfe]'
+            : 'bg-white/30 border-white/40 text-white';
+    const contextIconWrapClass = isHcHigh
+        ? 'bg-yellow-400/20 text-yellow-200'
+        : isDark
+            ? 'bg-[#1d4ed8]/30 text-[#bfdbfe]'
+            : 'bg-[#E0F2FE] text-[#0284C7]';
+    const contextChipClass = isHcHigh
+        ? 'bg-yellow-400/10 text-yellow-200 border-yellow-400'
+        : isDark
+            ? 'bg-white/10 text-[#e2e8f0] border-[#334155]'
+            : 'bg-[#E0F2FE] text-[#075985] border-[#BAE6FD]';
+
+    const skinTypeLabels = {
+        normal: t('onboarding.skinTypesLabels.normal'),
+        oily: t('onboarding.skinTypesLabels.oily'),
+        dry: t('onboarding.skinTypesLabels.dry'),
+        combination: t('onboarding.skinTypesLabels.combination'),
+        sensitive: t('onboarding.skinTypesLabels.sensitive'),
+    } as const;
+
+    const concernLabels = {
+        acne: t('onboarding.concernsLabels.acne'),
+        wrinkles: t('onboarding.concernsLabels.wrinkles'),
+        'dark-spots': t('onboarding.concernsLabels.dark-spots'),
+        dryness: t('onboarding.concernsLabels.dryness'),
+        sensitivity: t('onboarding.concernsLabels.sensitivity'),
+        redness: t('onboarding.concernsLabels.redness'),
+        'large-pores': t('onboarding.concernsLabels.large-pores'),
+        'dark-circles': t('onboarding.concernsLabels.dark-circles'),
+        'uneven-texture': t('onboarding.concernsLabels.uneven-texture'),
+        dullness: t('onboarding.concernsLabels.dullness'),
+        hyperpigmentation: t('onboarding.concernsLabels.hyperpigmentation'),
+        oiliness: t('onboarding.concernsLabels.oiliness'),
+    } as const;
+
+    const activeChat = historyItems.find((chat) => chat.id === activeChatId) || null;
+    const chatSkinProfile = ((activeChat?.context as { skinProfile?: ChatSkinProfileContext } | null)?.skinProfile) || null;
+
+    const resolvedSkinType = chatSkinProfile?.skinType || skinProfile?.skinType || null;
+    const resolvedFitzpatrick = chatSkinProfile?.fitzpatrickType ?? skinProfile?.fitzpatrickType ?? null;
+    const resolvedSkinAge = chatSkinProfile?.skinAge ?? skinProfile?.skinAge ?? null;
+    const resolvedHealthScore = chatSkinProfile?.healthScore ?? skinProfile?.healthScore ?? null;
+    const resolvedConcerns = (chatSkinProfile?.concerns?.length ? chatSkinProfile.concerns : skinProfile?.concerns) || [];
+
+    const normalizedSkinType = normalizeSkinTypeKey(resolvedSkinType);
+    const skinTypeValue = normalizedSkinType
+        ? skinTypeLabels[normalizedSkinType]
+        : (typeof resolvedSkinType === 'string' && resolvedSkinType.trim().length > 0
+            ? compactText(resolvedSkinType, 24)
+            : t('common.notSpecified'));
+
+    const fitzSuffix = resolvedFitzpatrick ? ` • Type ${resolvedFitzpatrick}` : '';
+    const skinTypeDisplay = `${skinTypeValue}${fitzSuffix}`;
+
+    const skinAgeDisplay = resolvedSkinAge !== null && resolvedSkinAge !== undefined
+        ? `${Math.round(resolvedSkinAge)} ${t('common.years')}`
+        : t('common.notSpecified');
+
+    const concernsDisplay = resolvedConcerns.length > 0
+        ? resolvedConcerns
+            .slice(0, 2)
+            .map((concern) => concernLabels[concern as keyof typeof concernLabels] || concern)
+            .join(', ')
+        : t('common.notSpecified');
+
+    const concernsDisplayCompact = compactText(concernsDisplay, 42);
+    const concernChips = resolvedConcerns
+        .slice(0, 3)
+        .map((concern) => concernLabels[concern as keyof typeof concernLabels] || compactText(concern, 20));
+
+    const healthScoreDisplay = resolvedHealthScore !== null && resolvedHealthScore !== undefined
+        ? `${Math.round(resolvedHealthScore)}/100`
+        : '--/100';
+
+    const healthScoreProgress = Math.max(
+        0,
+        Math.min(100, Math.round(resolvedHealthScore ?? 0)),
+    );
+    const scoreLevelLabel = healthScoreProgress >= 80
+        ? t('dashboard.scoreLevel.excellent')
+        : healthScoreProgress >= 60
+            ? t('dashboard.scoreLevel.good')
+            : healthScoreProgress >= 40
+                ? t('dashboard.scoreLevel.average')
+                : t('dashboard.scoreLevel.needsImprovement');
 
     const refreshUsage = async () => {
         try {
@@ -259,9 +385,10 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [premium, history] = await Promise.allSettled([
+                const [premium, history, profile] = await Promise.allSettled([
                     subscriptionService.getUsageSummary(),
                     chatService.getHistory(50, 0),
+                    skinProfileService.getMyProfile(),
                 ]);
                 if (premium.status === 'fulfilled') {
                     setIsPremium(premium.value.isPremium);
@@ -285,6 +412,10 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                     setHistoryItems([]);
                     setActiveChatId(null);
                     setMessages([welcomeMessage]);
+                }
+
+                if (profile.status === 'fulfilled') {
+                    setSkinProfile(profile.value);
                 }
             } catch { /* use defaults */ }
         };
@@ -578,30 +709,72 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                     {/* Context Info */}
                     <Card className={`${contextCardClass}`}>
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className={`text-lg font-bold ${contextTitleTextClass}`}>{t('chatPage.context.title')}</h3>
-                            <span className={`text-[11px] px-2 py-1 rounded-full font-semibold ${isHcHigh ? 'bg-yellow-400/20 text-yellow-200' : isDark ? 'bg-[#1e40af]/40 text-[#bfdbfe]' : 'bg-white/25 text-white border border-white/30'}`}>{t('chatPage.context.live')}</span>
+                            <h3 className={`text-lg font-bold inline-flex items-center gap-2 ${contextTitleTextClass}`}>
+                                <ShieldCheck className="w-5 h-5" />
+                                {t('chatPage.context.title')}
+                            </h3>
+                            <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold border ${contextSoftBadgeClass}`}>{t('chatPage.context.live')}</span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-sm">
-                            <div className={`flex items-center justify-between rounded-lg border px-3 py-2 ${contextTileClass}`}>
-                                <span className={contextLabelTextClass}>{t('chatPage.context.skinTypeLabel')}</span>
-                                <span className={`font-semibold ${contextValueTextClass}`}>{t('chatPage.context.skinTypeValue')}</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4 gap-3 text-sm">
+                            <div className={`flex flex-col items-start gap-1 rounded-lg border px-3 py-2 min-h-[84px] ${contextTileClass}`}>
+                                <div className="w-full flex items-center justify-between gap-2">
+                                    <span className={`text-xs font-medium ${contextLabelTextClass}`}>{t('chatPage.context.skinTypeLabel')}</span>
+                                    <span className={`w-6 h-6 rounded-md flex items-center justify-center ${contextIconWrapClass}`}>
+                                        <UserRound className="w-3.5 h-3.5" />
+                                    </span>
+                                </div>
+                                <span className={`font-semibold text-sm leading-tight break-words w-full ${contextValueTextClass}`}>{skinTypeDisplay}</span>
                             </div>
-                            <div className={`flex items-center justify-between rounded-lg border px-3 py-2 ${contextTileClass}`}>
-                                <span className={contextLabelTextClass}>{t('chatPage.context.ageLabel')}</span>
-                                <span className={`font-semibold ${contextValueTextClass}`}>{t('chatPage.context.ageValue')}</span>
+                            <div className={`flex flex-col items-start gap-1 rounded-lg border px-3 py-2 min-h-[84px] ${contextTileClass}`}>
+                                <div className="w-full flex items-center justify-between gap-2">
+                                    <span className={`text-xs font-medium ${contextLabelTextClass}`}>{t('chatPage.context.ageLabel')}</span>
+                                    <span className={`w-6 h-6 rounded-md flex items-center justify-center ${contextIconWrapClass}`}>
+                                        <Clock3 className="w-3.5 h-3.5" />
+                                    </span>
+                                </div>
+                                <span className={`font-semibold text-sm leading-tight break-words w-full ${contextValueTextClass}`}>{skinAgeDisplay}</span>
                             </div>
-                            <div className={`flex items-center justify-between rounded-lg border px-3 py-2 ${contextTileClass}`}>
-                                <span className={contextLabelTextClass}>{t('chatPage.context.mainConcernsLabel')}</span>
-                                <span className={`font-semibold ${contextValueTextClass}`}>{t('chatPage.context.mainConcernsValue')}</span>
+                            <div className={`flex flex-col items-start gap-1 rounded-lg border px-3 py-2 min-h-[84px] ${contextTileClass}`}>
+                                <div className="w-full flex items-center justify-between gap-2">
+                                    <span className={`text-xs font-medium ${contextLabelTextClass}`}>{t('chatPage.context.mainConcernsLabel')}</span>
+                                    <span className={`w-6 h-6 rounded-md flex items-center justify-center ${contextIconWrapClass}`}>
+                                        <Target className="w-3.5 h-3.5" />
+                                    </span>
+                                </div>
+                                {concernChips.length > 0 ? (
+                                    <div className="w-full flex flex-wrap gap-1.5 mt-0.5">
+                                        {concernChips.map((chip, idx) => (
+                                            <span
+                                                key={`${chip}-${idx}`}
+                                                className={`px-2 py-0.5 text-[11px] rounded-full border font-medium ${contextChipClass}`}
+                                            >
+                                                {chip}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <span className={`font-semibold text-sm leading-tight break-words w-full ${contextValueTextClass}`}>{concernsDisplayCompact}</span>
+                                )}
                             </div>
-                            <div className={`rounded-lg border px-3 py-2 sm:col-span-2 xl:col-span-1 ${contextScoreTileClass}`}>
+                            <div className={`rounded-lg border px-3 py-2 min-h-[84px] sm:col-span-2 xl:col-span-2 2xl:col-span-1 ${contextScoreTileClass}`}>
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className={`font-medium ${contextScoreLabelClass}`}>{t('chatPage.context.currentScore')}</span>
-                                    <span className={`font-bold ${contextScoreValueClass}`}>87/100</span>
+                                    <span className={`text-xs font-medium inline-flex items-center gap-1 ${contextScoreLabelClass}`}>
+                                        <Gauge className="w-3.5 h-3.5" />
+                                        {t('chatPage.context.currentScore')}
+                                    </span>
+                                    <span className={`font-bold ${contextScoreValueClass}`}>{healthScoreDisplay}</span>
                                 </div>
                                 <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-[#1e3a5f]' : 'bg-[#DBEAFE]'}`}>
-                                    <div className="h-full w-[87%] bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] rounded-full" />
+                                    <div
+                                        className="h-full bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] rounded-full transition-all duration-500"
+                                        style={{ width: `${healthScoreProgress}%` }}
+                                    />
+                                </div>
+                                <div className="mt-2 flex justify-end">
+                                    <span className={`text-[11px] px-2 py-0.5 rounded-full border font-semibold ${contextSoftBadgeClass}`}>
+                                        {scoreLevelLabel}
+                                    </span>
                                 </div>
                             </div>
                         </div>

@@ -188,8 +188,8 @@ export const authService = {
     return res.data;
   },
 
-  async faceLogin(email: string): Promise<LoginResponse> {
-    const res = await apiClient.post<LoginResponse>('/auth/face-login', { email });
+  async faceLogin(email: string, descriptor?: number[], imageBase64?: string): Promise<LoginResponse> {
+    const res = await apiClient.post<LoginResponse>('/auth/face-login', { email, descriptor, imageBase64 });
     if (res.data.tokens) {
       localStorage.setItem('access_token', res.data.tokens.access_token);
       localStorage.setItem('refresh_token', res.data.tokens.refresh_token);

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   TrendingUp, TrendingDown, Calendar, Eye,
   ChevronLeft, ChevronRight, Clock, Target,
-  Activity,
+  Activity, BarChart2, LayoutList,
 } from 'lucide-react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { Card } from '../card';
@@ -65,6 +65,7 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
   const [selectedAnalysisIndex, setSelectedAnalysisIndex] = useState(0);
   const [selectedMetric, setSelectedMetric] = useState<keyof typeof EVOLUTION_COLORS>('score');
   const [evolutionData, setEvolutionData] = useState<EvolutionDataPoint[]>([]);
+  const [showChart, setShowChart] = useState(true);
 
   const loadAnalyses = async () => {
     setLoading(true);
@@ -132,13 +133,13 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
       {/* Inject scrollbar styles */}
       <style>{scrollbarStyles}</style>
       
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1300] flex items-start justify-center overflow-y-auto pt-20 pb-4 custom-scrollbar">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1300] flex items-center justify-center overflow-y-auto py-4 px-4 custom-scrollbar">
         <motion.div
           initial={{ scale: 0.95, opacity: 0, y: -20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: -20 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl mx-4 my-4 flex flex-col"
-          style={{ maxHeight: 'calc(100vh - 6rem)' }}
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl my-auto flex flex-col"
+          style={{ maxHeight: 'calc(100vh - 2rem)' }}
         >
         {/* Header - Fixed */}
         <div className="bg-gradient-to-r from-[#0EA5E9] to-[#0EA5E9] text-white p-6 flex-shrink-0 rounded-t-3xl">
@@ -154,70 +155,93 @@ export function AnalysisHistory({ onClose }: AnalysisHistoryProps) {
                 </p>
               </div>
             </div>
-            <Button
-              onClick={onClose}
-              variant="ghost"
-              size="sm"
-              className="text-white hover:bg-white/10"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Toggle chart visibility */}
+              <motion.button
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.94 }}
+                onClick={() => setShowChart(prev => !prev)}
+                title={showChart ? 'Masquer le graphique' : 'Afficher le graphique'}
+                className="w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-colors"
+              >
+                {showChart ? <LayoutList className="w-4 h-4" /> : <BarChart2 className="w-4 h-4" />}
+              </motion.button>
+              <Button
+                onClick={onClose}
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
 
-          {/* Evolution Chart */}
-          {evolutionData && evolutionData.length > 1 && (
-            <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <Target className="w-5 h-5" />
-                <h3 className="font-semibold">{t('analysis.history.evolutionTitle')}</h3>
-                <div className="flex gap-2 ml-auto">
-                  {Object.entries(EVOLUTION_COLORS).map(([key, color]) => (
-                    <button
-                      key={key}
-                      onClick={() => setSelectedMetric(key as keyof typeof EVOLUTION_COLORS)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-                        selectedMetric === key
-                          ? 'bg-white text-gray-700'
-                          : 'bg-white/20 text-white hover:bg-white/30'
-                      }`}
-                    >
-                      {key === 'score' ? t('analysis.history.metricGlobal') : key.charAt(0).toUpperCase() + key.slice(1)}
-                    </button>
-                  ))}
+          {/* Evolution Chart — togglable */}
+          <AnimatePresence initial={false}>
+            {showChart && evolutionData && evolutionData.length > 1 && (
+              <motion.div
+                key="chart"
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginTop: 0 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                transition={{ duration: 0.28, ease: 'easeInOut' }}
+                className="overflow-hidden"
+              >
+                <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Target className="w-5 h-5" />
+                    <h3 className="font-semibold">{t('analysis.history.evolutionTitle')}</h3>
+                    <div className="flex gap-2 ml-auto">
+                      {Object.entries(EVOLUTION_COLORS).map(([key, color]) => (
+                        <button
+                          key={key}
+                          onClick={() => setSelectedMetric(key as keyof typeof EVOLUTION_COLORS)}
+                          className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                            selectedMetric === key
+                              ? 'bg-white text-gray-700'
+                              : 'bg-white/20 text-white hover:bg-white/30'
+                          }`}
+                        >
+                          {key === 'score' ? t('analysis.history.metricGlobal') : key.charAt(0).toUpperCase() + key.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="h-32">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={evolutionData}>
+                        <defs>
+                          <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={EVOLUTION_COLORS[selectedMetric]} stopOpacity={0.3} />
+                            <stop offset="95%" stopColor={EVOLUTION_COLORS[selectedMetric]} stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.2)" />
+                        <XAxis dataKey="date" hide />
+                        <YAxis domain={[0, 100]} hide />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'rgba(255,255,255,0.95)',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontSize: '12px'
+                          }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey={selectedMetric}
+                          stroke={EVOLUTION_COLORS[selectedMetric]}
+                          strokeWidth={2}
+                          fill="url(#scoreGradient)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-              </div>
-              <div className="h-32">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={evolutionData}>
-                    <defs>
-                      <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={EVOLUTION_COLORS[selectedMetric]} stopOpacity={0.3} />
-                        <stop offset="95%" stopColor={EVOLUTION_COLORS[selectedMetric]} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.2)" />
-                    <XAxis dataKey="date" hide />
-                    <YAxis domain={[0, 100]} hide />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'rgba(255,255,255,0.95)',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '12px'
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey={selectedMetric}
-                      stroke={EVOLUTION_COLORS[selectedMetric]}
-                      strokeWidth={2}
-                      fill="url(#scoreGradient)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Content with Tabs - Scrollable */}

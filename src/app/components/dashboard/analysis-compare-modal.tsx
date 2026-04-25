@@ -70,14 +70,14 @@ interface SelectorCardProps {
 
 function SelectorCard({ label, placeholder, noOther, selected, analyses, onSelect, excludeId, side, isDark, isHcHigh }: SelectorCardProps) {
   const [open, setOpen] = useState(false);
-  const gradientFrom = side === 'left' ? 'from-blue-500' : 'from-violet-500';
-  const gradientTo   = side === 'left' ? 'to-cyan-500'  : 'to-pink-500';
+  const gradientFrom = side === 'left' ? 'from-blue-500' : 'from-cyan-500';
+  const gradientTo   = side === 'left' ? 'to-cyan-500'  : 'to-indigo-500';
 
   const filtered = analyses.filter(a => a.id !== excludeId && a.status === 'completed');
 
   const btnClass = isHcHigh
     ? 'w-full text-left rounded-2xl border-2 border-yellow-400 bg-black hover:bg-yellow-900/20 transition-all'
-    : 'w-full text-left rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:border-blue-400 dark:hover:border-blue-500 transition-all shadow-sm hover:shadow-md group';
+    : 'w-full text-left rounded-2xl border border-slate-200/50 dark:border-white/10 bg-white/40 dark:bg-white/5 backdrop-blur-md hover:border-blue-400/50 dark:hover:border-blue-500/50 transition-all shadow-sm hover:shadow-md group';
 
   const dropdownClass = isHcHigh
     ? 'mt-2 rounded-2xl border-2 border-yellow-400 bg-black shadow-xl z-[1502] relative overflow-hidden'
@@ -326,8 +326,8 @@ export function AnalysisCompareModal({ open, onClose, allAnalyses, initialA }: A
   const panelBg = isHcHigh
     ? 'bg-black border-2 border-yellow-400'
     : isDark
-      ? 'bg-slate-900/95 border border-slate-700/50'
-      : 'bg-white/95 border border-white/20';
+      ? 'bg-slate-900/80 border border-white/10'
+      : 'bg-white/80 border border-slate-200/50';
 
   const headingClass = isHcHigh
     ? 'text-yellow-100'
@@ -340,8 +340,8 @@ export function AnalysisCompareModal({ open, onClose, allAnalyses, initialA }: A
   const cardClass = isHcHigh
     ? 'rounded-2xl border-2 border-yellow-600 bg-black p-4'
     : isDark
-      ? 'rounded-2xl border border-slate-800 bg-slate-800/50 p-4 backdrop-blur-sm'
-      : 'rounded-2xl border border-slate-100 bg-white/80 p-4 backdrop-blur-sm';
+      ? 'rounded-2xl border border-white/5 bg-white/5 p-4 backdrop-blur-md shadow-sm'
+      : 'rounded-2xl border border-slate-100 bg-slate-50/50 p-4 backdrop-blur-md shadow-sm';
 
   // ── State ─────────────────────────────────────────────────────────────
   const [analysisA, setAnalysisA] = useState<Analysis | null>(initialA ?? null);
@@ -401,12 +401,12 @@ export function AnalysisCompareModal({ open, onClose, allAnalyses, initialA }: A
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed inset-x-0 bottom-0 md:inset-x-auto md:bottom-auto md:top-[72px] md:left-1/2 md:-translate-x-1/2 z-[1501] w-full md:max-w-4xl flex flex-col"
+            className="fixed inset-x-0 bottom-0 md:inset-x-auto md:bottom-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-[1501] w-full md:max-w-4xl flex flex-col"
           >
-            <div className={`relative flex flex-col max-h-[92vh] md:max-h-[calc(100vh-88px)] rounded-t-3xl md:rounded-3xl overflow-hidden backdrop-blur-2xl shadow-[0_-20px_80px_rgba(0,0,0,0.25)] md:shadow-2xl ${panelBg}`}>
+            <div className={`relative flex flex-col max-h-[92vh] md:max-h-[90vh] rounded-t-3xl md:rounded-3xl overflow-hidden backdrop-blur-2xl shadow-[0_-20px_80px_rgba(0,0,0,0.25)] md:shadow-2xl ${panelBg}`}>
 
               {/* Gradient accent bar */}
-              <div className={`absolute inset-x-0 top-0 h-1 ${isHcHigh ? 'bg-yellow-400' : 'bg-gradient-to-r from-blue-500 via-cyan-400 to-violet-500'}`} />
+              <div className={`absolute inset-x-0 top-0 h-1 ${isHcHigh ? 'bg-yellow-400' : 'bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500'}`} />
 
               {/* Mobile drag handle */}
               <div className="md:hidden pt-3 pb-1 flex justify-center">
@@ -453,7 +453,7 @@ export function AnalysisCompareModal({ open, onClose, allAnalyses, initialA }: A
                       isHcHigh={isHcHigh}
                     />
                     <div className="hidden sm:flex items-center justify-center self-center mt-6">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg ${isHcHigh ? 'bg-yellow-500' : 'bg-gradient-to-br from-blue-500 to-violet-500'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg ${isHcHigh ? 'bg-yellow-500' : 'bg-gradient-to-br from-blue-500 to-indigo-500'}`}>
                         <ArrowRight className="w-4 h-4 text-white" />
                       </div>
                     </div>
@@ -559,9 +559,9 @@ export function AnalysisCompareModal({ open, onClose, allAnalyses, initialA }: A
                         <div className={`rounded-2xl p-4 ${
                           isHcHigh
                             ? 'bg-black border-2 border-yellow-500'
-                            : 'bg-gradient-to-br from-violet-50 to-pink-50 dark:from-violet-900/20 dark:to-pink-900/20 border border-violet-100 dark:border-violet-800/30'
+                            : 'bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border border-indigo-100 dark:border-indigo-800/30'
                         }`}>
-                          <div className={`text-xs font-semibold uppercase tracking-wider mb-2 ${isHcHigh ? 'text-yellow-400' : 'text-violet-600 dark:text-violet-400'}`}>{t('analysis.compare.skinAgeTitle')}</div>
+                          <div className={`text-xs font-semibold uppercase tracking-wider mb-2 ${isHcHigh ? 'text-yellow-400' : 'text-indigo-600 dark:text-indigo-400'}`}>{t('analysis.compare.skinAgeTitle')}</div>
                           <div className={`text-2xl font-black ${headingClass}`}>
                             {comparison.analysis2.skinAge ?? '—'}
                             <span className={`text-sm font-normal ml-1 ${subClass}`}>{t('analysis.compare.skinAgeUnit')}</span>
@@ -671,7 +671,7 @@ export function AnalysisCompareModal({ open, onClose, allAnalyses, initialA }: A
                       <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-4 ${
                         isHcHigh
                           ? 'bg-black border-2 border-yellow-500'
-                          : 'bg-gradient-to-br from-blue-500/10 to-violet-500/10 border border-blue-200/40 dark:border-blue-700/30'
+                          : 'bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-200/40 dark:border-blue-700/30'
                       }`}>
                         <GitCompare className={`w-9 h-9 ${isHcHigh ? 'text-yellow-400' : 'text-blue-400 dark:text-blue-500'}`} />
                       </div>

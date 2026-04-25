@@ -7,8 +7,8 @@ import toast from 'react-hot-toast';
 
 interface FaceIDScannerProps {
     userEmail: string;
-    userAvatarUrl: string;
-    onSuccess: () => void;
+    userAvatarUrl?: string;
+    onSuccess: (descriptor?: number[]) => Promise<boolean>;
     onClose: () => void;
 }
 
@@ -23,8 +23,6 @@ export function FaceIDScanner({ userEmail, userAvatarUrl, onSuccess, onClose }: 
     const [matchScore, setMatchScore] = useState<number>(0);
     const [scanProgress, setScanProgress] = useState<number>(0);
     const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
-    const [referenceDescriptor, setReferenceDescriptor] = useState<Float32Array | null>(null);
-    const [isReferenceLoading, setIsReferenceLoading] = useState(false);
 
     // Effect to attach stream to video element
     useEffect(() => {
@@ -32,66 +30,6 @@ export function FaceIDScanner({ userEmail, userAvatarUrl, onSuccess, onClose }: 
             videoRef.current.srcObject = videoStream;
         }
     }, [videoStream, scanStatus]);
-
-    // Effect to load reference descriptor once
-    useEffect(() => {
-        const loadReference = async () => {
-            if (!isModelsLoaded || !userAvatarUrl || referenceDescriptor) return;
-
-            setIsReferenceLoading(true);
-            try {
-                // Optimize Google/Facebook URLs for higher resolution if possible
-                let optimizedUrl = userAvatarUrl;
-                if (userAvatarUrl.includes('googleusercontent.com')) {
-                    optimizedUrl = userAvatarUrl.replace('=s96-c', '=s400-c').replace('/s96-c/', '/s400-c/');
-                } else if (userAvatarUrl.includes('facebook.com')) {
-                    optimizedUrl = userAvatarUrl + (userAvatarUrl.includes('?') ? '&' : '?') + 'width=400&height=400';
-                }
-
-                // Use backend proxy to avoid 429 and CORS issues with Google/Facebook, 
-                // but use data URLs directly as they don't have CORS issues
-                const proxyUrl = userAvatarUrl.startsWith('data:')
-                    ? userAvatarUrl
-                    : `http://localhost:3000/auth/proxy-avatar?url=${encodeURIComponent(optimizedUrl)}`;
-
-                // Manually load image to have better control over CORS and errors
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.src = proxyUrl;
-
-                await new Promise((resolve, reject) => {
-                    img.onload = resolve;
-                    img.onerror = () => reject(new Error("Failed to load reference image"));
-                });
-
-                // SSD Mobilenet V1 is much more accurate for static reference images
-                // Try with default minConfidence (0.5) first
-                let detection = await faceapi.detectSingleFace(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.4 }))
-                    .withFaceLandmarks()
-                    .withFaceDescriptor();
-
-                // If it fails, try a very low threshold (0.2) as a last resort
-                if (!detection) {
-                    detection = await faceapi.detectSingleFace(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.2 }))
-                        .withFaceLandmarks()
-                        .withFaceDescriptor();
-                }
-
-                if (detection) {
-                    setReferenceDescriptor(detection.descriptor);
-                } else {
-                    toast.error("Avatar non disponible. Veuillez réessayer.");
-                }
-            } catch (error) {
-                console.error("Error loading reference image:", error);
-                toast.error("Échec du chargement de l'avatar. Veuillez vérifier votre connexion.");
-            } finally {
-                setIsReferenceLoading(false);
-            }
-        };
-
-        loadReference();
-    }, [isModelsLoaded, userAvatarUrl]);
 
     useEffect(() => {
         const loadModels = async () => {
@@ -137,20 +75,12 @@ export function FaceIDScanner({ userEmail, userAvatarUrl, onSuccess, onClose }: 
             return;
         }
 
-        if (!referenceDescriptor && !isReferenceLoading) {
-            toast('Avatar non disponible. Analyse en mode camera.', { icon: '⚠️' });
-        }
-
         setIsScanning(true);
         setScanProgress(0);
         setMatchScore(0);
 
         try {
-            const faceMatcher = referenceDescriptor
-                ? new faceapi.FaceMatcher(referenceDescriptor, 0.6)
-                : null;
-
-            // 2. Continuous detection from video
+            // Continuous detection from video
             let matchFound = false;
             let currentProgress = 0;
             const scanInterval = setInterval(async () => {
@@ -162,12 +92,10 @@ export function FaceIDScanner({ userEmail, userAvatarUrl, onSuccess, onClose }: 
                 const detections = await faceapi.detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
 
                 if (detections) {
-                    const score = faceMatcher
-                        ? 1 - faceMatcher.findBestMatch(detections.descriptor).distance
-                        : detections.detection.score;
+                    const score = detections.detection.score;
                     setMatchScore(score);
 
-                    const isValidMatch = faceMatcher ? score > 0.55 : score > 0.45;
+                    const isValidMatch = score > 0.45;
                     if (isValidMatch) {
                         currentProgress += Math.random() * 15 + 10; // Increment progress
                         if (currentProgress >= 100) {
@@ -176,10 +104,18 @@ export function FaceIDScanner({ userEmail, userAvatarUrl, onSuccess, onClose }: 
                             setScanStatus('success');
                             clearInterval(scanInterval);
                             setIsScanning(false);
-                            stopVideo();
-                            setTimeout(() => {
-                                onSuccess();
-                            }, 1500);
+                            
+                            const finalDescriptor = Array.from(detections.descriptor);
+                            
+                            setTimeout(async () => {
+                                setScanStatus('loading');
+                                const success = await onSuccess(finalDescriptor);
+                                if (!success) {
+                                    setScanStatus('error');
+                                } else {
+                                    stopVideo();
+                                }
+                            }, 500);
                         }
                         setScanProgress(currentProgress);
                     } else {
@@ -196,7 +132,7 @@ export function FaceIDScanner({ userEmail, userAvatarUrl, onSuccess, onClose }: 
                     clearInterval(scanInterval);
                     setIsScanning(false);
                     setScanStatus('error');
-                    toast.error("Échec de la reconnaissance faciale. Réessayez.");
+                    toast.error("Échec de la capture faciale. Réessayez.");
                 }
             }, 15000);
 
@@ -491,19 +427,9 @@ export function FaceIDScanner({ userEmail, userAvatarUrl, onSuccess, onClose }: 
                                   whileHover={{ scale: 1.02 }}
                                   whileTap={{ scale: 0.98 }}
                                   onClick={handleScan}
-                                                                    disabled={isReferenceLoading}
-                                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm text-white shadow-lg transition-all ${
-                                                                        isReferenceLoading
-                                      ? 'bg-gray-400 cursor-not-allowed'
-                                      : 'bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] shadow-[#0EA5E9]/20 hover:shadow-xl'
-                                  }`}
+                                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm text-white shadow-lg transition-all bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] shadow-[#0EA5E9]/20 hover:shadow-xl"
                                 >
-                                  {isReferenceLoading ? (
-                                    <>
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                      Chargement...
-                                    </>
-                                  ) : "Commencer l'analyse"}
+                                  Commencer l'analyse
                                 </motion.button>
                             ) : (
                                 <div className="flex items-center justify-center gap-2 text-[#0EA5E9] font-medium py-3">

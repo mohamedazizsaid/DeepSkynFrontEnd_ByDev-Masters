@@ -3,27 +3,52 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import {
-  Cloud,
-  CloudRain,
-  Sun,
-  Wind,
-  Droplets,
-  Eye,
-  Gauge,
-  Sunrise,
-  Sunset,
-  Zap,
-  RefreshCw,
-  AlertCircle,
-  Loader,
-} from 'lucide-react';
 import { useWeather } from '@/lib/hooks/useWeather';
 import { showWeatherAdviceToast } from './weather-advice-toast';
+import { useAccessibilityStore } from '@/stores/accessibility.store';
+import { useReducedMotion } from 'motion/react';
+import { Cloud, CloudRain, Sun, Wind, Droplets, Eye, Gauge, Sunrise, Sunset, Zap, RefreshCw, AlertCircle, Loader, Calendar } from 'lucide-react';
 
 const WeatherDashboard: React.FC = () => {
   const { weather, advice, loading, error, refreshWeather } = useWeather(true);
   const [showAdvice, setShowAdvice] = useState(false);
+  const { theme, contrastMode, reduceMotion, t } = useAccessibilityStore();
+  const isDark = theme === 'dark';
+  const isHcHigh = contrastMode === 'high';
+  const browserReducedMotion = useReducedMotion();
+  const shouldReduceMotion = reduceMotion || browserReducedMotion;
+
+  const fullTitle = `${t('nav.weather')} & Environnement`;
+  const [visibleTitleText, setVisibleTitleText] = useState('');
+  const [titleLoopKey, setTitleLoopKey] = useState(0);
+  const titlePrefix = `${t('nav.weather')} `;
+
+  useEffect(() => {
+    if (shouldReduceMotion) {
+      setVisibleTitleText(fullTitle);
+      return;
+    }
+
+    setVisibleTitleText('');
+    const charDelay = 45;
+    const holdDelay = 10000; // 10s
+    const timeouts: NodeJS.Timeout[] = [];
+
+    const type = (index: number) => {
+      if (index <= fullTitle.length) {
+        setVisibleTitleText(fullTitle.slice(0, index));
+        timeouts.push(setTimeout(() => type(index + 1), charDelay));
+      } else {
+        timeouts.push(setTimeout(() => {
+          setTitleLoopKey(prev => prev + 1);
+        }, holdDelay));
+      }
+    };
+
+    timeouts.push(setTimeout(() => type(1), 100));
+
+    return () => timeouts.forEach(clearTimeout);
+  }, [fullTitle, shouldReduceMotion, titleLoopKey]);
 
   const getWeatherGradient = () => {
     if (!weather) return 'from-blue-400 to-blue-600';
@@ -81,6 +106,42 @@ const WeatherDashboard: React.FC = () => {
       transition={{ duration: 0.5 }}
       className="w-full space-y-6"
     >
+      {/* ═══ Header synced with RoutinePage ═══ */}
+      <div className="mb-4">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#0EA5E9]/20">
+            <Cloud className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h1 className={`text-3xl font-bold mb-1 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <motion.span
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {visibleTitleText.slice(0, titlePrefix.length)}
+                <span className={isHcHigh ? 'text-cyan-400' : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent'}>
+                  {visibleTitleText.length > titlePrefix.length
+                    ? visibleTitleText.slice(titlePrefix.length)
+                    : ''}
+                </span>
+                {visibleTitleText.length < fullTitle.length && !shouldReduceMotion && (
+                  <motion.span
+                    className="inline-block ml-0.5 text-[#0EA5E9]"
+                    animate={{ opacity: [0, 1, 0] }}
+                    transition={{ duration: 0.8, repeat: Infinity }}
+                  >
+                    |
+                  </motion.span>
+                )}
+              </motion.span>
+            </h1>
+            <p className="text-gray-500 text-sm">
+              Découvrez les conditions météo en temps réel et recevez des conseils skincare adaptés
+            </p>
+          </div>
+        </div>
+      </div>
       {/* Carte principale météo - Plus grande et détaillée */}
       <div className={`relative overflow-hidden rounded-3xl shadow-2xl bg-gradient-to-br ${getWeatherGradient()} text-white`}>
         {/* Éléments décoratifs animés */}

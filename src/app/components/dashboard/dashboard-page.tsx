@@ -23,8 +23,9 @@ interface DashboardPageProps {
 
 export function DashboardPage({ onNavigate }: DashboardPageProps) {
   const { user } = useAuthStore();
-  const { theme, contrastMode, t } = useAccessibilityStore();
-  const shouldReduceMotion = useReducedMotion();
+  const { theme, contrastMode, reduceMotion, t } = useAccessibilityStore();
+  const browserReducedMotion = useReducedMotion();
+  const shouldReduceMotion = reduceMotion || browserReducedMotion;
   const isDark = theme === 'dark';
   const isHcHigh = contrastMode === 'high';
 

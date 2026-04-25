@@ -121,9 +121,9 @@ export function PreocupentSelectorModal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.98 }}
             transition={{ type: 'spring', damping: 26, stiffness: 260 }}
-            className="preocupent-scrollbar-hide w-full max-w-5xl max-h-[calc(100vh-4rem)] md:max-h-[calc(100vh-5rem)] overflow-y-auto rounded-3xl border border-cyan-100 bg-gradient-to-br from-white via-[#f8fdff] to-[#f1fbff] shadow-2xl shadow-cyan-500/10"
+            className="preocupent-scrollbar-hide w-full max-w-5xl max-h-[calc(100vh-4rem)] md:max-h-[calc(100vh-5rem)] overflow-y-auto rounded-3xl border border-white/20 bg-white/60 dark:bg-slate-900/40 backdrop-blur-3xl shadow-2xl shadow-cyan-500/10"
           >
-          <div className="h-1.5 w-full rounded-t-3xl bg-gradient-to-r from-[#0EA5E9] via-[#38BDF8] to-[#60A5FA]" />
+          <div className="h-1.5 w-full rounded-t-3xl bg-gradient-to-r from-[#0EA5E9] via-indigo-400 to-cyan-500" />
           <div className="relative p-5 md:p-8">
             <button
               onClick={onClose}

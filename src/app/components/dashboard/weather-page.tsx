@@ -6,45 +6,40 @@ import { motion } from 'motion/react';
 import { Cloud, Droplets, Wind, Eye, AlertCircle, Sparkles } from 'lucide-react';
 import WeatherDashboard from '../../../components/weather/weather-dashboard';
 
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
+import { useReducedMotion } from 'motion/react';
+
 interface WeatherPageProps {
   onBack?: () => void;
 }
 
 export function WeatherPage({ onBack }: WeatherPageProps) {
+  const { reduceMotion } = useAccessibilityStore();
+  const browserReducedMotion = useReducedMotion();
+  const shouldReduceMotion = reduceMotion || browserReducedMotion;
+
+  const pageTransition = shouldReduceMotion ? { duration: 0 } : { duration: 0.5 };
+  const cardTransition = (idx: number) => shouldReduceMotion ? { duration: 0 } : { delay: 0.4 + idx * 0.1 };
+  const hoverScale = shouldReduceMotion ? 1 : 1.05;
+  const hoverY = shouldReduceMotion ? 0 : -5;
+
   return (
     <div className="min-h-screen pb-12 px-4 sm:px-6 lg:px-8">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={pageTransition}
         className="max-w-7xl mx-auto"
       >
-        {/* En-tête standardisé */}
-        <div className="mb-12 mt-2">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center flex-shrink-0">
-              <Cloud className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                Météo & Conseils
-              </h1>
-              <p className="text-[#6B7280] text-sm">
-                Découvrez les conditions météo en temps réel et recevez des conseils skincare adaptés
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Widget météo amélioré */}
-        <div className="space-y-6">
+        <div className="space-y-6 pt-4">
           <WeatherDashboard />
           
           {/* Tips section - Plus grande et détaillée */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.3 }}
             className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
           >
             {[
@@ -79,10 +74,10 @@ export function WeatherPage({ onBack }: WeatherPageProps) {
             ].map((tip, idx) => (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, y: 20 }}
+                initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + idx * 0.1 }}
-                whileHover={{ scale: 1.05, y: -5 }}
+                transition={cardTransition(idx)}
+                whileHover={{ scale: hoverScale, y: hoverY }}
                 className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-lg hover:shadow-xl transition-all"
               >
                 <div 
@@ -108,9 +103,9 @@ export function WeatherPage({ onBack }: WeatherPageProps) {
 
           {/* Pro Tips - Plus détaillée */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.5 }}
             className="rounded-3xl border border-blue-200 dark:border-blue-800 bg-gradient-to-br from-[#0EA5E9]/5 via-transparent to-[#06B6D4]/5 p-12"
           >
             <div className="flex items-center gap-4 mb-8">

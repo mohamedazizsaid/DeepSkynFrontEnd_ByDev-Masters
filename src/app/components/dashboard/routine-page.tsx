@@ -95,12 +95,13 @@ export function RoutinePage({ onBack, onUpgrade }: RoutinePageProps) {
   const [aiRoutineUsed, setAiRoutineUsed] = useState(0);
   const [aiRoutineResetAt, setAiRoutineResetAt] = useState<string | null>(null);
 
-  const { theme, contrastMode, t } = useAccessibilityStore();
+  const { theme, contrastMode, reduceMotion, t } = useAccessibilityStore();
   const { success, error } = useNotification();
   const isHcHigh = contrastMode === 'high';
   const isHcMedium = contrastMode === 'medium';
   const isDark = theme === 'dark';
-  const shouldReduceMotion = useReducedMotion();
+  const browserReducedMotion = useReducedMotion();
+  const shouldReduceMotion = reduceMotion || browserReducedMotion;
 
   const [amSteps, setAmSteps] = useState<StepItem[]>([]);
   const [pmSteps, setPmSteps] = useState<StepItem[]>([]);

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
     LayoutDashboard,
     Scan,
@@ -158,6 +158,8 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
         clearSpokenText,
         t,
     } = useAccessibilityStore();
+    const browserReducedMotion = useReducedMotion();
+    const shouldReduceMotion = reduceMotion || browserReducedMotion;
 
     const fullLogoText = 'DeepSkyn';
     const [visibleLogoText, setVisibleLogoText] = useState('');
@@ -165,7 +167,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
     const [isIconShifted, setIsIconShifted] = useState(false);
 
     useEffect(() => {
-        if (reduceMotion) {
+        if (shouldReduceMotion) {
             setVisibleLogoText(fullLogoText);
             setIsIconShifted(true);
             return;
@@ -174,7 +176,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
         setVisibleLogoText('');
         setIsIconShifted(false);
         const charDelay = 60;
-        const holdDelay = 5000;
+        const holdDelay = 10000;
         const timeouts: NodeJS.Timeout[] = [];
 
         const type = (index: number) => {
@@ -197,7 +199,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
         }, 1000));
 
         return () => timeouts.forEach(clearTimeout);
-    }, [logoLoopKey, reduceMotion]);
+    }, [logoLoopKey, shouldReduceMotion]);
 
     useEffect(() => {
         let mounted = true;
@@ -423,7 +425,7 @@ export function UserNavbar({ currentPage, onNavigate, onLogout, onToggleNotifica
                                         rotate: [-10, 10, -10, 10, 0],
                                         scale: [1, 1.1, 1, 1.1, 1]
                                     }}
-                                    transition={{ 
+                                    transition={shouldReduceMotion ? { duration: 0 } : { 
                                         duration: 1.5,
                                         repeat: Infinity,
                                         repeatDelay: 2,

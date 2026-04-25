@@ -96,8 +96,9 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
   const [showAnalysisHistory, setShowAnalysisHistory] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [allAnalysesForCompare, setAllAnalysesForCompare] = useState<Analysis[]>([]);
-  const { theme, contrastMode, t } = useAccessibilityStore();
-  const shouldReduceMotion = useReducedMotion();
+  const { theme, contrastMode, reduceMotion, t } = useAccessibilityStore();
+  const browserReducedMotion = useReducedMotion();
+  const shouldReduceMotion = reduceMotion || browserReducedMotion;
 
   const fullTitle = t('analysis.header.title');
   const [visibleTitleText, setVisibleTitleText] = useState('');
@@ -777,7 +778,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setCompareOpen(true)}
-                    className="px-6 py-3 rounded-xl bg-violet-600 dark:bg-violet-500 text-white font-semibold ring-2 ring-violet-400/60 dark:ring-violet-300/40 shadow-lg shadow-violet-500/40 hover:bg-violet-700 dark:hover:bg-violet-400 hover:shadow-xl transition-all flex items-center gap-2"
+                    className="px-6 py-3 rounded-xl bg-white dark:bg-slate-900/80 text-blue-600 dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-500/30 shadow-md hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all flex items-center gap-2"
                   >
                     <GitCompare className="w-5 h-5" />
                     <span>{t('analysis.compare.btnOpen')}</span>

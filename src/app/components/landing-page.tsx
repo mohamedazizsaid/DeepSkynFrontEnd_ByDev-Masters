@@ -15,14 +15,15 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
-  const { t } = useAccessibilityStore();
+  const { t, reduceMotion } = useAccessibilityStore();
   const [inView, setInView] = useState(false);
   const [plans, setPlans] = useState<SubscriptionPlanInfo[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [plansError, setPlansError] = useState<string | null>(null);
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
   const [selectedPlanName, setSelectedPlanName] = useState('');
-  const shouldReduceMotion = useReducedMotion();
+  const browserReducedMotion = useReducedMotion();
+  const shouldReduceMotion = !!(reduceMotion || browserReducedMotion);
 
   const fullTitle = `${t('landing.heroTitle1')}${t('landing.heroTitleGradient')}${t('landing.heroTitle2')}`;
   const [visibleTitleText, setVisibleTitleText] = useState('');

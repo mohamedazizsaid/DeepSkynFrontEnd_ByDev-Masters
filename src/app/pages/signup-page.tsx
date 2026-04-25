@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Mail, Lock, User, CheckCircle2, ArrowRight, ShieldCheck, RotateCcw, Check, X, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
@@ -25,14 +25,14 @@ type FieldInputProps = {
   errorMessage?: string;
 };
 
-function ValidationMessage({ message, show }: { message?: string; show: boolean }) {
+function ValidationMessage({ message, show, shouldReduceMotion }: { message?: string; show: boolean; shouldReduceMotion: boolean }) {
   return (
     <AnimatePresence mode="wait">
       {show && message && (
         <motion.div
-          initial={{ opacity: 0, y: -8, x: -8 }}
+          initial={shouldReduceMotion ? { opacity: 1, y: 0, x: 0 } : { opacity: 0, y: -8, x: -8 }}
           animate={{ opacity: 1, y: 0, x: 0 }}
-          exit={{ opacity: 0, y: -8, x: -8 }}
+          exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, x: -8 }}
           transition={{ duration: 0.2 }}
           className="flex items-center gap-2 px-3 py-2 mt-2 rounded-lg bg-[#FEF2F2] dark:bg-[#7F1D1D]/20 border border-[#FECACA] dark:border-[#DC2626]/30"
         >
@@ -58,7 +58,8 @@ function FloatingInput({
   valid,
   invalid,
   errorMessage,
-}: FieldInputProps) {
+  shouldReduceMotion,
+}: FieldInputProps & { shouldReduceMotion: boolean }) {
   return (
     <div>
       <label
@@ -79,9 +80,8 @@ function FloatingInput({
           inputMode={inputMode}
           maxLength={maxLength}
           placeholder=" "
-          className={`peer w-full rounded-2xl border bg-white/80 dark:bg-[#1e3a5f]/80 py-4 pl-12 pr-12 text-[15px] text-[#1A1A2E] dark:text-white outline-none shadow-[0_14px_24px_-20px_rgba(26,26,46,0.6)] dark:shadow-[0_14px_24px_-20px_rgba(0,0,0,0.6)] transition-all duration-300 focus:border-[#3BBDF4] focus:bg-white dark:focus:bg-[#1e3a5f] focus:ring-4 focus:ring-[#3BBDF4]/20 dark:focus:ring-[#0EA5E9]/20 ${
-            invalid ? 'border-[#F97316]/70 dark:border-[#EA580C]/70' : 'border-[#D6E6FA] dark:border-gray-600/50'
-          } ${valid ? 'border-[#10B981]/60 dark:border-[#059669]/60' : ''}`}
+          className={`peer w-full rounded-2xl border bg-white/80 dark:bg-[#1e3a5f]/80 py-4 pl-12 pr-12 text-[15px] text-[#1A1A2E] dark:text-white outline-none shadow-[0_14px_24px_-20px_rgba(26,26,46,0.6)] dark:shadow-[0_14px_24px_-20px_rgba(0,0,0,0.6)] transition-all duration-300 focus:border-[#3BBDF4] focus:bg-white dark:focus:bg-[#1e3a5f] focus:ring-4 focus:ring-[#3BBDF4]/20 dark:focus:ring-[#0EA5E9]/20 ${invalid ? 'border-[#F97316]/70 dark:border-[#EA580C]/70' : 'border-[#D6E6FA] dark:border-gray-600/50'
+            } ${valid ? 'border-[#10B981]/60 dark:border-[#059669]/60' : ''}`}
         />
 
         <span className="pointer-events-none absolute left-11 top-4 origin-left text-[13px] font-medium text-[#64748B] dark:text-gray-400 transition-all duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-[15px] peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-[11px] peer-focus:uppercase peer-focus:tracking-[0.12em] peer-focus:text-[#3BBDF4] dark:peer-focus:text-[#0EA5E9] peer-not-placeholder-shown:top-2 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-[11px] peer-not-placeholder-shown:uppercase peer-not-placeholder-shown:tracking-[0.12em]">
@@ -100,7 +100,11 @@ function FloatingInput({
           </span>
         ) : null}
       </label>
-      <ValidationMessage message={errorMessage} show={invalid && !valid && !!errorMessage} />
+      <ValidationMessage
+        message={errorMessage}
+        show={Boolean(invalid && !valid && errorMessage)}
+        shouldReduceMotion={Boolean(shouldReduceMotion)}
+      />
     </div>
   );
 }
@@ -174,7 +178,9 @@ function FaceIdIcon() {
 }
 
 export function SignUpPage() {
-  const { t } = useAccessibilityStore();
+  const { t, reduceMotion } = useAccessibilityStore();
+  const browserReducedMotion = useReducedMotion();
+  const shouldReduceMotion = !!(reduceMotion || browserReducedMotion);
   const navigate = useNavigate();
   const { requestSignupCode, verifySignupCode } = useAuthStore();
 
@@ -412,6 +418,7 @@ export function SignUpPage() {
                 invalid={touched.name && !isNameValid}
                 errorMessage={getNameError()}
                 required
+                shouldReduceMotion={shouldReduceMotion}
               />
 
               <FloatingInput
@@ -426,6 +433,7 @@ export function SignUpPage() {
                 invalid={touched.email && !isEmailValid}
                 errorMessage={getEmailError()}
                 required
+                shouldReduceMotion={shouldReduceMotion}
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:items-start">
@@ -442,8 +450,9 @@ export function SignUpPage() {
                     invalid={touched.password && passwordScore < 2}
                     errorMessage={getPasswordError()}
                     required
+                    shouldReduceMotion={shouldReduceMotion}
                   />
-                  
+
                   {formData.password.length > 0 && (
                     <motion.div
                       initial={{ opacity: 0, y: -6 }}
@@ -522,6 +531,7 @@ export function SignUpPage() {
                   invalid={touched.confirmPassword && !confirmPasswordValid}
                   errorMessage={getConfirmPasswordError()}
                   required
+                  shouldReduceMotion={shouldReduceMotion}
                 />
               </div>
 
@@ -569,6 +579,7 @@ export function SignUpPage() {
                 valid={verificationCode.length === 6}
                 invalid={verificationCode.length > 0 && verificationCode.length < 6}
                 required
+                shouldReduceMotion={shouldReduceMotion}
               />
 
               <div className="rounded-xl border border-[#D6E6FA] bg-white p-3 flex items-center justify-between">

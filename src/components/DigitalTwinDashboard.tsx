@@ -57,7 +57,7 @@ export const DigitalTwinDashboard: React.FC<DigitalTwinDashboardProps> = ({
         };
       case 'PREDICTIONS_UNLOCKED':
         return {
-          title: 'Projection Routine Débloquée ✨',
+          title: 'Projection Routine Débloquée ',
           subtitle: 'Visualisez votre jumeau amélioré après votre routine',
           gradient: 'from-blue-500 to-cyan-600',
           icon: Target,
