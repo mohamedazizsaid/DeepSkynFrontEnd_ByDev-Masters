@@ -94,7 +94,7 @@ function generateHandKeypoints(
     // Base position with hand movement
     let x = handGesture.position.x * easedProgress;
     let y = handGesture.position.y * easedProgress;
-    let z = handGesture.position.z * easedProgress;
+    const z = handGesture.position.z * easedProgress;
 
     // Apply finger extension/curling based on gesture
     if (i > 0) {

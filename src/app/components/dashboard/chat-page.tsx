@@ -21,8 +21,10 @@ import { QuotaAlertBanner } from './quota-alert-banner';
 import { chatService } from '../../../lib/services/chat.service';
 import { subscriptionService } from '../../../lib/services/subscription.service';
 import { skinProfileService } from '../../../lib/services/skin-profile.service';
+import { analysisService } from '../../../lib/services/analysis.service';
+import { generateAnalysisPdf } from '../../../lib/pdf/analysis-report';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
-import type { ChatHistory, SkinProfile } from '../../../lib/types';
+import type { ChatHistory, ChatProductRecommendation, SkinProfile } from '../../../lib/types';
 import toast from 'react-hot-toast';
 
 interface ChatPageProps {
@@ -35,12 +37,14 @@ interface Message {
     type: 'user' | 'ai';
     content: string;
     timestamp: Date;
+    products?: ChatProductRecommendation[];
 }
 
 interface PersistedChatMessage {
     role?: string;
     content?: string;
     timestamp?: string;
+    products?: ChatProductRecommendation[];
 }
 
 interface ChatSkinProfileContext {
@@ -115,6 +119,7 @@ const getConversationMessages = (chat: ChatHistory): Message[] => {
                 type: m.role === 'assistant' ? 'ai' : 'user',
                 content: m.content || '',
                 timestamp: new Date(m.timestamp || chat.updatedAt || chat.createdAt || Date.now()),
+                products: m.role === 'assistant' ? m.products : undefined,
             }));
     }
 
@@ -145,6 +150,16 @@ const getConversationTitle = (chat: ChatHistory, fallbackTitle: string): string 
     return title.length > 64 ? `${title.slice(0, 64)}...` : title;
 };
 
+const getAssistantProducts = (messages?: PersistedChatMessage[] | null): ChatProductRecommendation[] => {
+    if (!Array.isArray(messages)) return [];
+
+    const assistantMessage = [...messages]
+        .reverse()
+        .find((message) => message.role === 'assistant' && Array.isArray(message.products) && message.products.length > 0);
+
+    return assistantMessage?.products || [];
+};
+
 export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     const { t, language, theme, contrastMode, reduceMotion } = useAccessibilityStore();
     const welcomeMessage: Message = {
@@ -166,6 +181,21 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     const [historyItems, setHistoryItems] = useState<ChatHistory[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const [skinProfile, setSkinProfile] = useState<SkinProfile | null>(null);
+
+    const generateReportFromLatest = async () => {
+        try {
+            const latest = await analysisService.getLatest();
+            if (!latest) {
+                toast.error('Aucune analyse disponible pour générer le rapport.');
+                return;
+            }
+            generateAnalysisPdf(latest, `deepskyn-analysis-${latest.id || 'report'}.pdf`);
+            toast.success('Rapport généré et téléchargé.');
+        } catch (err) {
+            console.error('Report generation failed', err);
+            toast.error('Impossible de générer le rapport.');
+        }
+    };
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const browserReducedMotion = useReducedMotion();
     const shouldReduceMotion = reduceMotion || browserReducedMotion;
@@ -460,13 +490,26 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
         setInputValue('');
         setIsTyping(true);
 
+        // If the user explicitly asked to generate a report, trigger PDF generation
+        try {
+            const reportRequestRegex = /gén(?:é|e)r.*rapport|gén(?:é|e)rer.*rapport|créer.*rapport|rapport.*gén/iu;
+            if (reportRequestRegex.test(message)) {
+                // run in background, do not block chat send
+                void generateReportFromLatest();
+            }
+        } catch (e) { /* ignore */ }
+
         try {
             const response = await chatService.sendMessage({ message, chatId: activeChatId || undefined });
+            const latestAssistantMessage = Array.isArray(response.messages)
+                ? [...response.messages].reverse().find((entry) => entry.role === 'assistant')
+                : undefined;
             const aiMessage: Message = {
                 id: response.id || (Date.now() + 1).toString(),
                 type: 'ai',
-                content: response.assistantResponse || t('chatPage.toasts.aiFallback'),
-                timestamp: new Date(response.createdAt || Date.now())
+                content: latestAssistantMessage?.content || response.assistantResponse || t('chatPage.toasts.aiFallback'),
+                timestamp: new Date(latestAssistantMessage?.timestamp || response.createdAt || Date.now()),
+                products: latestAssistantMessage?.products || getAssistantProducts(response.messages as PersistedChatMessage[] | null | undefined),
             };
             setMessages(prev => [...prev, aiMessage]);
             const usage = await refreshUsage();
@@ -637,6 +680,46 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                                                     </div>
                                                 )}
                                                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                                                {message.type === 'ai' && message.products && message.products.length > 0 && (
+                                                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                                        {message.products.map((product, index) => (
+                                                            <div
+                                                                key={`${message.id}-product-${product.id || product.name || index}`}
+                                                                className="overflow-hidden rounded-xl border border-[#BFDBFE] bg-white shadow-sm"
+                                                            >
+                                                                <div className="aspect-square w-full bg-[#F8FBFF] overflow-hidden">
+                                                                    {product.imageUrl ? (
+                                                                        <img
+                                                                            src={product.imageUrl}
+                                                                            alt={product.name}
+                                                                            className="h-full w-full object-cover"
+                                                                            loading="lazy"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#E0F2FE] to-[#F8FBFF] px-3 text-center text-xs font-semibold text-[#0284C7]">
+                                                                            {product.name}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="p-3">
+                                                                    <div className="flex items-start justify-between gap-2">
+                                                                        <div>
+                                                                            <p className="text-sm font-semibold text-[#0F172A] leading-snug">{product.name}</p>
+                                                                            {product.brand && (
+                                                                                <p className="text-[11px] text-[#64748B] mt-0.5">{product.brand}</p>
+                                                                            )}
+                                                                        </div>
+                                                                        {product.category && (
+                                                                            <span className="shrink-0 rounded-full bg-[#E0F2FE] px-2 py-0.5 text-[10px] font-medium text-[#0369A1]">
+                                                                                {product.category}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                             <p className="text-xs text-[#64748B] mt-1 px-2 inline-flex items-center gap-1">
                                                 <Clock3 className="w-3 h-3" />

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { generateAnalysisPdf } from '../../../lib/pdf/analysis-report';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   ArrowLeft, Download, Sparkles, TrendingUp, TrendingDown,
@@ -10,10 +11,10 @@ import {
 import { Button } from '../button';
 import { Card } from '../card';
 import { QuotaAlertBanner } from './quota-alert-banner';
-import { 
-  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, 
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, 
-  CartesianGrid, Area, AreaChart 
+import {
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip,
+  CartesianGrid, Area, AreaChart
 } from 'recharts';
 import { analysisService } from '../../../lib/services/analysis.service';
 import { subscriptionService } from '../../../lib/services/subscription.service';
@@ -37,6 +38,7 @@ import {
 } from './preocupent-selector-modal';
 import { PredictiveRoutineCard } from '../../../components/analysis';
 import { AnalysisHistory } from './analysis-history';
+import { FaceZoneVisualization } from './face-zone-visualization';
 import { useFaceVerification } from '../../../lib/hooks/useFaceVerification';
 import toast from 'react-hot-toast';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
@@ -50,14 +52,14 @@ interface AnalysisPageProps {
 
 // Icon map for metric keys
 const METRIC_ICONS: Record<string, React.ReactNode> = {
-  hydration:    <Droplets className="w-6 h-6" />,
-  texture:      <Sparkles className="w-6 h-6" />,
-  pores:        <CircleDot className="w-6 h-6" />,
+  hydration: <Droplets className="w-6 h-6" />,
+  texture: <Sparkles className="w-6 h-6" />,
+  pores: <CircleDot className="w-6 h-6" />,
   pigmentation: <Sun className="w-6 h-6" />,
-  wrinkles:     <TrendingUp className="w-6 h-6" />,
-  acne:         <Flame className="w-6 h-6" />,
-  redness:      <Heart className="w-6 h-6" />,
-  elasticity:   <Zap className="w-6 h-6" />,
+  wrinkles: <TrendingUp className="w-6 h-6" />,
+  acne: <Flame className="w-6 h-6" />,
+  redness: <Heart className="w-6 h-6" />,
+  elasticity: <Zap className="w-6 h-6" />,
 };
 
 export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNavigateToRoutine }: AnalysisPageProps) {
@@ -82,9 +84,9 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
   const loadRunIdRef = useRef(0);
 
   // Face verification hook
-  const { 
-    isModelLoaded, 
-    loadModels, 
+  const {
+    isModelLoaded,
+    loadModels,
     extractDescriptorFromImage,
     verifyFromImage,
   } = useFaceVerification();
@@ -103,37 +105,37 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
   const fullTitle = t('analysis.header.title');
   const [visibleTitleText, setVisibleTitleText] = useState('');
   const [titleLoopKey, setTitleLoopKey] = useState(0);
-  
+
   const titleWords = fullTitle.split(' ');
-  const titlePrefix = titleWords.length > 1 
-      ? titleWords.slice(0, -1).join(' ') + ' ' 
-      : '';
+  const titlePrefix = titleWords.length > 1
+    ? titleWords.slice(0, -1).join(' ') + ' '
+    : '';
 
   useEffect(() => {
-      if (shouldReduceMotion) {
-          setVisibleTitleText(fullTitle);
-          return;
+    if (shouldReduceMotion) {
+      setVisibleTitleText(fullTitle);
+      return;
+    }
+
+    setVisibleTitleText('');
+    const charDelay = 45;
+    const holdDelay = 10000; // 10s pour ne pas être trop répétitif
+    const timeouts: NodeJS.Timeout[] = [];
+
+    const type = (index: number) => {
+      if (index <= fullTitle.length) {
+        setVisibleTitleText(fullTitle.slice(0, index));
+        timeouts.push(setTimeout(() => type(index + 1), charDelay));
+      } else {
+        timeouts.push(setTimeout(() => {
+          setTitleLoopKey(prev => prev + 1);
+        }, holdDelay));
       }
+    };
 
-      setVisibleTitleText('');
-      const charDelay = 45;
-      const holdDelay = 10000; // 10s pour ne pas être trop répétitif
-      const timeouts: NodeJS.Timeout[] = [];
+    timeouts.push(setTimeout(() => type(1), 150));
 
-      const type = (index: number) => {
-          if (index <= fullTitle.length) {
-              setVisibleTitleText(fullTitle.slice(0, index));
-              timeouts.push(setTimeout(() => type(index + 1), charDelay));
-          } else {
-              timeouts.push(setTimeout(() => {
-                  setTitleLoopKey(prev => prev + 1);
-              }, holdDelay));
-          }
-      };
-
-      timeouts.push(setTimeout(() => type(1), 150));
-
-      return () => timeouts.forEach(clearTimeout);
+    return () => timeouts.forEach(clearTimeout);
   }, [fullTitle, shouldReduceMotion, titleLoopKey]);
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -288,22 +290,22 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
     try {
       // 1. Récupérer les VRAIES données météo + conseil IA de la navbar
       const { weather, advice } = await fetchCompleteWeatherData();
-      
+
       // 2. Envoyer ces vraies données au backend pour les alertes supplémentaires
       let alert = null;
-      
+
       try {
         // Utiliser le service contextuel avec les vraies coordonnées pour les alertes
         const contextualData = await contextualAnalysisService.getWeatherAlert(
-          weather.latitude, 
-          weather.longitude, 
+          weather.latitude,
+          weather.longitude,
           weather.city
         );
         alert = contextualData.alert;
       } catch (err) {
         console.warn('Weather alerts unavailable, using weather data only:', err);
       }
-      
+
       // 3. Combiner vraies données météo + conseil IA de la navbar + alertes du backend
       const combinedData = {
         alert,
@@ -328,7 +330,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
           protectionLevel: advice.urgency as 'low' | 'medium' | 'high' | 'extreme',
         } : undefined,
       };
-      
+
       setWeatherData(combinedData);
     } catch (err) {
       console.warn('Weather data unavailable:', err);
@@ -394,10 +396,9 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
         // Create an image from the first uploaded file to verify face
         const file = files[0];
         const imageUrl = URL.createObjectURL(file);
-        
+
         const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
+
         await new Promise<void>((resolve, reject) => {
           img.onload = () => resolve();
           img.onerror = () => reject(new Error(t('analysis.messages.faceImageLoadError')));
@@ -497,23 +498,28 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
     ? new Date(analysis.createdAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })
     : '';
 
+  const generatePdfFromElement = () => {
+    if (!analysis) return;
+    generateAnalysisPdf(analysis, `deepskyn-analysis-${analysis?.id || 'report'}.pdf`);
+  };
+
   // ─── Dynamic accessibility colors ───
   const isDark = theme === 'dark';
   const isHcHigh = contrastMode === 'high';
   const isHcMedium = contrastMode === 'medium';
-  
+
   const getGridStroke = () => {
     if (isHcHigh) return '#FFD700';
     if (isHcMedium) return isDark ? '#c9a227' : '#8B6914';
     return isDark ? '#334155' : '#E5E7EB';
   };
-  
+
   const getAxisStroke = () => {
     if (isHcHigh) return '#ffffff';
     if (isHcMedium) return isDark ? '#c0c0c0' : '#3d3d3d';
     return isDark ? '#94a3b8' : '#6B7280';
   };
-  
+
   const getRadarStroke = () => {
     if (isHcHigh) return '#00ffff';
     return '#0EA5E9';
@@ -670,8 +676,8 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
     <div className="min-h-screen bg-transparent px-4 sm:px-8 pb-12">
       {/* Animated background elements */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <motion.div 
-          animate={{ 
+        <motion.div
+          animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.5, 0.3],
             rotate: [0, 90, 0]
@@ -679,8 +685,8 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
           transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
           className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-gradient-to-br from-blue-400/30 to-cyan-400/30 blur-3xl"
         />
-        <motion.div 
-          animate={{ 
+        <motion.div
+          animate={{
             scale: [1.2, 1, 1.2],
             opacity: [0.3, 0.5, 0.3],
             rotate: [90, 0, 90]
@@ -690,9 +696,9 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
         />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto">
+      <div id="analysis-report-root" className="relative z-10 max-w-7xl mx-auto">
         {/* Premium Header */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
@@ -700,7 +706,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
           <div className="backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20 dark:border-slate-700/50">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex items-center gap-4">
-                <motion.div 
+                <motion.div
                   whileHover={{ scale: 1.05, rotate: 5 }}
                   className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 flex items-center justify-center shadow-lg"
                 >
@@ -710,25 +716,25 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                 <div>
                   <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-white dark:via-slate-200 dark:to-white bg-clip-text text-transparent mb-1">
                     <motion.span
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.2 }}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
                     >
-                        {visibleTitleText.slice(0, titlePrefix.length)}
-                        <span className={isHcHigh ? 'text-cyan-400' : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent'}>
-                            {visibleTitleText.length > titlePrefix.length
-                                ? visibleTitleText.slice(titlePrefix.length)
-                                : ''}
-                        </span>
-                        {visibleTitleText.length < fullTitle.length && !shouldReduceMotion && (
-                            <motion.span
-                                className="inline-block ml-0.5 text-[#0EA5E9]"
-                                animate={{ opacity: [0, 1, 0] }}
-                                transition={{ duration: 0.8, repeat: Infinity }}
-                            >
-                                |
-                            </motion.span>
-                        )}
+                      {visibleTitleText.slice(0, titlePrefix.length)}
+                      <span className={isHcHigh ? 'text-cyan-400' : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent'}>
+                        {visibleTitleText.length > titlePrefix.length
+                          ? visibleTitleText.slice(titlePrefix.length)
+                          : ''}
+                      </span>
+                      {visibleTitleText.length < fullTitle.length && !shouldReduceMotion && (
+                        <motion.span
+                          className="inline-block ml-0.5 text-[#0EA5E9]"
+                          animate={{ opacity: [0, 1, 0] }}
+                          transition={{ duration: 0.8, repeat: Infinity }}
+                        >
+                          |
+                        </motion.span>
+                      )}
                     </motion.span>
                   </h1>
                   <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
@@ -737,7 +743,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex flex-wrap gap-3">
                 <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
                 <motion.button
@@ -784,13 +790,14 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                     <span>{t('analysis.compare.btnOpen')}</span>
                   </motion.button>
                 )}
+
               </div>
             </div>
           </div>
         </motion.div>
 
         {!isPremium && analysisRemaining !== null && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
@@ -803,18 +810,18 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                 : nearAnalysisLimit
                   ? t('analysis.quota.onlyLeft', { count: analysisRemaining ?? 0 })
                   : t('analysis.quota.usedThisMonth', { used: analysisUsed, limit: analysisLimit ?? 0 })}
-            used={analysisUsed}
-            limit={analysisLimit}
-            onUpgrade={onUpgrade}
-            upgradeLabel={t('analysis.quota.upgrade')}
-          />
+              used={analysisUsed}
+              limit={analysisLimit}
+              onUpgrade={onUpgrade}
+              upgradeLabel={t('analysis.quota.upgrade')}
+            />
           </motion.div>
         )}
 
         {/* Premium Overall Score Card */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }} 
-          animate={{ opacity: 1, scale: 1 }} 
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
           className="mb-8"
         >
@@ -851,7 +858,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                   <h2 className="text-xl font-semibold text-slate-600 dark:text-slate-400 mb-4">
                     {t('analysis.score.globalHealth')}
                   </h2>
-                  
+
                   {/* Circular progress score */}
                   <div className="relative inline-flex items-center justify-center mb-6">
                     <svg className="w-48 h-48 transform -rotate-90">
@@ -884,9 +891,9 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                         </linearGradient>
                       </defs>
                     </svg>
-                    
+
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <motion.span 
+                      <motion.span
                         className="text-6xl font-bold bg-gradient-to-br from-blue-600 via-cyan-500 to-purple-600 bg-clip-text text-transparent"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
@@ -901,15 +908,14 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
 
                 {/* Trend indicator */}
                 {scoreChange !== 0 && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
-                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-sm shadow-lg ${
-                      scoreChange > 0
+                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-sm shadow-lg ${scoreChange > 0
                         ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white'
                         : 'bg-gradient-to-r from-red-500 to-rose-500 text-white'
-                    }`}
+                      }`}
                   >
                     {scoreChange > 0 ? (
                       <TrendingUp className="w-5 h-5" />
@@ -923,7 +929,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                 )}
 
                 {/* Stats badges */}
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.7 }}
@@ -961,7 +967,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
 
                 {/* Skin type */}
                 {results?.skinType && (
-                  <motion.p 
+                  <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.8 }}
@@ -977,9 +983,9 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
 
         {/* Premium Weather & Environment Section */}
         {(weatherData || weatherLoading) && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="mb-8"
           >
@@ -1008,7 +1014,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <motion.div 
+                    <motion.div
                       whileHover={{ rotate: 180 }}
                       transition={{ duration: 0.6 }}
                       className="p-3 bg-white/25 rounded-2xl backdrop-blur-sm shadow-lg"
@@ -1025,7 +1031,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                       )}
                     </div>
                   </div>
-                  <motion.button 
+                  <motion.button
                     whileHover={{ scale: 1.1, rotate: 180 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={loadWeatherData}
@@ -1044,7 +1050,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                   <>
                     {/* Weather metrics grid */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                      <motion.div 
+                      <motion.div
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         whileHover={{ scale: 1.05, y: -5 }}
@@ -1055,9 +1061,9 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                         <div className="text-3xl font-bold">{weatherData.weather.uvIndex.toFixed(1)}</div>
                         <div className="text-sm text-white/80 mt-1">{t('analysis.weather.uvIndex')}</div>
                       </motion.div>
-                      
+
                       {weatherData.weather.aqi !== null && (
-                        <motion.div 
+                        <motion.div
                           initial={{ scale: 0.8, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           whileHover={{ scale: 1.05, y: -5 }}
@@ -1069,9 +1075,9 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                           <div className="text-sm text-white/80 mt-1">{t('analysis.weather.airQuality')}</div>
                         </motion.div>
                       )}
-                      
+
                       {weatherData.weather.humidity !== null && (
-                        <motion.div 
+                        <motion.div
                           initial={{ scale: 0.8, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           whileHover={{ scale: 1.05, y: -5 }}
@@ -1083,9 +1089,9 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                           <div className="text-sm text-white/80 mt-1">{t('analysis.weather.humidity')}</div>
                         </motion.div>
                       )}
-                      
+
                       {weatherData.weather.temperature !== null && (
-                        <motion.div 
+                        <motion.div
                           initial={{ scale: 0.8, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           whileHover={{ scale: 1.05, y: -5 }}
@@ -1101,7 +1107,7 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
 
                     {/* Premium AI Advice Card */}
                     {weatherData.aiAdvice && (
-                      <motion.div 
+                      <motion.div
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.5 }}
@@ -1114,31 +1120,30 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                             </div>
                             <span className="font-bold text-lg">{t('analysis.weather.aiAdviceTitle')}</span>
                           </div>
-                          <motion.span 
+                          <motion.span
                             whileHover={{ scale: 1.05 }}
-                            className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${
-                              weatherData.aiAdvice.protectionLevel === 'extreme' ? 'bg-gradient-to-r from-red-500 to-rose-600' :
-                              weatherData.aiAdvice.protectionLevel === 'high' ? 'bg-gradient-to-r from-orange-500 to-amber-600' :
-                              weatherData.aiAdvice.protectionLevel === 'medium' ? 'bg-gradient-to-r from-yellow-400 to-amber-500' :
-                              'bg-gradient-to-r from-green-500 to-emerald-600'
-                            }`}
+                            className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${weatherData.aiAdvice.protectionLevel === 'extreme' ? 'bg-gradient-to-r from-red-500 to-rose-600' :
+                                weatherData.aiAdvice.protectionLevel === 'high' ? 'bg-gradient-to-r from-orange-500 to-amber-600' :
+                                  weatherData.aiAdvice.protectionLevel === 'medium' ? 'bg-gradient-to-r from-yellow-400 to-amber-500' :
+                                    'bg-gradient-to-r from-green-500 to-emerald-600'
+                              }`}
                           >
                             {t('analysis.weather.protectionPrefix')} {weatherData.aiAdvice.protectionLevel === 'extreme' ? t('analysis.weather.protectionExtreme') :
-                            weatherData.aiAdvice.protectionLevel === 'high' ? t('analysis.weather.protectionHigh') :
-                            weatherData.aiAdvice.protectionLevel === 'medium' ? t('analysis.weather.protectionMedium') : t('analysis.weather.protectionLow')}
+                              weatherData.aiAdvice.protectionLevel === 'high' ? t('analysis.weather.protectionHigh') :
+                                weatherData.aiAdvice.protectionLevel === 'medium' ? t('analysis.weather.protectionMedium') : t('analysis.weather.protectionLow')}
                           </motion.span>
                         </div>
-                        
+
                         <p className="text-base text-white/95 mb-4 leading-relaxed">
                           {weatherData.aiAdvice.personalizedMessage}
                         </p>
-                        
+
                         {weatherData.aiAdvice.skinCareRoutine.length > 0 && (
                           <div className="space-y-2 mb-4">
                             <div className="text-sm font-semibold text-white/90 mb-2">{t('analysis.weather.recommendedRoutine')}</div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                               {weatherData.aiAdvice.skinCareRoutine.slice(0, 4).map((tip, i) => (
-                                <motion.div 
+                                <motion.div
                                   key={i}
                                   initial={{ x: -10, opacity: 0 }}
                                   animate={{ x: 0, opacity: 1 }}
@@ -1168,17 +1173,16 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
 
                     {/* Enhanced Alert Banner */}
                     {weatherData.alert && (
-                      <motion.div 
+                      <motion.div
                         initial={{ y: 20, opacity: 0, scale: 0.95 }}
                         animate={{ y: 0, opacity: 1, scale: 1 }}
                         transition={{ delay: 0.7 }}
-                        className={`mt-4 p-4 rounded-2xl backdrop-blur-lg border-2 shadow-2xl ${
-                          weatherData.alert.severity === 'high' 
+                        className={`mt-4 p-4 rounded-2xl backdrop-blur-lg border-2 shadow-2xl ${weatherData.alert.severity === 'high'
                             ? 'bg-red-500/30 border-red-300/50' :
-                          weatherData.alert.severity === 'medium' 
-                            ? 'bg-orange-500/30 border-orange-300/50' :
-                          'bg-yellow-500/30 border-yellow-300/50'
-                        }`}
+                            weatherData.alert.severity === 'medium'
+                              ? 'bg-orange-500/30 border-orange-300/50' :
+                              'bg-yellow-500/30 border-yellow-300/50'
+                          }`}
                       >
                         <div className="flex items-start gap-3">
                           <motion.div
@@ -1189,8 +1193,8 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
                           </motion.div>
                           <div className="flex-1">
                             <div className="font-bold text-base mb-1">
-                              {weatherData.alert.severity === 'high' ? t('analysis.weather.alertHigh') : 
-                               weatherData.alert.severity === 'medium' ? t('analysis.weather.alertMedium') : t('analysis.weather.alertInfo')}
+                              {weatherData.alert.severity === 'high' ? t('analysis.weather.alertHigh') :
+                                weatherData.alert.severity === 'medium' ? t('analysis.weather.alertMedium') : t('analysis.weather.alertInfo')}
                             </div>
                             <p className="text-sm text-white/95 leading-relaxed">{weatherData.alert.message}</p>
                           </div>
@@ -1204,438 +1208,328 @@ export function AnalysisPage({ onBack, onUpgrade, onNavigateToSettings, onNaviga
           </motion.div>
         )}
 
-        {/* Premium Analysis History Chart */}
-        {analysisHistory.length > 1 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ delay: 0.3 }}
-            className="mb-8"
-          >
-            <div className="relative overflow-hidden rounded-3xl backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border border-white/20 dark:border-slate-700/50 shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-purple-50/50 dark:from-slate-800/30 dark:to-purple-900/20" />
-              
-              <div className="relative z-10 p-6 md:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
-                    <TrendingUp className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t('analysis.evolution.title')}</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">{t('analysis.evolution.subtitleCount', { count: analysisHistory.length })}</p>
-                  </div>
-                </div>
-                
-                <div className="bg-white/50 dark:bg-slate-800/50 rounded-2xl p-4 backdrop-blur-sm">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={analysisHistory}>
-                      <defs>
-                        <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.05}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
-                      <XAxis 
-                        dataKey="date" 
-                        stroke="#64748b" 
-                        tick={{ fontSize: 12, fill: '#64748b' }}
-                        axisLine={{ stroke: '#cbd5e1' }}
-                      />
-                      <YAxis 
-                        domain={[0, 100]} 
-                        stroke="#64748b" 
-                        tick={{ fontSize: 12, fill: '#64748b' }}
-                        axisLine={{ stroke: '#cbd5e1' }}
-                      />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                          border: 'none',
-                          borderRadius: '16px',
-                          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                          backdropFilter: 'blur(10px)'
-                        }}
-                        formatter={(value: number) => [`${value}/100`, t('analysis.evolution.healthScore')]}
-                        labelStyle={{ color: '#0f172a', fontWeight: 600, marginBottom: '4px' }}
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="score" 
-                        stroke="#3b82f6" 
-                        strokeWidth={3}
-                        fill="url(#scoreGradient)" 
-                        dot={{ fill: '#3b82f6', strokeWidth: 2, r: 5, stroke: '#fff' }}
-                        activeDot={{ r: 7, fill: '#3b82f6', stroke: '#fff', strokeWidth: 3 }}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
+
 
         <div className="grid lg:grid-cols-2 gap-6 md:gap-8 mb-8">
           {/* Radar Chart */}
+
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
             <Card className={insightCardClass}>
-            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#378ADD] via-[#60A5FA] to-[#22D3EE]" />
-            <div className="absolute -right-12 -top-10 w-32 h-32 rounded-full bg-[#378ADD]/10 blur-2xl" />
-            <h3 className={insightTitleClass}>{t('analysis.radar.title')}</h3>
-            {radarData.length > 0 ? (
-              <div className="h-[340px] flex items-center justify-center">
-                <div className="w-full max-w-[430px] mx-auto">
-                <ResponsiveContainer width="100%" height={320}>
-                  <RadarChart data={radarData}>
-                    <PolarGrid stroke={getGridStroke()} strokeDasharray="4 4" />
-                    <PolarAngleAxis
-                      dataKey="category"
-                      tick={{ fontSize: 13, fill: isHcHigh ? '#ffffff' : isDark ? '#cbd5e1' : '#64748b', fontWeight: 500 }}
-                      tickLine={false}
-                      axisLine={false}
-                      tickSize={14}
-                    />
-                    <PolarRadiusAxis
-                      angle={90}
-                      domain={[0, 100]}
-                      tickCount={5}
-                      tick={{ fontSize: 10, fill: isHcHigh ? '#facc15' : isDark ? '#94a3b8' : '#94a3b8' }}
-                      axisLine={false}
-                      tickLine={false}
-                      stroke={getGridStroke()}
-                    />
-                    <Radar
-                      name={t('analysis.radar.score')}
-                      dataKey="value"
-                      stroke={isHcHigh ? '#00ffff' : '#378ADD'}
-                      fill={isHcHigh ? 'rgba(0,255,255,0.18)' : 'rgba(56, 138, 221, 0.25)'}
-                      strokeWidth={2}
-                      dot={{ r: 5, fill: '#378ADD', stroke: '#ffffff', strokeWidth: 2 }}
-                      activeDot={{ r: 5, fill: '#378ADD', stroke: '#ffffff', strokeWidth: 2 }}
-                    />
-                    <Tooltip
-                      content={({ active, payload }) => {
-                        if (!active || !payload?.length) return null;
-                        const point = payload[0]?.payload as { category: string; value: number };
-                        const value = Number(point?.value ?? 0);
-                        const badge = getRadarBadge(value);
-                        return (
-                          <div className={`rounded-xl border px-3 py-2 shadow-lg ${isDark ? 'border-[#334155] bg-[#0f172a]' : 'border-[#e2e8f0] bg-white'}`}>
-                            <div className={`text-xs font-semibold mb-1 ${isDark ? 'text-[#e2e8f0]' : 'text-[#0f172a]'}`}>{point?.category}</div>
-                            <div className="flex items-center gap-2">
-                              <span className={`text-sm font-bold ${isDark ? 'text-[#f8fafc]' : 'text-[#0f172a]'}`}>{value}/100</span>
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${badge.className}`}>
-                                {badge.label}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      }}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-                </div>
-              </div>
-            ) : (
-              <div className="h-[340px] flex items-center justify-center text-[#6B7280]">
-                {t('analysis.radar.noMetrics')}
-              </div>
-            )}
-          </Card>
-        </motion.div>
 
-        {/* Analysis Images History */}
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-          <Card className={insightCardClass}>
-            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#378ADD] via-[#60A5FA] to-[#22D3EE]" />
-            <div className="absolute -left-12 -bottom-12 w-36 h-36 rounded-full bg-[#378ADD]/10 blur-2xl" />
-            <h3 className={insightTitleClass}>{t('analysis.imagesHistory.title')}</h3>
-            {analysis.images.length > 0 ? (
-              <>
-                <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {analysis.images.map((imgSrc, idx) => (
-                    <button
-                      key={`${imgSrc}-${idx}`}
-                      onClick={() => setSelectedImageIndex(idx)}
-                      className={`relative flex-shrink-0 w-40 snap-start overflow-hidden rounded-xl transition-all duration-200 cursor-pointer border ${
-                        selectedImageIndex === idx
-                          ? 'border-2 border-[#378ADD]'
-                          : `${thumbBaseClass} hover:border-[#378ADD] hover:shadow-[0_8px_24px_rgba(56,138,221,0.2)] hover:scale-105`
-                      }`}
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#378ADD] via-[#60A5FA] to-[#22D3EE]" />
+              <div className="absolute -right-12 -top-10 w-32 h-32 rounded-full bg-[#378ADD]/10 blur-2xl" />
+              <h3 className={insightTitleClass}>{t('analysis.radar.title')}</h3>
+              {radarData.length > 0 ? (
+                <div className="h-[340px] flex items-center justify-center">
+                  <div className="w-full max-w-[430px] mx-auto">
+                    <ResponsiveContainer width="100%" height={320}>
+                      <RadarChart data={radarData}>
+                        <PolarGrid stroke={getGridStroke()} strokeDasharray="4 4" />
+                        <PolarAngleAxis
+                          dataKey="category"
+                          tick={{ fontSize: 13, fill: isHcHigh ? '#ffffff' : isDark ? '#cbd5e1' : '#64748b', fontWeight: 500 }}
+                          tickLine={false}
+                          axisLine={false}
+                          tickSize={14}
+                        />
+                        <PolarRadiusAxis
+                          angle={90}
+                          domain={[0, 100]}
+                          tickCount={5}
+                          tick={{ fontSize: 10, fill: isHcHigh ? '#facc15' : isDark ? '#94a3b8' : '#94a3b8' }}
+                          axisLine={false}
+                          tickLine={false}
+                          stroke={getGridStroke()}
+                        />
+                        <Radar
+                          name={t('analysis.radar.score')}
+                          dataKey="value"
+                          stroke={isHcHigh ? '#00ffff' : '#378ADD'}
+                          fill={isHcHigh ? 'rgba(0,255,255,0.18)' : 'rgba(56, 138, 221, 0.25)'}
+                          strokeWidth={2}
+                          dot={{ r: 5, fill: '#378ADD', stroke: '#ffffff', strokeWidth: 2 }}
+                          activeDot={{ r: 5, fill: '#378ADD', stroke: '#ffffff', strokeWidth: 2 }}
+                        />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (!active || !payload?.length) return null;
+                            const point = payload[0]?.payload as { category: string; value: number };
+                            const value = Number(point?.value ?? 0);
+                            const badge = getRadarBadge(value);
+                            return (
+                              <div className={`rounded-xl border px-3 py-2 shadow-lg ${isDark ? 'border-[#334155] bg-[#0f172a]' : 'border-[#e2e8f0] bg-white'}`}>
+                                <div className={`text-xs font-semibold mb-1 ${isDark ? 'text-[#e2e8f0]' : 'text-[#0f172a]'}`}>{point?.category}</div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-sm font-bold ${isDark ? 'text-[#f8fafc]' : 'text-[#0f172a]'}`}>{value}/100</span>
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${badge.className}`}>
+                                    {badge.label}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          }}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => generatePdfFromElement()}
+                      className="ml-auto px-5 py-2.5 rounded-xl bg-white text-[#0F172A] font-semibold border border-[#CFE3FB] shadow-sm hover:shadow-md hover:border-[#7DD3FC] transition-all flex items-center gap-2"
                     >
-                      <img
-                        src={imgSrc}
-                        alt={t('analysis.imagesHistory.imageAlt', { date: analysisThumbDate })}
-                        className="w-full h-[140px] object-cover block"
-                      />
-                      <span className={`block text-[11px] text-center py-1.5 ${thumbDateClass} ${selectedImageIndex === idx ? 'text-[#378ADD] font-semibold' : 'font-medium'}`}>
-                        {analysisThumbDate}
-                      </span>
-                    </button>
-                  ))}
+                      <Download className="w-5 h-5 text-[#0EA5E9]" />
+                      <span>{t('profile.downloadReport')}</span>
+                    </motion.button>
+                  </div>
+
                 </div>
 
-                <div className={previewFrameClass}>
-                  <AnimatePresence mode="wait">
-                    {selectedImageSrc && (
-                      <motion.img
-                        key={selectedImageSrc}
-                        src={selectedImageSrc}
-                        alt={t('analysis.imagesHistory.imageAlt', { date: analysisThumbDate })}
-                        className="w-full max-h-[280px] object-cover"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.25 }}
-                      />
-                    )}
-                  </AnimatePresence>
+              ) : (
+                <div className="h-[340px] flex items-center justify-center text-[#6B7280]">
+                  {t('analysis.radar.noMetrics')}
                 </div>
-              </>
-            ) : (
-              <div className="w-full h-80 bg-[#F3F4F6] rounded-xl flex items-center justify-center text-[#6B7280]">
-                {t('analysis.imagesHistory.noImage')}
-              </div>
-            )}
-          </Card>
-        </motion.div>
+              )}
+            </Card>
+          </motion.div>
+
+          {/* Analysis Images History */}
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+            <Card className={insightCardClass}>
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#378ADD] via-[#60A5FA] to-[#22D3EE]" />
+              <div className="absolute -left-12 -bottom-12 w-36 h-36 rounded-full bg-[#378ADD]/10 blur-2xl" />
+              <h3 className={insightTitleClass}>{t('analysis.imagesHistory.title')}</h3>
+              {analysis.images.length > 0 ? (
+                <>
+                  <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {analysis.images.map((imgSrc, idx) => (
+                      <button
+                        key={`${imgSrc}-${idx}`}
+                        onClick={() => setSelectedImageIndex(idx)}
+                        className={`relative flex-shrink-0 w-40 snap-start overflow-hidden rounded-xl transition-all duration-200 cursor-pointer border ${selectedImageIndex === idx
+                            ? 'border-2 border-[#378ADD]'
+                            : `${thumbBaseClass} hover:border-[#378ADD] hover:shadow-[0_8px_24px_rgba(56,138,221,0.2)] hover:scale-105`
+                          }`}
+                      >
+                        <img
+                          src={imgSrc}
+                          alt={t('analysis.imagesHistory.imageAlt', { date: analysisThumbDate })}
+                          className="w-full h-[140px] object-cover block"
+                        />
+                        <span className={`block text-[11px] text-center py-1.5 ${thumbDateClass} ${selectedImageIndex === idx ? 'text-[#378ADD] font-semibold' : 'font-medium'}`}>
+                          {analysisThumbDate}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className={previewFrameClass}>
+                    <AnimatePresence mode="wait">
+                      {selectedImageSrc && (
+                        <motion.img
+                          key={selectedImageSrc}
+                          src={selectedImageSrc}
+                          alt={t('analysis.imagesHistory.imageAlt', { date: analysisThumbDate })}
+                          className="w-full max-h-[280px] object-cover"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.25 }}
+                        />
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </>
+              ) : (
+                <div className="w-full h-80 bg-[#F3F4F6] rounded-xl flex items-center justify-center text-[#6B7280]">
+                  {t('analysis.imagesHistory.noImage')}
+                </div>
+              )}
+            </Card>
+          </motion.div>
         </div>
 
-        {/* Detailed Breakdown - Version Compacte et Professionnelle */}
-      {detailedScores.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-8">
-          <Card className="border-[#E2E8F0] shadow-md">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] flex items-center justify-center">
-                <Microscope className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="text-lg font-bold text-[#1F2937]">{t('analysis.detailed.title')}</h3>
-            </div>
-            
-            {/* Grid layout compact pour économiser l'espace */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {detailedScores.map((item: DetailedScoreItem, index: number) => (
-                <motion.div
-                  key={item.key}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 + index * 0.05 }}
-                  className="relative overflow-hidden rounded-xl border border-[#E5E7EB] bg-gradient-to-br from-white to-gray-50/50 hover:shadow-md transition-all duration-200 p-4"
-                >
-                  {/* Score indicator en arrière-plan */}
-                  <div 
-                    className="absolute inset-0 opacity-[0.03]"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${item.color}20 0%, transparent 70%)`
-                    }}
-                  />
-                  
-                  <div className="relative">
-                    {/* Header compact */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center"
-                          style={{ 
-                            backgroundColor: `${item.color}15`, 
-                            color: item.color 
-                          }}
-                        >
-                          {METRIC_ICONS[item.key] ?? <Eye className="w-4 h-4" />}
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-sm text-[#374151]">{item.category}</h4>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusColorClass(item.status)}`}>
-                            {item.status.replace('-', ' ')}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xl font-bold" style={{ color: item.color }}>
-                          {item.score}
-                        </div>
-                        <div className="text-xs text-[#9CA3AF]">/100</div>
-                      </div>
-                    </div>
-                    
-                    {/* Progress bar compacte */}
-                    <div className="h-1.5 bg-[#F3F4F6] rounded-full overflow-hidden mb-2">
-                      <motion.div
-                        className="h-full rounded-full"
-                        style={{ backgroundColor: item.color }}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${item.score}%` }}
-                        transition={{ duration: 0.8, delay: 0.5 + index * 0.05 }}
-                      />
-                    </div>
-                    
-                    {/* Description compacte */}
-                    <p className="text-xs text-[#6B7280] leading-relaxed line-clamp-2">
-                      {item.description}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </Card>
-        </motion.div>
-      )}
 
-      {/* Recommendations */}
-      {analysis.recommendations && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="mb-8">
-          <Card className="border-[#E2E8F0] shadow-md">
-            <h3 className="text-lg font-bold mb-6">{t('analysis.recommendations.title')}</h3>
-            <div className="grid md:grid-cols-3 gap-6">
-              {/* Products */}
-              {analysis.recommendations.products?.length > 0 && (
+
+        {/* Recommendations */}
+        {analysis.recommendations && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="mb-8">
+            <Card className="border-[#E2E8F0] shadow-md">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center">
+                  <Target className="w-6 h-6 text-white" />
+                </div>
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Package className="w-5 h-5 text-[#0EA5E9]" />
-                    <h4 className="font-bold text-sm">{t('analysis.recommendations.products')}</h4>
+                  <h3 className="text-lg font-bold">{t('analysis.recommendations.title')}</h3>
+                  <p className="text-xs text-[#6B7280]">{t('analysis.aiInsights.subtitle')}</p>
+
+                </div>
+              </div>
+              <div className="grid md:grid-cols-3 gap-6">
+                {/* Products */}
+                {analysis.recommendations.products?.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Package className="w-5 h-5 text-[#0EA5E9]" />
+                      <h4 className="font-bold text-sm">{t('analysis.recommendations.products')}</h4>
+                    </div>
+                    <ul className="space-y-2">
+                      {analysis.recommendations.products.map((p, i) => (
+                        <li key={i} className="text-sm text-[#374151] flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9] mt-1.5 flex-shrink-0" />
+                          {p}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="space-y-2">
-                    {analysis.recommendations.products.map((p, i) => (
-                      <li key={i} className="text-sm text-[#374151] flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9] mt-1.5 flex-shrink-0" />
-                        {p}
-                      </li>
+                )}
+                {/* Ingredients */}
+                {analysis.recommendations.ingredients?.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Leaf className="w-5 h-5 text-[#10B981]" />
+                      <h4 className="font-bold text-sm">{t('analysis.recommendations.ingredients')}</h4>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {analysis.recommendations.ingredients.map((ing, i) => (
+                        <span key={i} className="px-3 py-1 bg-[#10B981]/10 text-[#10B981] text-xs rounded-full font-medium">
+                          {ing}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* Lifestyle */}
+                {analysis.recommendations.lifestyle?.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Shield className="w-5 h-5 text-[#F59E0B]" />
+                      <h4 className="font-bold text-sm">{t('analysis.recommendations.lifestyle')}</h4>
+                    </div>
+                    <ul className="space-y-2">
+                      {analysis.recommendations.lifestyle.map((tip, i) => (
+                        <li key={i} className="text-sm text-[#374151] flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] mt-1.5 flex-shrink-0" />
+                          {tip}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              {/* Warnings */}
+              {analysis.recommendations.warnings?.length > 0 && (
+                <div className="mt-6 p-4 bg-[#FEF2F2] rounded-xl">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="w-5 h-5 text-[#EF4444]" />
+                    <h4 className="font-bold text-sm text-[#EF4444]">{t('analysis.recommendations.warnings')}</h4>
+                  </div>
+                  <ul className="space-y-1">
+                    {analysis.recommendations.warnings.map((w, i) => (
+                      <li key={i} className="text-sm text-[#991B1B]">{w}</li>
                     ))}
                   </ul>
                 </div>
               )}
-              {/* Ingredients */}
-              {analysis.recommendations.ingredients?.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Leaf className="w-5 h-5 text-[#10B981]" />
-                    <h4 className="font-bold text-sm">{t('analysis.recommendations.ingredients')}</h4>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {analysis.recommendations.ingredients.map((ing, i) => (
-                      <span key={i} className="px-3 py-1 bg-[#10B981]/10 text-[#10B981] text-xs rounded-full font-medium">
-                        {ing}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* Lifestyle */}
-              {analysis.recommendations.lifestyle?.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Shield className="w-5 h-5 text-[#F59E0B]" />
-                    <h4 className="font-bold text-sm">{t('analysis.recommendations.lifestyle')}</h4>
-                  </div>
-                  <ul className="space-y-2">
-                    {analysis.recommendations.lifestyle.map((tip, i) => (
-                      <li key={i} className="text-sm text-[#374151] flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] mt-1.5 flex-shrink-0" />
-                        {tip}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-            {/* Warnings */}
-            {analysis.recommendations.warnings?.length > 0 && (
-              <div className="mt-6 p-4 bg-[#FEF2F2] rounded-xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle className="w-5 h-5 text-[#EF4444]" />
-                  <h4 className="font-bold text-sm text-[#EF4444]">{t('analysis.recommendations.warnings')}</h4>
-                </div>
-                <ul className="space-y-1">
-                  {analysis.recommendations.warnings.map((w, i) => (
-                    <li key={i} className="text-sm text-[#991B1B]">{w}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </Card>
-        </motion.div>
-      )}
-
-      {/* AI Insights */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
-        <Card className="border-[#BFDBFE] bg-gradient-to-br from-white to-[#F8FBFF] shadow-lg shadow-[#0EA5E9]/10">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold">{t('analysis.aiInsights.title')}</h3>
-              <p className="text-xs text-[#6B7280]">{t('analysis.aiInsights.subtitle')}</p>
-            </div>
-          </div>
-          <div className="prose prose-sm max-w-none text-[#334155]">
-            {adviceLoading ? (
-              <div className="flex items-center gap-2 text-[#6B7280]">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>{t('analysis.aiInsights.generating')}</span>
-              </div>
-            ) : advice ? (
-              <div className="rounded-2xl border border-[#DBEAFE] bg-white p-4">
-                <p className="whitespace-pre-line">{advice}</p>
-              </div>
-            ) : results?.summary ? (
-              <div className="rounded-2xl border border-[#DBEAFE] bg-white p-4">
-                <p className="whitespace-pre-line">{results.summary}</p>
-              </div>
-            ) : (
-              <p className="text-[#6B7280]">{t('analysis.aiInsights.empty')}</p>
-            )}
-          </div>
-        </Card>
-      </motion.div>
-<div style={{ height: "30px" }}></div>   
-   {/* Predictive Routine - NEW */}
-      {hasAnalysis && analysis.id && results && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
-          <PredictiveRoutineCard
-            analysisId={analysis.id}
-            analysisResult={{
-              condition: results.conditions?.[0] || t('analysis.defaultCondition'),
-              detectedIssues: analysis.conditions || [],
-              skinType: results.skinType || 'normal',
-            }}
-            onNavigateToRoutine={onNavigateToRoutine}
-          />
-        </motion.div>
-      )}
-
-      {/* Analysis History Modal */}
-      <AnimatePresence>
-        {showAnalysisHistory && (
-          <AnalysisHistory onClose={() => setShowAnalysisHistory(false)} />
+            </Card>
+          </motion.div>
         )}
-      </AnimatePresence>
 
-      {/* Camera Scan Modal */}
-      <CameraScanModal
-        open={scanOpen}
-        onClose={() => setScanOpen(false)}
-        onAnalysisSaved={loadData}
-        canSaveAnalysis={!analysisLimitReached}
-        analysisBlockedMessage={t('analysis.messages.limitReachedReset', { date: formatResetDate(analysisResetAt) })}
-        onUpgrade={onUpgrade}
-        onNavigateToSettings={onNavigateToSettings}
-      />
-      <PreocupentSelectorModal
-        open={preocupentModalOpen}
-        initialSelected={lastSelectedPreocupent}
-        onClose={closeUploadPreocupentModal}
-        onConfirm={submitUploadWithPreocupent}
-        loading={uploadPreocupentSubmitting}
-        confirmLabel={t('analysis.actions.startAnalysis')}
-      />
-      <AnalysisCompareModal
-        open={compareOpen}
-        onClose={() => setCompareOpen(false)}
-        allAnalyses={allAnalysesForCompare}
-        initialA={analysis}
-      />
+        {/* AI Insights */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
+          <Card className="border-[#BFDBFE] bg-gradient-to-br from-white to-[#F8FBFF] shadow-lg shadow-[#0EA5E9]/10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">{t('analysis.aiInsights.title')}</h3>
+                <p className="text-xs text-[#6B7280]">{t('analysis.aiInsights.subtitle')}</p>
+              </div>
+            </div>
+            <div className="prose prose-sm max-w-none text-[#334155]">
+              {adviceLoading ? (
+                <div className="flex items-center gap-2 text-[#6B7280]">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>{t('analysis.aiInsights.generating')}</span>
+                </div>
+              ) : advice ? (
+                <div className="rounded-2xl border border-[#DBEAFE] bg-white p-4">
+                  <p className="whitespace-pre-line">{advice}</p>
+                </div>
+              ) : results?.summary ? (
+                <div className="rounded-2xl border border-[#DBEAFE] bg-white p-4">
+                  <p className="whitespace-pre-line">{results.summary}</p>
+                </div>
+              ) : (
+                <p className="text-[#6B7280]">{t('analysis.aiInsights.empty')}</p>
+              )}
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Face Zone Visualization — real scores mapped on first face photo */}
+        {analysis.images.length > 0 && results && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.88 }}
+            className="mt-8 mb-8"
+          >
+            <FaceZoneVisualization
+              imageSrc={analysis.images[0]}
+              results={results}
+              isDark={isDark}
+              isHcHigh={isHcHigh}
+            />
+          </motion.div>
+        )}
+        <div style={{ height: "30px" }}></div>
+        {/* Predictive Routine - NEW */}
+        {hasAnalysis && analysis.id && results && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
+            <PredictiveRoutineCard
+              analysisId={analysis.id}
+              analysisResult={{
+                condition: results.conditions?.[0] || t('analysis.defaultCondition'),
+                detectedIssues: analysis.conditions || [],
+                skinType: results.skinType || 'normal',
+              }}
+              onNavigateToRoutine={onNavigateToRoutine}
+            />
+          </motion.div>
+        )}
+
+        {/* Analysis History Modal */}
+        <AnimatePresence>
+          {showAnalysisHistory && (
+            <AnalysisHistory onClose={() => setShowAnalysisHistory(false)} />
+          )}
+        </AnimatePresence>
+
+        {/* Camera Scan Modal */}
+        <CameraScanModal
+          open={scanOpen}
+          onClose={() => setScanOpen(false)}
+          onAnalysisSaved={loadData}
+          canSaveAnalysis={!analysisLimitReached}
+          analysisBlockedMessage={t('analysis.messages.limitReachedReset', { date: formatResetDate(analysisResetAt) })}
+          onUpgrade={onUpgrade}
+          onNavigateToSettings={onNavigateToSettings}
+        />
+        <PreocupentSelectorModal
+          open={preocupentModalOpen}
+          initialSelected={lastSelectedPreocupent}
+          onClose={closeUploadPreocupentModal}
+          onConfirm={submitUploadWithPreocupent}
+          loading={uploadPreocupentSubmitting}
+          confirmLabel={t('analysis.actions.startAnalysis')}
+        />
+        <AnalysisCompareModal
+          open={compareOpen}
+          onClose={() => setCompareOpen(false)}
+          allAnalyses={allAnalysesForCompare}
+          initialA={analysis}
+        />
       </div>
     </div>
   );

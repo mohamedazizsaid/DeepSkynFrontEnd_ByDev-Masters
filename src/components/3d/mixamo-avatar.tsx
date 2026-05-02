@@ -98,7 +98,7 @@ export function MixamoAvatar({
 
       // Trouver une animation appropriée
       // Pour une meilleure expérience, mapper les gestes aux animations Mixamo
-      let animationClip = animations[index % animations.length];
+      const animationClip = animations[index % animations.length];
 
       // Éviter de jouer la même animation deux fois
       if (currentActionRef.action) {
