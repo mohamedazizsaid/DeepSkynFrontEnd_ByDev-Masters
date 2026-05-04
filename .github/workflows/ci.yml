@@ -65,7 +65,7 @@ jobs:
           curl --fail --show-error --silent \
             -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" \
             --upload-file "$FILE" \
-            "http://${{ env.NEXUS_REGISTRY }}/repository/frontend-releases/$FILE"
+            "http://${{ env.NEXUS_REGISTRY }}/repository/frontend-releases/${FILE}"
 
   # ── Job 3: SonarQube (self-hosted — needs internal network) ──
   sonar:
