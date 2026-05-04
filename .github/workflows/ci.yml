@@ -150,9 +150,33 @@ jobs:
 
     steps:
       - name: Trigger Jenkins frontend-cd job
+        env:
+          JENKINS_URL: http://192.168.32.128:8080
+          JENKINS_JOB: Frontend CD
+          JENKINS_USER: ${{ secrets.JENKINS_USER }}
+          JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
+          IMAGE_TAG: ${{ needs.docker.outputs.image_tag }}
         run: |
-          curl --fail --silent \
-            -X POST \
-            -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_TOKEN }}" \
-            "http://192.168.32.128:8080/job/frontend-cd/buildWithParameters?IMAGE_TAG=${{ needs.docker.outputs.image_tag }}"
-          echo "✅ Jenkins CD triggered with IMAGE_TAG=${{ needs.docker.outputs.image_tag }}"
+          if [ -z "$JENKINS_USER" ] || [ -z "$JENKINS_TOKEN" ]; then
+            echo "❌ Missing JENKINS_USER or JENKINS_TOKEN secret"
+            exit 1
+          fi
+
+          CRUMB=$(curl --silent --show-error --fail \
+            -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
+            "${JENKINS_URL}/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)" || true)
+
+          if [ -n "$CRUMB" ]; then
+            curl --fail --show-error --silent \
+              -X POST \
+              -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
+              -H "$CRUMB" \
+              "${JENKINS_URL}/job/${JENKINS_JOB}/buildWithParameters?IMAGE_TAG=${IMAGE_TAG}"
+          else
+            curl --fail --show-error --silent \
+              -X POST \
+              -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
+              "${JENKINS_URL}/job/${JENKINS_JOB}/buildWithParameters?IMAGE_TAG=${IMAGE_TAG}"
+          fi
+
+          echo "✅ Jenkins CD triggered with IMAGE_TAG=${IMAGE_TAG}"
