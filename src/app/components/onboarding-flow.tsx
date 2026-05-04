@@ -30,7 +30,6 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Total steps: Welcome(0), Profile(1), SkinType(2), Fitzpatrick(3), Concerns(4), Sensitivities(5), Summary(6)
   const stepLabels = t('onboarding.steps') as unknown as string[];
   const totalSteps = stepLabels.length;
 

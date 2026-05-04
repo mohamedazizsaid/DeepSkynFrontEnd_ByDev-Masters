@@ -24,7 +24,7 @@ interface HelpSettingsProps {
 }
 
 export function HelpSettings({ onBack }: HelpSettingsProps) {
-  const { t } = useAccessibilityStore();
+  const { t, language } = useAccessibilityStore();
   const { user } = useAuthStore();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [isReclamationModalOpen, setIsReclamationModalOpen] = useState(false);
@@ -69,14 +69,12 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
     }));
   }, [user?.email, user?.name]);
 
-  const reclamationTypeOptions = [
-    'Problème abonnement',
-    'Problème paiement',
-    'Bug technique',
-    'Compte et connexion',
-    'Qualité de service',
-    'Autre',
-  ];
+  const reclamationTypeOptions = {
+    fr: ['Problème abonnement', 'Problème paiement', 'Bug technique', 'Compte et connexion', 'Qualité de service', 'Autre'],
+    en: ['Subscription issue', 'Payment issue', 'Technical bug', 'Account and login', 'Service quality', 'Other'],
+    ar: ['مشكلة اشتراك', 'مشكلة دفع', 'خلل تقني', 'الحساب وتسجيل الدخول', 'جودة الخدمة', 'أخرى'],
+    es: ['Problema de suscripción', 'Problema de pago', 'Error técnico', 'Cuenta e inicio de sesión', 'Calidad del servicio', 'Otro'],
+  }[language] || ['Problème abonnement', 'Problème paiement', 'Bug technique', 'Compte et connexion', 'Qualité de service', 'Autre'];
 
   const descriptionLength = useMemo(
     () => reclamationForm.description.trim().length,
@@ -97,11 +95,11 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
     }
 
     if (!reclamationForm.type_reclamation.trim()) {
-      errors.type_reclamation = 'Veuillez choisir un type de réclamation.';
+      errors.type_reclamation = t('settings.help.reclamationValidationType');
     }
 
     if (descriptionLength < 10) {
-      errors.description = 'La description doit contenir au moins 10 caractères.';
+      errors.description = t('settings.help.reclamationValidationDescription');
     }
 
     setFormErrors(errors);
@@ -154,39 +152,22 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
 
       toast.success(
         response.id_reclamation
-          ? `Réclamation envoyée avec succès (#${response.id_reclamation}).`
-          : 'Réclamation envoyée avec succès.',
+          ? t('settings.help.reclamationSuccessWithId', { id: response.id_reclamation })
+          : t('settings.help.reclamationSuccessFallback'),
       );
 
       setIsReclamationModalOpen(false);
       resetReclamationForm();
     } catch {
       toast.error(
-        'Impossible d\'envoyer votre réclamation pour le moment. Veuillez réessayer.',
+        t('settings.help.reclamationError'),
       );
     } finally {
       setIsSubmittingReclamation(false);
     }
   };
 
-  const faqs = [
-    {
-      question: "Comment fonctionne l'analyse de peau ?",
-      answer: "L'analyse utilise l'intelligence artificielle pour examiner votre photo. Prenez un selfie sous un bon éclairage naturel, l'IA détectera ensuite les zones de sécheresse, taches, acné ou rides pour vous conseiller."
-    },
-    {
-      question: "La fonctionnalité 'Coach IA' est-elle payante ?",
-      answer: "Vous bénéficiez de 10 messages gratuits par jour. Pour des interactions illimitées et des recommandations de produits très personnalisées, l'abonnement Premium est nécessaire."
-    },
-    {
-      question: "Comment annuler mon abonnement ?",
-      answer: "Vous pouvez annuler votre abonnement dans vos paramètres de compte sur la plateforme (Google Play, Apple Store ou Stripe) via l'interface d'abonnement. L'accès Premium restera actif jusqu'à la fin de la période facturée."
-    },
-    {
-      question: "Mes photos sont-elles enregistrées ?",
-      answer: "Vos photos sont traitées de manière sécurisée pour l'analyse. Vous pouvez demander leur suppression complète depuis les paramètres de confidentialité de votre profil."
-    }
-  ];
+  const faqs = (t('settings.help.faqs') as Array<{ question: string; answer: string }>) || [];
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto">
@@ -195,10 +176,10 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         onClick={onBack}
-        className="flex lg:hidden items-center gap-2 text-[#6B7280] hover:text-[#0EA5E9] transition-all w-fit font-black uppercase text-xs tracking-widest"
+        className="flex lg:hidden items-center gap-2 text-[#6B7280] dark:text-gray-400 hover:text-[#0EA5E9] dark:hover:text-sky-300 transition-all w-fit font-black uppercase text-xs tracking-widest"
       >
         <ArrowLeft className="w-5 h-5" />
-        {t('common.back') || 'Retour'}
+        {t('common.back')}
       </motion.button>
 
       {/* Header */}
@@ -212,8 +193,8 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
             <HelpCircle className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#111827]">{t('settings.help.title')}</h2>
-            <p className="text-xs text-[#6B7280]">{t('settings.help.subtitle')}</p>
+            <h2 className="text-lg font-bold text-[#111827] dark:text-gray-100">{t('settings.help.title')}</h2>
+            <p className="text-xs text-[#6B7280] dark:text-gray-400">{t('settings.help.subtitle')}</p>
           </div>
         </div>
       </motion.div>
@@ -232,9 +213,9 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
              <Sparkles className="w-8 h-8 text-white" />
           </div>
           <div className="text-center md:text-left">
-            <h3 className="text-xl font-bold text-white mb-2">Besoin d'un coup de main ?</h3>
+            <h3 className="text-xl font-bold text-white mb-2">{t('settings.help.introTitle')}</h3>
             <p className="text-white/80 text-sm max-w-xl leading-relaxed">
-              Que vous ayez une question sur l'IA ou besoin d'aide pour votre abonnement, notre équipe et nos outils sont là pour vous accompagner 24h/24.
+              {t('settings.help.introDesc')}
             </p>
           </div>
         </div>
@@ -246,13 +227,13 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-3xl border border-[#E5E7EB] p-8 flex flex-col items-center text-center group transition-all hover:border-[#0EA5E9]/30 hover:shadow-xl hover:shadow-blue-500/5"
+          className="bg-white dark:bg-slate-900 rounded-3xl border border-[#E5E7EB] dark:border-slate-700 p-8 flex flex-col items-center text-center group transition-all hover:border-[#0EA5E9]/30 hover:shadow-xl hover:shadow-blue-500/5"
         >
           <div className="w-20 h-20 rounded-2xl bg-[#0EA5E9]/5 flex items-center justify-center mb-6 shadow-sm border border-[#0EA5E9]/10 group-hover:scale-105 transition-transform duration-300">
             <Mail className="w-10 h-10 text-[#0EA5E9]" />
           </div>
-          <h3 className="text-lg font-bold text-[#111827] mb-2">Assistance par Email</h3>
-          <p className="text-sm text-[#6B7280] mb-8 leading-relaxed max-w-[200px]">Notre équipe d'experts répond généralement sous 24h ouvrées.</p>
+          <h3 className="text-lg font-bold text-[#111827] dark:text-gray-100 mb-2">{t('settings.help.emailTitle')}</h3>
+          <p className="text-sm text-[#6B7280] dark:text-gray-400 mb-8 leading-relaxed max-w-[200px]">{t('settings.help.emailDesc')}</p>
           <a
             href="mailto:support@deepskyn.com"
             className="px-8 py-4 w-full bg-[#0EA5E9] text-white font-bold rounded-2xl hover:bg-[#0284C7] shadow-lg shadow-[#0EA5E9]/20 transition-all text-sm uppercase tracking-widest text-center"
@@ -266,19 +247,19 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-3xl border border-[#E5E7EB] p-8 flex flex-col items-center text-center group transition-all hover:border-[#F97316]/30 hover:shadow-xl hover:shadow-orange-500/5"
+          className="bg-white dark:bg-slate-900 rounded-3xl border border-[#E5E7EB] dark:border-slate-700 p-8 flex flex-col items-center text-center group transition-all hover:border-[#F97316]/30 hover:shadow-xl hover:shadow-orange-500/5"
         >
           <div className="w-20 h-20 rounded-2xl bg-[#F97316]/5 flex items-center justify-center mb-6 shadow-sm border border-[#F97316]/10 group-hover:scale-105 transition-transform duration-300">
             <MessageSquareWarning className="w-10 h-10 text-[#F97316]" />
           </div>
-          <h3 className="text-lg font-bold text-[#111827] mb-2">Déposer une Réclamation</h3>
-          <p className="text-sm text-[#6B7280] mb-8 leading-relaxed max-w-[240px]">Signalez un problème lié à votre compte, paiement ou expérience. Notre équipe traite chaque demande rapidement.</p>
+          <h3 className="text-lg font-bold text-[#111827] dark:text-gray-100 mb-2">{t('settings.help.reclamationTitle')}</h3>
+          <p className="text-sm text-[#6B7280] dark:text-gray-400 mb-8 leading-relaxed max-w-[240px]">{t('settings.help.reclamationDesc')}</p>
           <button
             onClick={() => setIsReclamationModalOpen(true)}
             className="px-8 py-4 w-full bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white font-bold rounded-2xl hover:brightness-95 shadow-lg shadow-orange-500/25 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2"
           >
             <Send className="w-4 h-4" />
-            Ouvrir le formulaire
+            {t('settings.help.reclamationOpen')}
           </button>
         </motion.div>
       </div>
@@ -306,13 +287,13 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.98 }}
               transition={{ duration: 0.22 }}
-              className="relative z-10 w-full max-w-2xl rounded-3xl border border-[#E5E7EB] bg-white shadow-2xl overflow-hidden"
+              className="relative z-10 w-full max-w-2xl rounded-3xl border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
             >
               <div className="bg-gradient-to-r from-[#F97316] to-[#FB7185] px-6 sm:px-8 py-6 text-white">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">Formulaire de Réclamation</h3>
-                    <p className="text-sm text-white/85 mt-1">Décrivez votre problème, nous revenons vers vous dans les meilleurs délais.</p>
+                    <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">{t('settings.help.reclamationModalTitle')}</h3>
+                    <p className="text-sm text-white/85 mt-1">{t('settings.help.reclamationModalSubtitle')}</p>
                   </div>
                   <button
                     type="button"
@@ -328,8 +309,8 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
               <form onSubmit={handleReclamationSubmit} className="p-6 sm:p-8 space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="reclamation-nom" className="block text-sm font-semibold text-[#111827] mb-1.5">
-                      Nom
+                    <label htmlFor="reclamation-nom" className="block text-sm font-semibold text-[#111827] dark:text-gray-100 mb-1.5">
+                      {t('settings.help.reclamationName')}
                     </label>
                     <input
                       id="reclamation-nom"
@@ -338,8 +319,8 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
                       onChange={(event) =>
                         handleReclamationFieldChange('nom', event.target.value)
                       }
-                      placeholder="Votre nom complet"
-                      className="w-full h-11 rounded-xl border border-[#D1D5DB] px-3.5 text-sm outline-none focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/15 transition-all"
+                      placeholder={t('settings.help.reclamationNamePlaceholder')}
+                      className="w-full h-11 rounded-xl border border-[#D1D5DB] dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 px-3.5 text-sm outline-none focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/15 transition-all"
                     />
                     {formErrors.nom && (
                       <p className="mt-1.5 text-xs text-[#DC2626]">{formErrors.nom}</p>
@@ -347,8 +328,8 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
                   </div>
 
                   <div>
-                    <label htmlFor="reclamation-email" className="block text-sm font-semibold text-[#111827] mb-1.5">
-                      Email
+                    <label htmlFor="reclamation-email" className="block text-sm font-semibold text-[#111827] dark:text-gray-100 mb-1.5">
+                      {t('settings.help.reclamationEmail')}
                     </label>
                     <input
                       id="reclamation-email"
@@ -357,8 +338,8 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
                       onChange={(event) =>
                         handleReclamationFieldChange('email', event.target.value)
                       }
-                      placeholder="votre@email.com"
-                      className="w-full h-11 rounded-xl border border-[#D1D5DB] px-3.5 text-sm outline-none focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/15 transition-all"
+                      placeholder={t('settings.help.reclamationEmailPlaceholder')}
+                      className="w-full h-11 rounded-xl border border-[#D1D5DB] dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 px-3.5 text-sm outline-none focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/15 transition-all"
                     />
                     {formErrors.email && (
                       <p className="mt-1.5 text-xs text-[#DC2626]">{formErrors.email}</p>
@@ -367,8 +348,8 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
                 </div>
 
                 <div>
-                  <label htmlFor="reclamation-type" className="block text-sm font-semibold text-[#111827] mb-1.5">
-                    Type de réclamation
+                  <label htmlFor="reclamation-type" className="block text-sm font-semibold text-[#111827] dark:text-gray-100 mb-1.5">
+                    {t('settings.help.reclamationType')}
                   </label>
                   <select
                     id="reclamation-type"
@@ -379,9 +360,9 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
                         event.target.value,
                       )
                     }
-                    className="w-full h-11 rounded-xl border border-[#D1D5DB] px-3.5 text-sm outline-none focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/15 transition-all bg-white"
+                    className="w-full h-11 rounded-xl border border-[#D1D5DB] dark:border-slate-600 px-3.5 text-sm outline-none focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/15 transition-all bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
                   >
-                    <option value="">Sélectionnez un type</option>
+                    <option value="">{t('settings.help.reclamationTypePlaceholder')}</option>
                     {reclamationTypeOptions.map((option) => (
                       <option key={option} value={option}>
                         {option}
@@ -395,10 +376,10 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label htmlFor="reclamation-description" className="block text-sm font-semibold text-[#111827]">
-                      Description
+                    <label htmlFor="reclamation-description" className="block text-sm font-semibold text-[#111827] dark:text-gray-100">
+                      {t('settings.help.reclamationDescription')}
                     </label>
-                    <span className={`text-xs font-medium ${descriptionLength < 10 ? 'text-[#D97706]' : 'text-[#6B7280]'}`}>
+                    <span className={`text-xs font-medium ${descriptionLength < 10 ? 'text-[#D97706]' : 'text-[#6B7280] dark:text-gray-400'}`}>
                       {descriptionLength}/2000
                     </span>
                   </div>
@@ -412,8 +393,8 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
                       )
                     }
                     rows={6}
-                    placeholder="Expliquez clairement le problème rencontré (étapes, captures, contexte...)."
-                    className="w-full rounded-xl border border-[#D1D5DB] px-3.5 py-3 text-sm outline-none focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/15 transition-all resize-y min-h-[140px]"
+                    placeholder={t('settings.help.reclamationDescriptionPlaceholder')}
+                    className="w-full rounded-xl border border-[#D1D5DB] dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 px-3.5 py-3 text-sm outline-none focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/15 transition-all resize-y min-h-[140px]"
                   />
                   {formErrors.description && (
                     <p className="mt-1.5 text-xs text-[#DC2626]">{formErrors.description}</p>
@@ -424,9 +405,9 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
                   <button
                     type="button"
                     onClick={closeReclamationModal}
-                    className="h-11 px-5 rounded-xl border border-[#D1D5DB] text-[#4B5563] hover:bg-[#F9FAFB] font-semibold transition-colors"
+                    className="h-11 px-5 rounded-xl border border-[#D1D5DB] dark:border-slate-600 text-[#4B5563] dark:text-gray-300 hover:bg-[#F9FAFB] dark:hover:bg-slate-800 font-semibold transition-colors"
                   >
-                    Annuler
+                    {t('common.cancel')}
                   </button>
                   <button
                     type="submit"
@@ -436,12 +417,12 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
                     {isSubmittingReclamation ? (
                       <>
                         <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                        Envoi en cours...
+                        {t('settings.help.reclamationSending')}
                       </>
                     ) : (
                       <>
                         <Send className="w-4 h-4" />
-                        Envoyer la réclamation
+                        {t('settings.help.reclamationSubmit')}
                       </>
                     )}
                   </button>
@@ -457,27 +438,27 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.3 }}
-        className="bg-white rounded-3xl border border-[#E5E7EB] shadow-sm p-8"
+        className="bg-white dark:bg-slate-900 rounded-3xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-8"
       >
         <div className="flex items-center gap-4 mb-8">
           <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 shadow-sm border border-purple-100">
             <FileQuestion className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-[#111827]">Questions fréquentes</h3>
-            <p className="text-xs text-[#6B7280]">Tout ce que vous devez savoir sur DeepSkyn</p>
+            <h3 className="text-xl font-bold text-[#111827] dark:text-gray-100">{t('settings.help.faqTitle')}</h3>
+            <p className="text-xs text-[#6B7280] dark:text-gray-400">{t('settings.help.faqSubtitle')}</p>
           </div>
         </div>
         
         <div className="space-y-4">
           {faqs.map((faq, index) => (
-            <div key={index} className={`rounded-2xl border transition-all duration-300 ${openFaq === index ? 'bg-gray-50 border-[#0EA5E9]/20' : 'bg-white border-gray-100'}`}>
+            <div key={index} className={`rounded-2xl border transition-all duration-300 ${openFaq === index ? 'bg-gray-50 dark:bg-slate-800 border-[#0EA5E9]/20' : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-700'}`}>
               <button
                 onClick={() => setOpenFaq(openFaq === index ? null : index)}
                 className="w-full flex items-center justify-between p-5 text-left transition-colors"
               >
-                <span className="font-bold text-[#111827] text-sm leading-tight pr-6">{faq.question}</span>
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center bg-white border transition-all duration-300 ${openFaq === index ? 'rotate-180 border-[#0EA5E9] text-[#0EA5E9] shadow-sm' : 'border-gray-100 text-gray-400'}`}>
+                <span className="font-bold text-[#111827] dark:text-gray-100 text-sm leading-tight pr-6">{faq.question}</span>
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center bg-white dark:bg-slate-700 border transition-all duration-300 ${openFaq === index ? 'rotate-180 border-[#0EA5E9] text-[#0EA5E9] shadow-sm' : 'border-gray-100 dark:border-slate-600 text-gray-400 dark:text-gray-300'}`}>
                   <ChevronDown className="w-5 h-5" />
                 </div>
               </button>
@@ -489,8 +470,8 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
                     exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden"
                   >
-                    <div className="p-5 pt-0 text-sm font-medium text-[#6B7280] leading-relaxed">
-                       <div className="h-px bg-gray-200/50 mb-5" />
+                      <div className="p-5 pt-0 text-sm font-medium text-[#6B7280] dark:text-gray-400 leading-relaxed">
+                        <div className="h-px bg-gray-200/50 dark:bg-slate-700 mb-5" />
                       {faq.answer}
                     </div>
                   </motion.div>

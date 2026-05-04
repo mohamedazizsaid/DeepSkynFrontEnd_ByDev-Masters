@@ -136,7 +136,15 @@ export const digitalTwinService = {
 
   // Predictions
   async createPrediction(request: CreatePredictionRequest): Promise<SkinPrediction> {
-    const res = await apiClient.post<SkinPrediction>('/digital-twin/predict', request);
+    const daysAheadMap: Record<CreatePredictionRequest['predictionType'], number> = {
+      SEVEN_DAY: 7,
+      FOURTEEN_DAY: 14,
+      THIRTY_DAY: 30,
+    };
+    const daysAhead = daysAheadMap[request.predictionType] ?? 7;
+    const res = await apiClient.get<SkinPrediction>('/digital-twin/predict', {
+      params: { daysAhead },
+    });
     return res.data;
   },
 

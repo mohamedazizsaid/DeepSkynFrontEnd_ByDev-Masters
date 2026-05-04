@@ -1,5 +1,5 @@
 import apiClient from '../api-client';
-import type { ChatHistory, SendMessageDto } from '../types';
+import type { ChatHistory, ChatMessage, SendMessageDto } from '../types';
 
 type BackendSendMessageResponse = {
   chatId?: string;
@@ -8,7 +8,21 @@ type BackendSendMessageResponse = {
     role?: string;
     content?: string;
     timestamp?: string;
+    products?: Array<{
+      id?: string;
+      name?: string;
+      brand?: string | null;
+      imageUrl?: string | null;
+      category?: string | null;
+    }>;
   };
+  products?: Array<{
+    id?: string;
+    name?: string;
+    brand?: string | null;
+    imageUrl?: string | null;
+    category?: string | null;
+  }>;
 };
 
 type BackendHistoryResponse =
@@ -22,7 +36,7 @@ const nowIso = () => new Date().toISOString();
 
 function normalizeChatHistory(chat: ChatHistory): ChatHistory {
   const rawMessages = Array.isArray(chat.messages)
-    ? (chat.messages as Array<{ role?: string; content?: string; timestamp?: string }> )
+    ? (chat.messages as Array<ChatMessage>)
     : [];
 
   const lastUser = [...rawMessages].reverse().find((m) => m.role === 'user');
@@ -50,6 +64,7 @@ function normalizeSendMessageResponse(
 
   const timestamp = data.message?.timestamp || nowIso();
   const assistantText = data.message?.content || null;
+  const assistantProducts = data.message?.products || data.products || [];
 
   return {
     id: data.chatId || `chat-${Date.now()}`,
@@ -61,7 +76,7 @@ function normalizeSendMessageResponse(
     messages: [
       { role: 'user', content: sentMessage, timestamp },
       ...(assistantText
-        ? [{ role: 'assistant', content: assistantText, timestamp }]
+        ? [{ role: 'assistant', content: assistantText, timestamp, products: assistantProducts }]
         : []),
     ],
     context: sentContext || null,

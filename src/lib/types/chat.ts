@@ -3,6 +3,15 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp?: string;
+  products?: ChatProductRecommendation[];
+}
+
+export interface ChatProductRecommendation {
+  id?: string;
+  name: string;
+  brand?: string | null;
+  imageUrl?: string | null;
+  category?: string | null;
 }
 
 export interface ChatHistory {

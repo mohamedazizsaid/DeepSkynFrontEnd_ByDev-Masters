@@ -4,6 +4,7 @@ import { Camera, MapPin, Link2, Calendar, MessageCircle, UserPlus, Loader2 } fro
 import { Button } from '../../components/button';
 import { StoryHighlights } from './story-highlights';
 import { StoryTimeline } from './story-timeline';
+import { useAccessibilityStore } from '../../../stores/accessibility.store';
 import toast from 'react-hot-toast';
 
 interface UserProfile {
@@ -41,6 +42,7 @@ export function ProfileHero({
   onFollow,
   isFollowing = false,
 }: ProfileHeroProps) {
+  const { t, language } = useAccessibilityStore();
   const [loadingCover, setLoadingCover] = useState(false);
   const [loadingAvatar, setLoadingAvatar] = useState(false);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
@@ -52,13 +54,13 @@ export function ProfileHero({
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('La photo doit faire moins de 5MB');
+      toast.error(t('community.photoSizeError'));
       return;
     }
 
     // Validate file type
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      toast.error('Seul JPG, PNG et WEBP sont acceptés');
+      toast.error(t('community.typeError'));
       return;
     }
 
@@ -70,12 +72,12 @@ export function ProfileHero({
         const base64 = event.target?.result as string;
         if (onCoverPhotoUpload) {
           await onCoverPhotoUpload(base64);
-          toast.success('Photo de couverture mise à jour');
+          toast.success(t('community.coverUpdated'));
         }
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      toast.error('Erreur lors du téléchargement de la photo');
+      toast.error(t('community.uploadError'));
       console.error(error);
     } finally {
       setLoadingCover(false);
@@ -88,13 +90,13 @@ export function ProfileHero({
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('L\'avatar doit faire moins de 5MB');
+      toast.error(t('community.photoSizeError'));
       return;
     }
 
     // Validate file type
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      toast.error('Seul JPG, PNG et WEBP sont acceptés');
+      toast.error(t('community.typeError'));
       return;
     }
 
@@ -106,12 +108,12 @@ export function ProfileHero({
         const base64 = event.target?.result as string;
         if (onAvatarUpload) {
           await onAvatarUpload(base64);
-          toast.success('Avatar mis à jour');
+          toast.success(t('community.avatarUpdated'));
         }
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      toast.error('Erreur lors du téléchargement de l\'avatar');
+      toast.error(t('community.uploadError'));
       console.error(error);
     } finally {
       setLoadingAvatar(false);
@@ -119,7 +121,8 @@ export function ProfileHero({
   };
 
   const formatJoinDate = (date: string) => {
-    return new Date(date).toLocaleDateString('fr-FR', {
+    const locale = language === 'ar' ? 'ar-SA' : language === 'en' ? 'en-GB' : language === 'es' ? 'es-ES' : 'fr-FR';
+    return new Date(date).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
     });
@@ -129,10 +132,10 @@ export function ProfileHero({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6"
+      className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm overflow-hidden mb-6"
     >
       {/* Cover Photo Section */}
-      <div className="relative h-48 bg-gradient-to-r from-[#F9A8D4] to-[#FED7AA]">
+      <div className="relative h-48 bg-gradient-to-r from-[#7DD3FC] to-[#BAE6FD]">
         {user.coverPhoto && (
           <img
             src={user.coverPhoto}
@@ -152,7 +155,7 @@ export function ProfileHero({
             ) : (
               <div className="flex flex-col items-center gap-2">
                 <Camera className="w-8 h-8 text-white" />
-                <span className="text-white text-sm font-medium">Modifier la couverture</span>
+                <span className="text-white text-sm font-medium">{t('common.edit')}</span>
               </div>
             )}
           </div>
@@ -172,7 +175,7 @@ export function ProfileHero({
         <div className="flex items-end gap-6 mb-6">
           {/* Avatar */}
           <div className="relative -mt-16 flex-shrink-0">
-            <div className="w-32 h-32 rounded-full border-4 border-white bg-[#F3F4F6] overflow-hidden shadow-lg">
+            <div className="w-32 h-32 rounded-full border-4 border-white dark:border-slate-700 bg-[#F3F4F6] dark:bg-slate-800 overflow-hidden shadow-lg">
               {user.avatar ? (
                 <img
                   src={user.avatar}
@@ -213,7 +216,7 @@ export function ProfileHero({
           <div className="flex-1"></div>
           <div className="flex gap-3">
             {isOwnProfile ? (
-              <Button onClick={onEditProfile}>Modifier le profil</Button>
+              <Button onClick={onEditProfile}>{t('common.edit')}</Button>
             ) : (
               <>
                 <Button
@@ -221,11 +224,11 @@ export function ProfileHero({
                   onClick={onFollow}
                 >
                   <UserPlus className="w-4 h-4" />
-                  {isFollowing ? 'Suivi' : 'Suivre'}
+                  {isFollowing ? t('common.following') : t('common.follow')}
                 </Button>
                 <Button variant="outline">
                   <MessageCircle className="w-4 h-4" />
-                  Message
+                  {t('common.send')}
                 </Button>
               </>
             )}
@@ -234,17 +237,17 @@ export function ProfileHero({
 
         {/* User Info */}
         <div className="mb-4">
-          <h1 className="text-3xl font-bold text-[#111827]">{user.name || 'Sans nom'}</h1>
-          <p className="text-[#6B7280]">@{user.email?.split('@')[0] || 'utilisateur'}</p>
+          <h1 className="text-3xl font-bold text-[#111827] dark:text-gray-100">{user.name || t('common.user')}</h1>
+          <p className="text-[#6B7280] dark:text-gray-400">@{user.email?.split('@')[0] || t('common.user')}</p>
         </div>
 
         {/* Bio */}
         {user.bio && (
-          <p className="text-[#374151] mb-4 leading-relaxed">{user.bio}</p>
+          <p className="text-[#374151] dark:text-gray-300 mb-4 leading-relaxed">{user.bio}</p>
         )}
 
         {/* Location, Website, Join Date */}
-        <div className="flex flex-wrap gap-4 mb-6 text-sm text-[#6B7280]">
+        <div className="flex flex-wrap gap-4 mb-6 text-sm text-[#6B7280] dark:text-gray-400">
           {user.location && (
             <div className="flex items-center gap-1.5">
               <MapPin className="w-4 h-4" />
@@ -261,37 +264,37 @@ export function ProfileHero({
           )}
           <div className="flex items-center gap-1.5">
             <Calendar className="w-4 h-4" />
-            <span>Inscrit en {formatJoinDate(user.createdAt)}</span>
+            <span>{t('community.joinedIn', { date: formatJoinDate(user.createdAt) })}</span>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="flex gap-8 pt-4 border-t border-[#E5E7EB]">
+        <div className="flex gap-8 pt-4 border-t border-[#E5E7EB] dark:border-slate-700">
           <motion.div
             whileHover={{ scale: 1.05 }}
             className="cursor-pointer"
           >
-            <p className="font-bold text-[#111827]">{user.postsCount || 0}</p>
-            <p className="text-sm text-[#6B7280]">Publications</p>
+            <p className="font-bold text-[#111827] dark:text-gray-100">{user.postsCount || 0}</p>
+            <p className="text-sm text-[#6B7280] dark:text-gray-400">{t('community.publications')}</p>
           </motion.div>
           <motion.div
             whileHover={{ scale: 1.05 }}
             className="cursor-pointer"
           >
-            <p className="font-bold text-[#111827]">{user.followersCount || 0}</p>
-            <p className="text-sm text-[#6B7280]">Abonnés</p>
+            <p className="font-bold text-[#111827] dark:text-gray-100">{user.followersCount || 0}</p>
+            <p className="text-sm text-[#6B7280] dark:text-gray-400">{t('community.followers')}</p>
           </motion.div>
           <motion.div
             whileHover={{ scale: 1.05 }}
             className="cursor-pointer"
           >
-            <p className="font-bold text-[#111827]">{user.followingCount || 0}</p>
-            <p className="text-sm text-[#6B7280]">Abonnements</p>
+            <p className="font-bold text-[#111827] dark:text-gray-100">{user.followingCount || 0}</p>
+            <p className="text-sm text-[#6B7280] dark:text-gray-400">{t('community.subscriptions')}</p>
           </motion.div>
         </div>
 
         {/* Story Highlights */}
-        <div className="mt-8 pt-6 border-t border-[#E5E7EB]">
+        <div className="mt-8 pt-6 border-t border-[#E5E7EB] dark:border-slate-700">
           <StoryHighlights
             userId={user.id}
             isOwnProfile={isOwnProfile}
@@ -300,7 +303,7 @@ export function ProfileHero({
         </div>
 
         {/* Story Timeline */}
-        <div className="mt-8 pt-6 border-t border-[#E5E7EB]">
+        <div className="mt-8 pt-6 border-t border-[#E5E7EB] dark:border-slate-700">
           <StoryTimeline userId={user.id} />
         </div>
       </div>

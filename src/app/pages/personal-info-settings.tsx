@@ -104,7 +104,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
   // Register face from current profile photo
   const handleRegisterFace = async () => {
     if (!formData.avatar) {
-      toast.error('Vous devez d\'abord définir une photo de profil', {
+      toast.error(t('settings.personal.faceNoProfilePhoto'), {
         style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
       });
       return;
@@ -126,7 +126,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
       const descriptor = await extractDescriptorFromImage(img);
       
       if (!descriptor) {
-        toast.error('Aucun visage détecté dans votre photo de profil. Veuillez utiliser une photo montrant clairement votre visage.', {
+        toast.error(t('settings.personal.faceNotDetected'), {
           style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
         });
         return;
@@ -135,7 +135,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
       // Register the face reference
       await faceVerificationService.registerFromProfile({ descriptor });
       
-      toast.success('Référence faciale enregistrée avec succès ! Vous pouvez maintenant utiliser l\'analyse de peau.', {
+      toast.success(t('settings.personal.faceRegisterSuccess'), {
         style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
       });
 
@@ -143,7 +143,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
       await loadFaceReferenceStatus();
     } catch (error: any) {
       console.error('Error registering face:', error);
-      toast.error(error?.response?.data?.message || 'Erreur lors de l\'enregistrement de la référence faciale', {
+      toast.error(error?.response?.data?.message || t('settings.personal.faceRegisterError'), {
         style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
       });
     } finally {
@@ -155,12 +155,12 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
   const handleResetFaceReference = async () => {
     try {
       await faceVerificationService.reset();
-      toast.success('Référence faciale réinitialisée', {
+      toast.success(t('settings.personal.faceResetSuccess'), {
         style: { borderRadius: '12px', background: '#FFFFFF', color: '#111827', border: '1px solid #E5E7EB', padding: '12px' }
       });
       await loadFaceReferenceStatus();
     } catch (error) {
-      toast.error('Erreur lors de la réinitialisation', {
+      toast.error(t('settings.personal.faceResetError'), {
         style: { borderRadius: '12px', background: '#FFFFFF', color: '#EF4444', border: '1px solid #FEE2E2', padding: '12px' }
       });
     }
@@ -263,7 +263,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         onClick={onBack}
-        className="flex lg:hidden items-center gap-2 text-[#6B7280] hover:text-[#111827] transition-colors w-fit"
+        className="flex lg:hidden items-center gap-2 text-[#6B7280] dark:text-gray-400 hover:text-[#111827] dark:hover:text-gray-100 transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
         <span className="text-sm font-medium">{t('common.back')}</span>
@@ -280,8 +280,8 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
             <User className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#111827]">{t('settings.personal.title')}</h2>
-            <p className="text-xs text-[#6B7280]">{t('settings.personal.subtitle')}</p>
+            <h2 className="text-lg font-bold text-[#111827] dark:text-gray-100">{t('settings.personal.title')}</h2>
+            <p className="text-xs text-[#6B7280] dark:text-gray-400">{t('settings.personal.subtitle')}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -307,9 +307,9 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6"
+        className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-6"
       >
-        <h3 className="text-lg font-bold text-[#111827] mb-6 flex items-center gap-2">
+        <h3 className="text-lg font-bold text-[#111827] dark:text-gray-100 mb-6 flex items-center gap-2">
           <User className="w-5 h-5 text-[#0EA5E9]" />
           {t('settings.personal.details')}
         </h3>
@@ -402,10 +402,10 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
                   !isEditing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
                 }`}
               >
-                <span className={formData.gender ? 'text-[#111827]' : 'text-[#9CA3AF]'}>
+                <span className={formData.gender ? 'text-[#111827] dark:text-gray-100' : 'text-[#9CA3AF] dark:text-gray-500'}>
                   {formData.gender
                     ? { Male: t('settings.personal.genderOptions.male'), Female: t('settings.personal.genderOptions.female'), 'Non-binary': t('settings.personal.genderOptions.nonBinary'), 'Prefer not to say': t('settings.personal.genderOptions.private') }[formData.gender] || formData.gender
-                    : '---'}
+                    : t('common.notSpecified')}
                 </span>
               </button>
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none">
@@ -422,7 +422,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white rounded-xl border border-[#E5E7EB] shadow-xl overflow-hidden"
+                    className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white dark:bg-slate-900 rounded-xl border border-[#E5E7EB] dark:border-slate-700 shadow-xl overflow-hidden"
                   >
                     {[
                       { value: 'Male', label: t('settings.personal.genderOptions.male') },
@@ -440,7 +440,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
                         className={`w-full px-4 py-3 text-left text-sm transition-colors ${
                           formData.gender === option.value
                             ? 'bg-[#0EA5E9] text-white font-medium'
-                            : 'hover:bg-[#F3F4F6] text-[#111827]'
+                            : 'hover:bg-[#F3F4F6] dark:hover:bg-slate-800 text-[#111827] dark:text-gray-100'
                         }`}
                       >
                         {option.label}
@@ -460,7 +460,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6 space-y-4"
+          className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-6 space-y-4"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -468,8 +468,8 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
             <MapPin className="w-5 h-5 text-white" />
           </div>
               <div>
-                <h3 className="text-lg font-bold text-[#111827]">{t('settings.personal.location')}</h3>
-                <p className="text-xs text-[#6B7280]">{t('settings.personal.locationDesc')}</p>
+                <h3 className="text-lg font-bold text-[#111827] dark:text-gray-100">{t('settings.personal.location')}</h3>
+                <p className="text-xs text-[#6B7280] dark:text-gray-400">{t('settings.personal.locationDesc')}</p>
               </div>
             </div>
             <Button
@@ -485,24 +485,24 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
               <div className="sm:col-span-2 p-4 rounded-xl bg-sky-50/50 border border-[#0EA5E9]/20">
                 <p className="text-xs text-[#0EA5E9] uppercase tracking-wider font-semibold">{t('settings.personal.address')}</p>
-                <p className="text-sm font-medium text-[#111827] mt-1 line-clamp-2">
+                <p className="text-sm font-medium text-[#111827] dark:text-gray-100 mt-1 line-clamp-2">
                   {selectedAddress.address}
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB]">
-                <p className="text-xs text-[#6B7280] uppercase tracking-wider font-semibold">{t('settings.personal.city')}</p>
-                <p className="text-sm font-medium text-[#111827] mt-1">{selectedAddress.city}</p>
+              <div className="p-4 rounded-xl bg-[#F3F4F6] dark:bg-slate-800 border border-[#E5E7EB] dark:border-slate-700">
+                <p className="text-xs text-[#6B7280] dark:text-gray-400 uppercase tracking-wider font-semibold">{t('settings.personal.city')}</p>
+                <p className="text-sm font-medium text-[#111827] dark:text-gray-100 mt-1">{selectedAddress.city}</p>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB]">
-                <p className="text-xs text-[#6B7280] uppercase tracking-wider font-semibold">{t('settings.personal.zipCode')}</p>
-                <p className="text-sm font-medium text-[#111827] mt-1">{selectedAddress.zipCode}</p>
+              <div className="p-4 rounded-xl bg-[#F3F4F6] dark:bg-slate-800 border border-[#E5E7EB] dark:border-slate-700">
+                <p className="text-xs text-[#6B7280] dark:text-gray-400 uppercase tracking-wider font-semibold">{t('settings.personal.zipCode')}</p>
+                <p className="text-sm font-medium text-[#111827] dark:text-gray-100 mt-1">{selectedAddress.zipCode}</p>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB]">
-                <p className="text-xs text-[#6B7280] uppercase tracking-wider font-semibold">{t('settings.personal.country')}</p>
-                <p className="text-sm font-medium text-[#111827] mt-1">{selectedAddress.country}</p>
+              <div className="p-4 rounded-xl bg-[#F3F4F6] dark:bg-slate-800 border border-[#E5E7EB] dark:border-slate-700">
+                <p className="text-xs text-[#6B7280] dark:text-gray-400 uppercase tracking-wider font-semibold">{t('settings.personal.country')}</p>
+                <p className="text-sm font-medium text-[#111827] dark:text-gray-100 mt-1">{selectedAddress.country}</p>
               </div>
 
               <div className="sm:col-span-2 p-3 rounded-xl bg-[#F0F9FF] border border-[#0EA5E9]/20 text-center">
@@ -565,9 +565,9 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
-        className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6"
+        className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-6"
       >
-        <h3 className="text-lg font-bold text-[#111827] mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-bold text-[#111827] dark:text-gray-100 mb-4 flex items-center gap-2">
           <Share2 className="w-5 h-5 text-[#0EA5E9]" />
           {t('settings.personal.privacy')}
         </h3>
@@ -611,14 +611,14 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.25 }}
-        className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6"
+        className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-6"
       >
-        <h3 className="text-lg font-bold text-[#111827] mb-2 flex items-center gap-2">
+        <h3 className="text-lg font-bold text-[#111827] dark:text-gray-100 mb-2 flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-[#0EA5E9]" />
-          Vérification Faciale
+          {t('settings.personal.faceVerificationTitle')}
         </h3>
-        <p className="text-xs text-[#6B7280] mb-4">
-          Sécurisez vos analyses de peau en vérifiant votre identité par reconnaissance faciale
+        <p className="text-xs text-[#6B7280] dark:text-gray-400 mb-4">
+          {t('settings.personal.faceVerificationSubtitle')}
         </p>
 
         {isLoadingFaceStatus ? (
@@ -630,7 +630,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
             {/* Status display */}
             <div className="p-4 rounded-xl bg-gray-50/50 border border-gray-100">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-gray-700">Statut de la référence faciale</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('settings.personal.faceVerificationStatus')}</span>
                 <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
                   faceReferenceStatus?.hasFaceReference 
                     ? 'bg-emerald-100 text-emerald-700' 
@@ -639,12 +639,12 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
                   {faceReferenceStatus?.hasFaceReference ? (
                     <>
                       <ShieldCheck className="w-3 h-3" />
-                      Active
+                      {t('settings.personal.faceVerificationActive')}
                     </>
                   ) : (
                     <>
                       <ShieldX className="w-3 h-3" />
-                      Non configurée
+                      {t('settings.personal.faceVerificationInactive')}
                     </>
                   )}
                 </div>
@@ -652,19 +652,19 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
               
               {faceReferenceStatus?.hasFaceReference ? (
                 <div className="text-xs text-gray-500">
-                  <p>Votre référence faciale est configurée. Les analyses de peau sont sécurisées par reconnaissance faciale.</p>
+                  <p>{t('settings.personal.faceVerificationConfigured')}</p>
                   {faceReferenceStatus.faceReference?.updatedAt && (
                     <p className="mt-1 text-[10px] text-gray-400">
-                      Dernière mise à jour : {new Date(faceReferenceStatus.faceReference.updatedAt).toLocaleDateString('fr-FR')}
+                      {t('settings.personal.faceVerificationUpdatedAt')}: {new Date(faceReferenceStatus.faceReference.updatedAt).toLocaleDateString('fr-FR')}
                     </p>
                   )}
                 </div>
               ) : (
                 <div className="text-xs text-gray-500">
                   {!formData.avatar ? (
-                    <p>Vous devez d'abord définir une photo de profil pour activer la vérification faciale.</p>
+                    <p>{t('settings.personal.faceVerificationNeedPhoto')}</p>
                   ) : (
-                    <p>Enregistrez votre référence faciale depuis votre photo de profil pour sécuriser vos analyses.</p>
+                    <p>{t('settings.personal.faceVerificationPrompt')}</p>
                   )}
                 </div>
               )}
@@ -677,17 +677,17 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
                   onClick={handleRegisterFace}
                   disabled={isRegisteringFace || !isModelLoaded}
                   size="sm"
-                  className="bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6]"
+                  className="bg-gradient-to-r from-[#0EA5E9] to-[#0EA5E9]"
                 >
                   {isRegisteringFace ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Enregistrement...
+                      {t('settings.personal.faceVerificationRegistering')}
                     </>
                   ) : (
                     <>
                       <ShieldCheck className="w-4 h-4 mr-2" />
-                      Enregistrer ma référence faciale
+                      {t('settings.personal.faceVerificationRegister')}
                     </>
                   )}
                 </Button>
@@ -704,12 +704,12 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
                     {isRegisteringFace ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Mise à jour...
+                        {t('settings.personal.faceVerificationUpdating')}
                       </>
                     ) : (
                       <>
                         <RefreshCw className="w-4 h-4 mr-2" />
-                        Mettre à jour
+                        {t('common.update')}
                       </>
                     )}
                   </Button>
@@ -720,7 +720,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
                     className="text-red-600 hover:text-red-700 hover:border-red-300"
                   >
                     <ShieldX className="w-4 h-4 mr-2" />
-                    Réinitialiser
+                    {t('common.reset')}
                   </Button>
                 </>
               )}
@@ -729,7 +729,7 @@ export function PersonalInfoSettings({ onBack }: PersonalInfoSettingsProps) {
             {/* Info box */}
             <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
               <p className="text-[11px] text-blue-700">
-                <strong>Comment ça fonctionne :</strong> Votre photo de profil est utilisée comme référence pour vérifier votre identité avant chaque analyse de peau. Cela empêche d'autres personnes d'utiliser votre compte pour leurs analyses.
+                <strong>{t('settings.personal.faceVerificationHowItWorksTitle')}:</strong> {t('settings.personal.faceVerificationHowItWorks')}
               </p>
             </div>
           </div>

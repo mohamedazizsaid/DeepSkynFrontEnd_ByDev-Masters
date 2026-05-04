@@ -45,7 +45,7 @@ const StackedAvatars = ({ avatars, extraCount, className = "" }: { avatars: stri
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3, delay: 0.3 }}
-      className="flex items-center justify-center w-7 h-7 rounded-full border-2 border-white dark:border-[#1e293b] bg-gradient-to-tr from-[#0EA5E9] to-[#8B5CF6] text-[8px] font-black text-white shadow-sm"
+      className="flex items-center justify-center w-7 h-7 rounded-full border-2 border-white dark:border-[#1e293b] bg-gradient-to-tr from-[#0EA5E9] to-[#0EA5E9] text-[8px] font-black text-white shadow-sm"
     >
       +{extraCount}
     </motion.div>
@@ -351,7 +351,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('access_token')}` },
         body: JSON.stringify({ coverPhotoUrl: base64 }),
       });
-      if (!response.ok) throw new Error('Erreur');
+      if (!response.ok) throw new Error(t('common.error'));
       const updatedUser = await response.json();
       if (user) {
         setUser({ ...user, coverPhoto: updatedUser.coverPhoto });
@@ -369,7 +369,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('access_token')}` },
         body: JSON.stringify({ avatarUrl: base64 }),
       });
-      if (!response.ok) throw new Error('Erreur');
+      if (!response.ok) throw new Error(t('common.error'));
       const updatedUser = await response.json();
       if (user) {
         setUser({ ...user, avatar: updatedUser.avatar });
@@ -573,13 +573,13 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
             onClick={async () => {
               toast.dismiss(toastInstance.id);
               try {
-                const loadingToast = toast.loading(t('common.loading') || "Suppression...");
+                const loadingToast = toast.loading(t('common.loading'));
                 await postsService.delete(postId);
                 setPosts((prev) => prev.filter((p) => p.id !== postId));
                 setUserStats(prev => ({ ...prev, posts: Math.max(0, prev.posts - 1) }));
-                toast.success(t('common.success') || "Publication supprimée", { id: loadingToast });
+                toast.success(t('common.success'), { id: loadingToast });
               } catch {
-                toast.error(t('common.error') || "Erreur lors de la suppression");
+                toast.error(t('common.error'));
               }
             }}
             className="px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider bg-red-600 text-white shadow-lg shadow-red-500/20 hover:bg-red-700 transition-all hover:scale-105 active:scale-95"
@@ -616,13 +616,13 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
               onClick={async () => {
                 toast.dismiss(toastInstance.id);
                 try {
-                  const loadingToast = toast.loading(t('common.loading') || "Traitement...");
+                  const loadingToast = toast.loading(t('common.loading'));
                   await postsService.toggleArchive(postId);
                   setPosts((prev) => prev.filter((p) => p.id !== postId));
-                  toast.success(t('common.success') || "Action réussie", { id: loadingToast });
+                  toast.success(t('common.success'), { id: loadingToast });
                   resolve();
                 } catch {
-                  toast.error(t('common.error') || "Erreur lors de l'action");
+                  toast.error(t('common.error'));
                   resolve();
                 }
               }}
@@ -731,7 +731,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
   // ─── Sub-tab definitions ───
   const tabs: { key: CommunityTab; label: string; icon: React.ReactNode }[] = [
     { key: 'feed', label: t('community.feed'), icon: <Newspaper className="w-4 h-4" /> },
-    { key: 'archive', label: t('community.archivesTab') || 'Archives', icon: <Archive className="w-4 h-4" /> },
+    { key: 'archive', label: t('community.archivesTab'), icon: <Archive className="w-4 h-4" /> },
     { key: 'profile', label: t('community.profile'), icon: <User className="w-4 h-4" /> },
     { key: 'suggestions', label: t('community.suggestions'), icon: <UserPlus className="w-4 h-4" /> },
     { key: 'stats', label: t('community.stats'), icon: <BarChart3 className="w-4 h-4" /> },
@@ -871,7 +871,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                                   newComment={newComment}
                                   setNewComment={setNewComment}
                                   userAvatar={user?.avatar}
-                                  userName={user?.name || 'User'}
+                                  userName={user?.name || t('common.user')}
                                   t={t}
                                   isDark={isDark}
                                   isHcHigh={isHcHigh}
@@ -918,7 +918,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                           )}
                         </div>
                         <div className="flex items-center justify-center gap-1 mb-0.5">
-                          <h3 className={`font-bold text-sm ${textColor}`}>{user?.name || 'Utilisateur'}</h3>
+                          <h3 className={`font-bold text-sm ${textColor}`}>{user?.name || t('common.user')}</h3>
                           <BadgeCheck className="w-3.5 h-3.5 text-[#0EA5E9] fill-[#0EA5E9]/10" />
                         </div>
                         <p className={`text-xs ${subText} opacity-80`}>@{user?.email?.split('@')[0]}</p>
@@ -1017,20 +1017,20 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                       </div>
                       <div className="mb-4 text-left">
                         <div className="flex items-center gap-2 mb-1">
-                          <h1 className="text-4xl font-black text-white drop-shadow-lg">{user?.name || 'DeepSkyn Communauté'}</h1>
+                          <h1 className="text-4xl font-black text-white drop-shadow-lg">{user?.name || t('nav.community')}</h1>
                           <BadgeCheck className="w-7 h-7 text-[#0EA5E9] fill-white" />
                         </div>
                         <div className="flex items-center gap-3">
-                          <p className="text-white/90 font-medium">@{user?.email?.split('@')[0] || 'utilisateur'}</p>
+                          <p className="text-white/90 font-medium">@{user?.email?.split('@')[0] || t('common.user')}</p>
                           <span className="w-1 h-1 rounded-full bg-white/40" />
-                          <p className="text-white/90 font-medium flex items-center gap-1.5"><Users className="w-4 h-4" /> Membre depuis 2024</p>
+                          <p className="text-white/90 font-medium flex items-center gap-1.5"><Users className="w-4 h-4" /> {t('community.joinedIn', { date: '2024' })}</p>
                         </div>
                       </div>
                     </div>
 
                     <button className="mb-6 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-2xl border border-white/20 text-white font-bold transition-all flex items-center gap-2">
                        <MoreHorizontal className="w-5 h-5" />
-                       Modifier le profil
+                        {t('common.edit')}
                     </button>
                   </div>
 
@@ -1054,7 +1054,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                         ))}
                       </div>
                       <p className={`text-sm font-medium ${subText}`}>
-                        <span className={`font-bold ${textColor}`}>Amira B.</span> et {userStats.followers > 0 ? userStats.followers - 1 : 42} autres amis sont membres
+                        <span className={`font-bold ${textColor}`}>{userStats.followers > 0 ? userStats.followers : 42}</span> {t('community.followers')}
                       </p>
                     </div>
                   </div>
@@ -1137,7 +1137,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                 {/* Right Column: Timeline & Posts */}
                 <div className="space-y-6">
                   {/* PostComposer */}
-                  <PostComposer userAvatar={user?.avatar} userName={user?.name || 'Utilisateur'} onSubmit={handleCreatePost} isLoading={posting} />
+                  <PostComposer userAvatar={user?.avatar} userName={user?.name || t('common.user')} onSubmit={handleCreatePost} isLoading={posting} />
 
                   {/* Story Timeline */}
                   <motion.div
@@ -1161,7 +1161,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                           <PostCard
                             post={{
                               id: post.id, userId: post.userId,
-                              userName: post.user?.name || 'Utilisateur',
+                              userName: post.user?.name || t('common.user'),
                               userAvatar: post.user?.avatar ?? undefined,
                               content: post.message, media: post.media ?? undefined,
                               createdAt: post.createdAt,
@@ -1188,7 +1188,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
                                 newComment={newComment}
                                 setNewComment={setNewComment}
                                 userAvatar={user?.avatar}
-                                userName={user?.name || 'Utilisateur'}
+                                userName={user?.name || t('common.user')}
                                 t={t}
                                 isDark={isDark}
                                 isHcHigh={isHcHigh}

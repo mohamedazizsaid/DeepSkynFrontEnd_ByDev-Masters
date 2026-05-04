@@ -68,7 +68,7 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
     const targetUserId = String(userId || '').trim();
     if (!targetUserId) {
       setLoading(false);
-      toast.error("Profil invalide");
+      toast.error(t('common.error'));
       return;
     }
 
@@ -100,7 +100,7 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
       }
     } catch (err) {
       console.error("Failed to fetch public profile", err);
-      toast.error("Impossible de charger le profil");
+      toast.error(t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -114,16 +114,16 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
         ...prev,
         followers: result.followed ? prev.followers + 1 : prev.followers - 1
       }));
-      toast.success(result.followed ? `Vous suivez maintenant ${user?.name}` : `Vous ne suivez plus ${user?.name}`);
+      toast.success(result.followed ? t('common.follow') : t('common.unfollow'));
     } catch (error) {
-      toast.error("Erreur lors de l'opération");
+      toast.error(t('common.error'));
     }
   };
 
   const handleRefresh = async () => {
-    const loadingToast = toast.loading("Actualisation du profil...");
+    const loadingToast = toast.loading(t('common.loading'));
     await fetchProfile();
-    toast.success("Profil actualisé", { id: loadingToast });
+    toast.success(t('common.success'), { id: loadingToast });
   };
 
   const handleShareRoutine = async (routine: any) => {
@@ -131,14 +131,14 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
       const routineDetails = routine.steps.map((s: any, i: number) => `${i+1}. ${s.productName || s.name}`).join('\n');
       const message = `✨ Je viens de mettre à jour ma routine ${routine.type} !\n\n${routineDetails}\n\nDécouvrez mon profil pour plus de détails.`;
       
-      const loadingToast = toast.loading("Partage de la routine...");
+      const loadingToast = toast.loading(t('common.loading'));
       await postsService.create({ 
         message, 
         media: user?.avatar // Use avatar as default media if none
       });
-      toast.success("Routine partagée sur le fil communautaire !", { id: loadingToast });
+      toast.success(t('common.success'), { id: loadingToast });
     } catch (error) {
-      toast.error("Erreur lors du partage");
+      toast.error(t('common.error'));
     }
   };
 
@@ -154,18 +154,18 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <Loader2 className="w-10 h-10 text-[#0EA5E9] animate-spin mb-4" />
-        <p className={subText}>Chargement du profil...</p>
+        <p className={subText}>{t('common.loading')}</p>
       </div>
     );
   }
 
   // ─── Community Tabs for illusion of continuity ───
   const communityTabs = [
-    { key: 'feed', label: t('community.feed') || "Fil d'actualité", icon: <Newspaper className="w-4 h-4" /> },
-    { key: 'archive', label: 'Archives', icon: <Archive className="w-4 h-4" /> },
-    { key: 'profile', label: t('community.profile') || 'Profil', icon: <User className="w-4 h-4" /> },
-    { key: 'suggestions', label: t('community.suggestions') || 'Suggestions', icon: <UserPlus className="w-4 h-4" /> },
-    { key: 'stats', label: t('community.stats') || 'Statistiques', icon: <BarChart3 className="w-4 h-4" /> },
+    { key: 'feed', label: t('community.feed'), icon: <Newspaper className="w-4 h-4" /> },
+    { key: 'archive', label: t('community.archivesTab'), icon: <Archive className="w-4 h-4" /> },
+    { key: 'profile', label: t('community.profile'), icon: <User className="w-4 h-4" /> },
+    { key: 'suggestions', label: t('community.suggestions'), icon: <UserPlus className="w-4 h-4" /> },
+    { key: 'stats', label: t('community.stats'), icon: <BarChart3 className="w-4 h-4" /> },
   ];
 
   return (
@@ -299,7 +299,7 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
             </div>
             <div className={`col-span-1 md:col-span-2 p-6 rounded-3xl ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100'} border flex items-center`}>
                <p className={`text-sm italic font-medium leading-relaxed ${subText} opacity-80`}>
-                 "{user?.bio || "Passionnée de skincare et de produits naturels. Ici pour partager mes routines et découvrir les vôtres !"}"
+                 "{user?.bio || t('community.defaultBio')}"
                </p>
             </div>
           </div>
@@ -309,9 +309,9 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
       {/* Tab Switcher */}
       <div className={`flex items-center gap-6 mb-8 border-t border-b ${isDark ? 'border-white/5' : 'border-gray-100'} pt-4 pb-0 px-2 overflow-x-auto no-scrollbar`}>
         {[
-          { id: 'posts', label: 'Publications', icon: Calendar },
-          { id: 'skin_profile', label: 'Profil de Peau', icon: Activity },
-          { id: 'routine', label: 'Routine', icon: Sun },
+          { id: 'posts', label: t('community.publications'), icon: Calendar },
+          { id: 'skin_profile', label: t('community.skinProfileTab'), icon: Activity },
+          { id: 'routine', label: t('nav.routine'), icon: Sun },
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           return (
@@ -347,7 +347,7 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
                 <div className="w-10 h-10 rounded-xl bg-[#0EA5E9]/10 flex items-center justify-center shadow-inner">
                    <Calendar className="w-5 h-5 text-[#0EA5E9]" />
                 </div>
-                Publications de {user?.name}
+                {t('community.profilePostsOfUser', { name: user?.name })}
               </h3>
               <div className={`flex items-center gap-3 p-1.5 rounded-2xl ${isDark ? 'bg-white/5 border border-white/10' : 'bg-gray-100 border border-gray-200'}`}>
                  <button className={`p-2 rounded-xl transition-all ${isDark ? 'bg-[#0EA5E9] text-white shadow-lg' : 'bg-white text-[#0EA5E9] shadow-sm'} hover:scale-105 active:scale-95`}>
@@ -364,8 +364,8 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
                 <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center opacity-40 text-[#6B7280]">
                    <Calendar className="w-10 h-10" />
                 </div>
-                <p className="font-semibold text-lg">Aucune publication pour le moment.</p>
-                <p className="text-xs opacity-70">Revenez bientôt pour découvrir ses nouveaux contenus !</p>
+                <p className="font-semibold text-lg">{t('community.profileNoPostsYet')}</p>
+                <p className="text-xs opacity-70">{t('community.profileCheckBackSoon')}</p>
               </div>
             ) : (
               <div className="space-y-6">
@@ -399,7 +399,7 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
                <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#8B5CF6]/5 rounded-full blur-3xl -ml-32 -mb-32 transition-transform duration-1000 group-hover:scale-150" />
                
                <div className="flex items-center gap-5 mb-10 overflow-hidden relative">
-                 <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-[#0EA5E9] to-[#8B5CF6] flex items-center justify-center shadow-xl text-white transform -rotate-3 hover:rotate-2 transition-transform">
+                 <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-[#0EA5E9] to-[#0EA5E9] flex items-center justify-center shadow-xl text-white transform -rotate-3 hover:rotate-2 transition-transform">
                    <Activity className="w-8 h-8" />
                  </div>
                  <div>
@@ -415,22 +415,22 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
                      <div className={`p-8 rounded-[2.5rem] ${isDark ? 'bg-white/5' : 'bg-gray-50'} border border-white/5 shadow-inner transition-all hover:shadow-xl`}>
                         <div className="flex items-center gap-4 mb-3 text-[#0EA5E9]">
                           <Zap className="w-5 h-5" />
-                          <h4 className="text-xs font-bold uppercase tracking-widest opacity-70">Type de Peau</h4>
+                          <h4 className="text-xs font-bold uppercase tracking-widest opacity-70">{t('community.profileSkinTypeLabel')}</h4>
                         </div>
                         <p className={`text-4xl font-bold ${textColor} mb-2`}>{user.skinProfile.skinType || 'N/A'}</p>
-                        <p className="text-xs font-medium text-gray-500 italic opacity-80 leading-relaxed">Le type de peau de {user.name} est {user.skinProfile.skinType}.</p>
+                        <p className="text-xs font-medium text-gray-500 italic opacity-80 leading-relaxed">{t('community.profileSkinTypeSentence', { name: user.name, type: user.skinProfile.skinType || 'N/A' })}</p>
                      </div>
                      
                      <div className="grid grid-cols-2 gap-6">
                         <div className={`p-6 rounded-[2rem] ${isDark ? 'bg-white/5' : 'bg-gray-50'} border border-white/5`}>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Skin Age</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">{t('community.profileSkinAgeLabel')}</p>
                           <div className="flex items-center gap-2">
                              <Clock className="w-4 h-4 text-green-400" />
-                             <p className={`text-xl font-bold ${textColor}`}>{user.skinProfile.skinAge || '32'} Ans</p>
+                              <p className={`text-xl font-bold ${textColor}`}>{user.skinProfile.skinAge || '32'} {t('common.years')}</p>
                           </div>
                         </div>
                         <div className={`p-6 rounded-[2rem] ${isDark ? 'bg-white/5' : 'bg-gray-50'} border border-white/5`}>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Health Score</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">{t('community.profileHealthScoreLabel')}</p>
                           <div className="flex items-center gap-2">
                              <Heart className="w-4 h-4 text-pink-400" />
                              <p className={`text-xl font-bold ${textColor}`}>{user.skinProfile.healthScore || '92'}/100</p>
@@ -444,28 +444,28 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
                       <div className={`p-8 rounded-[2.5rem] ${isDark ? 'bg-white/5' : 'bg-gray-50'} border border-white/5 shadow-inner`}>
                         <div className="flex items-center gap-4 mb-6 text-[#8B5CF6]">
                            <Layers className="w-5 h-5" />
-                           <h4 className="text-xs font-bold uppercase tracking-widest opacity-70">Préoccupations</h4>
+                          <h4 className="text-xs font-bold uppercase tracking-widest opacity-70">{t('community.profileConcernsLabel')}</h4>
                         </div>
                         <div className="flex flex-wrap gap-3">
                            {user.skinProfile.concerns?.map((c: string) => (
                              <span key={c} className="px-4 py-2 bg-[#8B5CF6]/10 text-[#8B5CF6] text-[10px] font-bold rounded-xl border border-[#8B5CF6]/20 uppercase tracking-wide shadow-sm hover:bg-[#8B5CF6] hover:text-white transition-all">
                                {c}
                              </span>
-                           )) || <p className="text-xs italic text-gray-400">Aucune préoccupation déclarée</p>}
+                          )) || <p className="text-xs italic text-gray-400">{t('community.profileNoConcerns')}</p>}
                         </div>
                       </div>
 
                       <div className={`p-8 rounded-[2.5rem] ${isDark ? 'bg-white/5' : 'bg-gray-50'} border border-white/5 shadow-inner`}>
                         <div className="flex items-center gap-4 mb-6 text-red-400">
                            <Shield className="w-5 h-5" />
-                           <h4 className="text-xs font-bold uppercase tracking-widest opacity-70">Sensibilités</h4>
+                          <h4 className="text-xs font-bold uppercase tracking-widest opacity-70">{t('community.profileSensitivitiesLabel')}</h4>
                         </div>
                         <div className="flex flex-wrap gap-3">
                            {user.skinProfile.sensitivities?.map((s: string) => (
                              <span key={s} className="px-4 py-2 bg-red-400/10 text-red-500 text-[10px] font-bold rounded-xl border border-red-400/20 uppercase tracking-wide shadow-sm hover:bg-red-500 hover:text-white transition-all">
                                {s}
                              </span>
-                           )) || <p className="text-xs italic text-gray-400">Aucune sensibilité déclarée</p>}
+                          )) || <p className="text-xs italic text-gray-400">{t('community.profileNoSensitivities')}</p>}
                         </div>
                       </div>
                    </div>
@@ -473,8 +473,8 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
                ) : (
                  <div className="text-center py-20 px-10 border-2 border-dashed border-white/10 rounded-[3rem] bg-white/5">
                     <Sparkles className="w-16 h-16 text-gray-400/40 mx-auto mb-6" />
-                    <p className={`text-xl font-semibold ${textColor} mb-2`}>Profil de peau non configuré</p>
-                    <p className="text-sm text-gray-500 max-w-sm mx-auto italic">Cet utilisateur n'a pas encore partagé son profil de santé cutanée avec la communauté.</p>
+                    <p className={`text-xl font-semibold ${textColor} mb-2`}>{t('community.profileSkinNotConfigured')}</p>
+                    <p className="text-sm text-gray-500 max-w-sm mx-auto italic">{t('community.profileSkinNotShared')}</p>
                  </div>
                )}
             </div>
@@ -521,7 +521,7 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
                     </div>
                   ) : (
                     <button 
-                      onClick={() => toast.success('Routine partagée avec succès !')} 
+                      onClick={() => toast.success(t('common.success'))} 
                       className="px-6 py-3 bg-[#0EA5E9] text-white rounded-2xl text-xs font-bold uppercase tracking-widest shadow-xl shadow-[#0EA5E9]/30 hover:shadow-2xl hover:-translate-y-1 active:scale-95 transition-all flex items-center gap-3 border-none"
                     >
                       <Share2 className="w-4 h-4" />
@@ -546,11 +546,11 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
                               </div>
                               <div>
                                  <h4 className={`text-xl font-bold ${textColor} truncate max-w-[150px]`}>{routine.name}</h4>
-                                 <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">{isMorning ? 'Routine Matinale' : 'Routine du Soir'}</p>
+                                <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">{isMorning ? t('community.profileMorningRoutine') : t('community.profileEveningRoutine')}</p>
                               </div>
                            </div>
                            <div className={`px-4 py-1.5 rounded-full ${isMorning ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600'} text-[10px] font-bold uppercase tracking-tighter shadow-sm`}>
-                              {routine.steps?.length || 0} Étapes
+                              {t('community.profileStepsCount', { count: routine.steps?.length || 0 })}
                            </div>
                         </div>
 
@@ -562,7 +562,7 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
                                 </div>
                                 <div className="flex-1 min-w-0">
                                    <p className={`text-sm font-semibold ${textColor} truncate`}>{step.productName || step.name}</p>
-                                   <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest truncate">{step.category || 'Treatment'}</p>
+                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest truncate">{step.category || t('community.profileTreatment')}</p>
                                 </div>
                                 <CheckCircle2 className="w-4 h-4 text-green-400 opacity-30" />
                              </div>
@@ -570,7 +570,7 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
                            {routine.steps?.length > 4 && (
                              <div className="text-center pt-2">
                                 <span className="text-[10px] font-bold text-[#0EA5E9] bg-[#0EA5E9]/5 px-5 py-2 rounded-full cursor-pointer hover:bg-[#0EA5E9] hover:text-white transition-all uppercase tracking-widest border border-[#0EA5E9]/20 shadow-sm">
-                                  + {routine.steps.length - 4} étapes supplémentaires
+                                  {t('community.profileMoreSteps', { count: routine.steps.length - 4 })}
                                 </span>
                              </div>
                            )}
@@ -579,7 +579,7 @@ export function PublicProfilePage({ userId, onBack, onProfileClick, onNavigate }
                         <div className="mt-10 pt-6 border-t border-white/5 flex items-center justify-between overflow-hidden relative">
                            <div className="flex items-center gap-2 opacity-60">
                               <Clock className="w-3.5 h-3.5 text-gray-400" />
-                              <span className="text-[10px] font-semibold text-gray-400">{routine.estimatedTime || '15'} MIN</span>
+                              <span className="text-[10px] font-semibold text-gray-400">{routine.estimatedTime || '15'} {t('community.profileMinutesShort')}</span>
                            </div>
                            <button className={`p-2 rounded-xl text-gray-400 hover:text-[#0EA5E9] transition-all hover:scale-110 active:scale-90`}>
                               <RefreshCw className="w-4 h-4" />

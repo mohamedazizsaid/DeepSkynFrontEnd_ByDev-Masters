@@ -895,7 +895,7 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
                     <motion.div
                       animate={{ rotate: [0, 10, -10, 0] }}
                       transition={{ duration: 2, repeat: Infinity }}
-                      className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0EA5E9] to-[#8B5CF6] flex items-center justify-center shadow-lg shadow-purple-500/20"
+                      className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0EA5E9] to-[#0EA5E9] flex items-center justify-center shadow-lg shadow-purple-500/20"
                     >
                       <Crown className="w-6 h-6 text-white" />
                     </motion.div>
@@ -1035,7 +1035,7 @@ export function SubscriptionPage({ onBack }: SubscriptionPageProps) {
                       <Button 
                         onClick={handleStartCheckout} 
                         disabled={upgrading}
-                        className="bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] hover:from-[#0284C7] hover:to-[#7C3AED] text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
+                        className="bg-gradient-to-r from-[#0EA5E9] to-[#0EA5E9] hover:from-[#0284C7] hover:to-[#7C3AED] text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
                       >
                         {upgrading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                         {checkoutMode === 'renew' ? t('subscriptionPage.checkout.renewWithStripe') : t('subscriptionPage.checkout.continueToPayment')}

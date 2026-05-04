@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
     Send,
     Sparkles,
@@ -9,15 +9,22 @@ import {
     MessageSquare,
     Clock3,
     History,
-    ChevronRight
+    ChevronRight,
+    UserRound,
+    Target,
+    Gauge,
+    ShieldCheck
 } from 'lucide-react';
 import { Button } from '../button';
 import { Card } from '../card';
 import { QuotaAlertBanner } from './quota-alert-banner';
 import { chatService } from '../../../lib/services/chat.service';
 import { subscriptionService } from '../../../lib/services/subscription.service';
+import { skinProfileService } from '../../../lib/services/skin-profile.service';
+import { analysisService } from '../../../lib/services/analysis.service';
+import { generateAnalysisPdf } from '../../../lib/pdf/analysis-report';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
-import type { ChatHistory } from '../../../lib/types';
+import type { ChatHistory, ChatProductRecommendation, SkinProfile } from '../../../lib/types';
 import toast from 'react-hot-toast';
 
 interface ChatPageProps {
@@ -30,13 +37,45 @@ interface Message {
     type: 'user' | 'ai';
     content: string;
     timestamp: Date;
+    products?: ChatProductRecommendation[];
 }
 
 interface PersistedChatMessage {
     role?: string;
     content?: string;
     timestamp?: string;
+    products?: ChatProductRecommendation[];
 }
+
+interface ChatSkinProfileContext {
+    skinType?: string | null;
+    fitzpatrickType?: number | null;
+    concerns?: string[];
+    healthScore?: number | null;
+    skinAge?: number | null;
+}
+
+const compactText = (value: string, max = 36): string => {
+    const normalized = value.replace(/\s+/g, ' ').trim();
+    if (!normalized) return '';
+    return normalized.length > max ? `${normalized.slice(0, max - 1)}…` : normalized;
+};
+
+const normalizeSkinTypeKey = (value: unknown): 'normal' | 'oily' | 'dry' | 'combination' | 'sensitive' | null => {
+    if (typeof value !== 'string') return null;
+    const v = value.trim().toLowerCase();
+
+    if (v.includes('comb') || v.includes('mixte')) return 'combination';
+    if (v.includes('oily') || v.includes('gras')) return 'oily';
+    if (v.includes('dry') || v.includes('sech')) return 'dry';
+    if (v.includes('sens')) return 'sensitive';
+    if (v.includes('normal')) return 'normal';
+
+    if (['normal', 'oily', 'dry', 'combination', 'sensitive'].includes(v)) {
+        return v as 'normal' | 'oily' | 'dry' | 'combination' | 'sensitive';
+    }
+    return null;
+};
 
 const premiumButtonClass = 'bg-gradient-to-r from-[#FACC15] to-[#F59E0B] text-white border border-[#FCD34D] hover:from-[#FBBF24] hover:to-[#D97706] shadow-md hover:shadow-lg';
 
@@ -80,6 +119,7 @@ const getConversationMessages = (chat: ChatHistory): Message[] => {
                 type: m.role === 'assistant' ? 'ai' : 'user',
                 content: m.content || '',
                 timestamp: new Date(m.timestamp || chat.updatedAt || chat.createdAt || Date.now()),
+                products: m.role === 'assistant' ? m.products : undefined,
             }));
     }
 
@@ -110,8 +150,18 @@ const getConversationTitle = (chat: ChatHistory, fallbackTitle: string): string 
     return title.length > 64 ? `${title.slice(0, 64)}...` : title;
 };
 
+const getAssistantProducts = (messages?: PersistedChatMessage[] | null): ChatProductRecommendation[] => {
+    if (!Array.isArray(messages)) return [];
+
+    const assistantMessage = [...messages]
+        .reverse()
+        .find((message) => message.role === 'assistant' && Array.isArray(message.products) && message.products.length > 0);
+
+    return assistantMessage?.products || [];
+};
+
 export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
-    const { t, language } = useAccessibilityStore();
+    const { t, language, theme, contrastMode, reduceMotion } = useAccessibilityStore();
     const welcomeMessage: Message = {
         id: 'welcome',
         type: 'ai',
@@ -130,7 +180,201 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     const [chatResetAt, setChatResetAt] = useState<string | null>(null);
     const [historyItems, setHistoryItems] = useState<ChatHistory[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
+    const [skinProfile, setSkinProfile] = useState<SkinProfile | null>(null);
+
+    const generateReportFromLatest = async () => {
+        try {
+            const latest = await analysisService.getLatest();
+            if (!latest) {
+                toast.error('Aucune analyse disponible pour générer le rapport.');
+                return;
+            }
+            generateAnalysisPdf(latest, `deepskyn-analysis-${latest.id || 'report'}.pdf`);
+            toast.success('Rapport généré et téléchargé.');
+        } catch (err) {
+            console.error('Report generation failed', err);
+            toast.error('Impossible de générer le rapport.');
+        }
+    };
     const messagesContainerRef = useRef<HTMLDivElement>(null);
+    const browserReducedMotion = useReducedMotion();
+    const shouldReduceMotion = reduceMotion || browserReducedMotion;
+
+    const fullTitle = t('chatPage.header.title');
+    const [visibleTitleText, setVisibleTitleText] = useState('');
+    const [titleLoopKey, setTitleLoopKey] = useState(0);
+    
+    const titleWords = fullTitle.split(' ');
+    const titlePrefix = titleWords.length > 1 
+        ? titleWords.slice(0, -1).join(' ') + ' ' 
+        : '';
+
+    useEffect(() => {
+        if (shouldReduceMotion) {
+            setVisibleTitleText(fullTitle);
+            return;
+        }
+
+        setVisibleTitleText('');
+        const charDelay = 45;
+        const holdDelay = 10000; // 10s
+        const timeouts: NodeJS.Timeout[] = [];
+
+        const type = (index: number) => {
+            if (index <= fullTitle.length) {
+                setVisibleTitleText(fullTitle.slice(0, index));
+                timeouts.push(setTimeout(() => type(index + 1), charDelay));
+            } else {
+                timeouts.push(setTimeout(() => {
+                    setTitleLoopKey(prev => prev + 1);
+                }, holdDelay));
+            }
+        };
+
+        timeouts.push(setTimeout(() => type(1), 150));
+
+        return () => timeouts.forEach(clearTimeout);
+    }, [fullTitle, shouldReduceMotion, titleLoopKey]);
+
+    const isDark = theme === 'dark';
+    const isHcHigh = contrastMode === 'high';
+
+    const chatShellClass = isHcHigh
+        ? 'border-2 border-yellow-400 bg-black/90'
+        : isDark
+            ? 'border-[#334155] bg-white/[0.04] backdrop-blur-xl shadow-lg shadow-black/30'
+            : 'border-[#CFE3FB] bg-gradient-to-b from-[#E8F3FF]/70 via-[#E1EFFF]/60 to-[#D6E9FF]/55 backdrop-blur-xl shadow-lg shadow-[#0EA5E9]/12';
+
+    const messagesAreaClass = isHcHigh
+        ? 'bg-black'
+        : isDark
+            ? 'bg-white/[0.03]'
+            : 'bg-transparent';
+
+    const inputAreaClass = isHcHigh
+        ? 'border-yellow-400 bg-black'
+        : isDark
+            ? 'border-[#334155] bg-white/[0.04]'
+            : 'border-[#CFE3FB] bg-[#EAF4FF]/70 backdrop-blur-lg';
+
+    const contextCardClass = isHcHigh
+        ? 'border-2 border-yellow-400 bg-black'
+        : isDark
+            ? 'border-[#2563EB]/40 bg-gradient-to-br from-[#0B2340] via-[#0f172a] to-[#153251] shadow-[0_14px_30px_rgba(37,99,235,0.24)]'
+            : 'border-[#52C7EA] bg-gradient-to-br from-[#1FA7D8] via-[#21B8DE] to-[#19C1D9] shadow-[0_16px_34px_rgba(25,193,217,0.26)]';
+
+    const contextTileClass = isHcHigh
+        ? 'border-yellow-400 bg-black'
+        : isDark
+            ? 'border-[#334155] bg-white/[0.06]'
+            : 'border-white/45 bg-white/88';
+
+    const contextScoreTileClass = isHcHigh
+        ? 'border-yellow-400 bg-black'
+        : isDark
+            ? 'border-[#3B82F6]/40 bg-[#0b2948]'
+            : 'border-white/45 bg-white/92';
+
+    const contextHintClass = isHcHigh
+        ? 'bg-yellow-400/10 border-yellow-400 text-yellow-200'
+        : isDark
+            ? 'bg-[#1d4ed8]/20 border-[#2563eb]/40 text-[#bfdbfe]'
+            : 'bg-white/18 border-white/40 text-white';
+
+    const contextTitleTextClass = isHcHigh ? 'text-cyan-400' : isDark ? 'text-[#e2e8f0]' : 'text-white';
+    const contextLabelTextClass = isHcHigh ? 'text-yellow-300' : isDark ? 'text-[#94a3b8]' : 'text-[#0B3A5A]';
+    const contextValueTextClass = isHcHigh ? 'text-cyan-200' : isDark ? 'text-white' : 'text-[#0F172A]';
+    const contextScoreLabelClass = isHcHigh ? 'text-yellow-200' : isDark ? 'text-[#93c5fd]' : 'text-[#0369A1]';
+    const contextScoreValueClass = isHcHigh ? 'text-cyan-200' : isDark ? 'text-[#67e8f9]' : 'text-[#0284C7]';
+    const contextSoftBadgeClass = isHcHigh
+        ? 'bg-yellow-400/20 border-yellow-400 text-yellow-200'
+        : isDark
+            ? 'bg-white/10 border-[#3B82F6]/40 text-[#bfdbfe]'
+            : 'bg-white/30 border-white/40 text-white';
+    const contextIconWrapClass = isHcHigh
+        ? 'bg-yellow-400/20 text-yellow-200'
+        : isDark
+            ? 'bg-[#1d4ed8]/30 text-[#bfdbfe]'
+            : 'bg-[#E0F2FE] text-[#0284C7]';
+    const contextChipClass = isHcHigh
+        ? 'bg-yellow-400/10 text-yellow-200 border-yellow-400'
+        : isDark
+            ? 'bg-white/10 text-[#e2e8f0] border-[#334155]'
+            : 'bg-[#E0F2FE] text-[#075985] border-[#BAE6FD]';
+
+    const skinTypeLabels = {
+        normal: t('onboarding.skinTypesLabels.normal'),
+        oily: t('onboarding.skinTypesLabels.oily'),
+        dry: t('onboarding.skinTypesLabels.dry'),
+        combination: t('onboarding.skinTypesLabels.combination'),
+        sensitive: t('onboarding.skinTypesLabels.sensitive'),
+    } as const;
+
+    const concernLabels = {
+        acne: t('onboarding.concernsLabels.acne'),
+        wrinkles: t('onboarding.concernsLabels.wrinkles'),
+        'dark-spots': t('onboarding.concernsLabels.dark-spots'),
+        dryness: t('onboarding.concernsLabels.dryness'),
+        sensitivity: t('onboarding.concernsLabels.sensitivity'),
+        redness: t('onboarding.concernsLabels.redness'),
+        'large-pores': t('onboarding.concernsLabels.large-pores'),
+        'dark-circles': t('onboarding.concernsLabels.dark-circles'),
+        'uneven-texture': t('onboarding.concernsLabels.uneven-texture'),
+        dullness: t('onboarding.concernsLabels.dullness'),
+        hyperpigmentation: t('onboarding.concernsLabels.hyperpigmentation'),
+        oiliness: t('onboarding.concernsLabels.oiliness'),
+    } as const;
+
+    const activeChat = historyItems.find((chat) => chat.id === activeChatId) || null;
+    const chatSkinProfile = ((activeChat?.context as { skinProfile?: ChatSkinProfileContext } | null)?.skinProfile) || null;
+
+    const resolvedSkinType = chatSkinProfile?.skinType || skinProfile?.skinType || null;
+    const resolvedFitzpatrick = chatSkinProfile?.fitzpatrickType ?? skinProfile?.fitzpatrickType ?? null;
+    const resolvedSkinAge = chatSkinProfile?.skinAge ?? skinProfile?.skinAge ?? null;
+    const resolvedHealthScore = chatSkinProfile?.healthScore ?? skinProfile?.healthScore ?? null;
+    const resolvedConcerns = (chatSkinProfile?.concerns?.length ? chatSkinProfile.concerns : skinProfile?.concerns) || [];
+
+    const normalizedSkinType = normalizeSkinTypeKey(resolvedSkinType);
+    const skinTypeValue = normalizedSkinType
+        ? skinTypeLabels[normalizedSkinType]
+        : (typeof resolvedSkinType === 'string' && resolvedSkinType.trim().length > 0
+            ? compactText(resolvedSkinType, 24)
+            : t('common.notSpecified'));
+
+    const fitzSuffix = resolvedFitzpatrick ? ` • Type ${resolvedFitzpatrick}` : '';
+    const skinTypeDisplay = `${skinTypeValue}${fitzSuffix}`;
+
+    const skinAgeDisplay = resolvedSkinAge !== null && resolvedSkinAge !== undefined
+        ? `${Math.round(resolvedSkinAge)} ${t('common.years')}`
+        : t('common.notSpecified');
+
+    const concernsDisplay = resolvedConcerns.length > 0
+        ? resolvedConcerns
+            .slice(0, 2)
+            .map((concern) => concernLabels[concern as keyof typeof concernLabels] || concern)
+            .join(', ')
+        : t('common.notSpecified');
+
+    const concernsDisplayCompact = compactText(concernsDisplay, 42);
+    const concernChips = resolvedConcerns
+        .slice(0, 3)
+        .map((concern) => concernLabels[concern as keyof typeof concernLabels] || compactText(concern, 20));
+
+    const healthScoreDisplay = resolvedHealthScore !== null && resolvedHealthScore !== undefined
+        ? `${Math.round(resolvedHealthScore)}/100`
+        : '--/100';
+
+    const healthScoreProgress = Math.max(
+        0,
+        Math.min(100, Math.round(resolvedHealthScore ?? 0)),
+    );
+    const scoreLevelLabel = healthScoreProgress >= 80
+        ? t('dashboard.scoreLevel.excellent')
+        : healthScoreProgress >= 60
+            ? t('dashboard.scoreLevel.good')
+            : healthScoreProgress >= 40
+                ? t('dashboard.scoreLevel.average')
+                : t('dashboard.scoreLevel.needsImprovement');
 
     const refreshUsage = async () => {
         try {
@@ -171,9 +415,10 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [premium, history] = await Promise.allSettled([
+                const [premium, history, profile] = await Promise.allSettled([
                     subscriptionService.getUsageSummary(),
                     chatService.getHistory(50, 0),
+                    skinProfileService.getMyProfile(),
                 ]);
                 if (premium.status === 'fulfilled') {
                     setIsPremium(premium.value.isPremium);
@@ -197,6 +442,10 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                     setHistoryItems([]);
                     setActiveChatId(null);
                     setMessages([welcomeMessage]);
+                }
+
+                if (profile.status === 'fulfilled') {
+                    setSkinProfile(profile.value);
                 }
             } catch { /* use defaults */ }
         };
@@ -241,13 +490,26 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
         setInputValue('');
         setIsTyping(true);
 
+        // If the user explicitly asked to generate a report, trigger PDF generation
+        try {
+            const reportRequestRegex = /gén(?:é|e)r.*rapport|gén(?:é|e)rer.*rapport|créer.*rapport|rapport.*gén/iu;
+            if (reportRequestRegex.test(message)) {
+                // run in background, do not block chat send
+                void generateReportFromLatest();
+            }
+        } catch (e) { /* ignore */ }
+
         try {
             const response = await chatService.sendMessage({ message, chatId: activeChatId || undefined });
+            const latestAssistantMessage = Array.isArray(response.messages)
+                ? [...response.messages].reverse().find((entry) => entry.role === 'assistant')
+                : undefined;
             const aiMessage: Message = {
                 id: response.id || (Date.now() + 1).toString(),
                 type: 'ai',
-                content: response.assistantResponse || t('chatPage.toasts.aiFallback'),
-                timestamp: new Date(response.createdAt || Date.now())
+                content: latestAssistantMessage?.content || response.assistantResponse || t('chatPage.toasts.aiFallback'),
+                timestamp: new Date(latestAssistantMessage?.timestamp || response.createdAt || Date.now()),
+                products: latestAssistantMessage?.products || getAssistantProducts(response.messages as PersistedChatMessage[] | null | undefined),
             };
             setMessages(prev => [...prev, aiMessage]);
             const usage = await refreshUsage();
@@ -324,7 +586,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
     };
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-[calc(100vh-4rem)] flex flex-col">
+        <div className="px-4 sm:px-8 pb-12 max-w-7xl mx-auto min-h-[calc(100vh-4rem)] flex flex-col">
 
             {/* Header */}
             <div className="mb-6 md:mb-8">
@@ -334,7 +596,29 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                             <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-bold text-[#0F172A]">{t('chatPage.header.title')}</h1>
+                            <h1 className={`text-2xl md:text-3xl font-bold mb-1 tracking-tight ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+                                <motion.span
+                                    initial={{ opacity: 0, y: 4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    {visibleTitleText.slice(0, titlePrefix.length)}
+                                    <span className={isHcHigh ? 'text-cyan-400' : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] bg-clip-text text-transparent'}>
+                                        {visibleTitleText.length > titlePrefix.length
+                                            ? visibleTitleText.slice(titlePrefix.length)
+                                            : ''}
+                                    </span>
+                                    {visibleTitleText.length < fullTitle.length && !shouldReduceMotion && (
+                                        <motion.span
+                                            className="inline-block ml-0.5 text-[#0EA5E9]"
+                                            animate={{ opacity: [0, 1, 0] }}
+                                            transition={{ duration: 0.8, repeat: Infinity }}
+                                        >
+                                            |
+                                        </motion.span>
+                                    )}
+                                </motion.span>
+                            </h1>
                             <div className="flex items-center gap-2 text-sm text-[#64748B]">
                                 <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></div>
                                 <span>{t('chatPage.header.online')}</span>
@@ -369,10 +653,10 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
             <div className="grid lg:grid-cols-3 gap-6 items-start">
                 {/* Chat Area */}
                 <div className="lg:col-span-2 flex flex-col gap-4">
-                    <Card className="flex flex-col h-[70vh] sm:h-[74vh] lg:h-[78vh] min-h-[560px] max-h-[980px] p-0 overflow-hidden border-[#93C5FD] bg-gradient-to-b from-[#D9ECFF] via-[#E8F3FF] to-[#D2E8FF] shadow-lg shadow-[#0EA5E9]/15">
+                    <Card className={`flex flex-col h-[70vh] sm:h-[74vh] lg:h-[78vh] min-h-[560px] max-h-[980px] p-0 overflow-hidden ${chatShellClass}`}>
 
                         {/* Messages */}
-                        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-gradient-to-b from-[#D5EAFF] via-[#E7F3FF] to-[#CDE5FF] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                        <div ref={messagesContainerRef} className={`flex-1 overflow-y-auto p-4 md:p-6 space-y-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${messagesAreaClass}`}>
                             <AnimatePresence>
                                 {messages.map((message) => (
                                     <motion.div
@@ -396,6 +680,46 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                                                     </div>
                                                 )}
                                                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                                                {message.type === 'ai' && message.products && message.products.length > 0 && (
+                                                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                                        {message.products.map((product, index) => (
+                                                            <div
+                                                                key={`${message.id}-product-${product.id || product.name || index}`}
+                                                                className="overflow-hidden rounded-xl border border-[#BFDBFE] bg-white shadow-sm"
+                                                            >
+                                                                <div className="aspect-square w-full bg-[#F8FBFF] overflow-hidden">
+                                                                    {product.imageUrl ? (
+                                                                        <img
+                                                                            src={product.imageUrl}
+                                                                            alt={product.name}
+                                                                            className="h-full w-full object-cover"
+                                                                            loading="lazy"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#E0F2FE] to-[#F8FBFF] px-3 text-center text-xs font-semibold text-[#0284C7]">
+                                                                            {product.name}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="p-3">
+                                                                    <div className="flex items-start justify-between gap-2">
+                                                                        <div>
+                                                                            <p className="text-sm font-semibold text-[#0F172A] leading-snug">{product.name}</p>
+                                                                            {product.brand && (
+                                                                                <p className="text-[11px] text-[#64748B] mt-0.5">{product.brand}</p>
+                                                                            )}
+                                                                        </div>
+                                                                        {product.category && (
+                                                                            <span className="shrink-0 rounded-full bg-[#E0F2FE] px-2 py-0.5 text-[10px] font-medium text-[#0369A1]">
+                                                                                {product.category}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                             <p className="text-xs text-[#64748B] mt-1 px-2 inline-flex items-center gap-1">
                                                 <Clock3 className="w-3 h-3" />
@@ -425,7 +749,7 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                         </div>
 
                         {/* Input Area */}
-                        <div className="border-t border-[#93C5FD] p-4 md:p-5 bg-gradient-to-b from-[#EAF4FF] to-[#D4E9FF]">
+                        <div className={`border-t p-4 md:p-5 ${inputAreaClass}`}>
                             {!isPremium && freeRemaining !== null && (
                                 <div className="mb-4">
                                     <QuotaAlertBanner
@@ -466,38 +790,80 @@ export function ChatPage({ onBack, onUpgrade }: ChatPageProps) {
                     </Card>
 
                     {/* Context Info */}
-                    <Card className="border-[#BFDBFE] bg-gradient-to-b from-white to-[#F8FAFC] shadow-md shadow-[#0EA5E9]/10">
+                    <Card className={`${contextCardClass}`}>
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold text-[#0F172A]">{t('chatPage.context.title')}</h3>
-                            <span className="text-[11px] px-2 py-1 rounded-full bg-[#E0F2FE] text-[#0369A1] font-semibold">{t('chatPage.context.live')}</span>
+                            <h3 className={`text-lg font-bold inline-flex items-center gap-2 ${contextTitleTextClass}`}>
+                                <ShieldCheck className="w-5 h-5" />
+                                {t('chatPage.context.title')}
+                            </h3>
+                            <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold border ${contextSoftBadgeClass}`}>{t('chatPage.context.live')}</span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-sm">
-                            <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
-                                <span className="text-[#6B7280]">{t('chatPage.context.skinTypeLabel')}</span>
-                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.skinTypeValue')}</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4 gap-3 text-sm">
+                            <div className={`flex flex-col items-start gap-1 rounded-lg border px-3 py-2 min-h-[84px] ${contextTileClass}`}>
+                                <div className="w-full flex items-center justify-between gap-2">
+                                    <span className={`text-xs font-medium ${contextLabelTextClass}`}>{t('chatPage.context.skinTypeLabel')}</span>
+                                    <span className={`w-6 h-6 rounded-md flex items-center justify-center ${contextIconWrapClass}`}>
+                                        <UserRound className="w-3.5 h-3.5" />
+                                    </span>
+                                </div>
+                                <span className={`font-semibold text-sm leading-tight break-words w-full ${contextValueTextClass}`}>{skinTypeDisplay}</span>
                             </div>
-                            <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
-                                <span className="text-[#6B7280]">{t('chatPage.context.ageLabel')}</span>
-                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.ageValue')}</span>
+                            <div className={`flex flex-col items-start gap-1 rounded-lg border px-3 py-2 min-h-[84px] ${contextTileClass}`}>
+                                <div className="w-full flex items-center justify-between gap-2">
+                                    <span className={`text-xs font-medium ${contextLabelTextClass}`}>{t('chatPage.context.ageLabel')}</span>
+                                    <span className={`w-6 h-6 rounded-md flex items-center justify-center ${contextIconWrapClass}`}>
+                                        <Clock3 className="w-3.5 h-3.5" />
+                                    </span>
+                                </div>
+                                <span className={`font-semibold text-sm leading-tight break-words w-full ${contextValueTextClass}`}>{skinAgeDisplay}</span>
                             </div>
-                            <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
-                                <span className="text-[#6B7280]">{t('chatPage.context.mainConcernsLabel')}</span>
-                                <span className="font-semibold text-[#0F172A]">{t('chatPage.context.mainConcernsValue')}</span>
+                            <div className={`flex flex-col items-start gap-1 rounded-lg border px-3 py-2 min-h-[84px] ${contextTileClass}`}>
+                                <div className="w-full flex items-center justify-between gap-2">
+                                    <span className={`text-xs font-medium ${contextLabelTextClass}`}>{t('chatPage.context.mainConcernsLabel')}</span>
+                                    <span className={`w-6 h-6 rounded-md flex items-center justify-center ${contextIconWrapClass}`}>
+                                        <Target className="w-3.5 h-3.5" />
+                                    </span>
+                                </div>
+                                {concernChips.length > 0 ? (
+                                    <div className="w-full flex flex-wrap gap-1.5 mt-0.5">
+                                        {concernChips.map((chip, idx) => (
+                                            <span
+                                                key={`${chip}-${idx}`}
+                                                className={`px-2 py-0.5 text-[11px] rounded-full border font-medium ${contextChipClass}`}
+                                            >
+                                                {chip}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <span className={`font-semibold text-sm leading-tight break-words w-full ${contextValueTextClass}`}>{concernsDisplayCompact}</span>
+                                )}
                             </div>
-                            <div className="rounded-lg border border-[#BAE6FD] bg-[#F0F9FF] px-3 py-2 sm:col-span-2 xl:col-span-1">
+                            <div className={`rounded-lg border px-3 py-2 min-h-[84px] sm:col-span-2 xl:col-span-2 2xl:col-span-1 ${contextScoreTileClass}`}>
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-[#0369A1] font-medium">{t('chatPage.context.currentScore')}</span>
-                                    <span className="font-bold text-[#0284C7]">87/100</span>
+                                    <span className={`text-xs font-medium inline-flex items-center gap-1 ${contextScoreLabelClass}`}>
+                                        <Gauge className="w-3.5 h-3.5" />
+                                        {t('chatPage.context.currentScore')}
+                                    </span>
+                                    <span className={`font-bold ${contextScoreValueClass}`}>{healthScoreDisplay}</span>
                                 </div>
-                                <div className="h-2 rounded-full bg-[#DBEAFE] overflow-hidden">
-                                    <div className="h-full w-[87%] bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] rounded-full" />
+                                <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-[#1e3a5f]' : 'bg-[#DBEAFE]'}`}>
+                                    <div
+                                        className="h-full bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] rounded-full transition-all duration-500"
+                                        style={{ width: `${healthScoreProgress}%` }}
+                                    />
+                                </div>
+                                <div className="mt-2 flex justify-end">
+                                    <span className={`text-[11px] px-2 py-0.5 rounded-full border font-semibold ${contextSoftBadgeClass}`}>
+                                        {scoreLevelLabel}
+                                    </span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="mt-3 p-3 bg-[#0EA5E9]/10 rounded-xl border border-[#BAE6FD]">
-                            <p className="text-xs text-[#0369A1]">
+                        <div className={`mt-3 p-3 rounded-xl border ${contextHintClass}`}>
+                            <p className="text-xs">
                                 {t('chatPage.context.hint')}
                             </p>
                         </div>

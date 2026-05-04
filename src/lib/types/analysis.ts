@@ -39,6 +39,7 @@ export interface Analysis {
   userId: string;
   images: string[];
   questionnaire: Record<string, unknown> | null;
+  preocupent: string[];
   results: GeminiAnalysisResult | null;
   healthScore: number | null;
   skinAge: number | null;
@@ -81,10 +82,40 @@ export interface AnalysisListResponse {
   total: number;
 }
 
+export type ScanFaceAngle = 'front' | 'left' | 'right';
+
+export interface CapturedScanImage {
+  angle: ScanFaceAngle;
+  imageBase64: string;
+  mimeType: 'image/jpeg' | 'image/png' | 'image/webp';
+  imageUrl?: string | null;
+}
+
+export interface AnalysisEvolutionRemark {
+  hasHistory: boolean;
+  trend: 'improved' | 'declined' | 'stable';
+  healthScoreChange: number;
+  skinAgeChange: number;
+  newConditions: string[];
+  resolvedConditions: string[];
+  remark: string;
+}
+
+export interface RealTimeScanResult {
+  analysis: GeminiAnalysisResult;
+  capturedImages: Record<ScanFaceAngle, CapturedScanImage | null>;
+  evolution: AnalysisEvolutionRemark;
+}
+
 /** Request DTO for POST /analyses/scan */
 export interface RealTimeScanDto {
-  image: string;
+  image?: string; // legacy payload
+  frontImage?: string;
+  leftImage?: string;
+  rightImage?: string;
   mimeType?: 'image/jpeg' | 'image/png' | 'image/webp';
   saveImage?: boolean;
   saveAnalysis?: boolean;
+  preocupent?: string[];
+  cachedAnalysis?: GeminiAnalysisResult;
 }

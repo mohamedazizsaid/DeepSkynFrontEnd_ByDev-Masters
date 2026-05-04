@@ -2,10 +2,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Cloud, CloudRain, Sun, Wind, Droplets, Eye, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { Cloud, CloudRain, Sun, Wind, Droplets, Eye, AlertCircle, ArrowRight } from 'lucide-react';
 import { useWeather } from '@/lib/hooks/useWeather';
 import { showWeatherAdviceToast } from './weather-advice-toast';
+import { useAccessibilityStore } from '@/stores/accessibility.store';
 
 interface WeatherNavbarProps {
   className?: string;
@@ -14,6 +15,9 @@ interface WeatherNavbarProps {
 const WeatherNavbar: React.FC<WeatherNavbarProps> = ({ className = '' }) => {
   const { weather, advice, loading, error, fetchWeather } = useWeather(false);
   const [showPopup, setShowPopup] = useState(false);
+  const { t, reduceMotion } = useAccessibilityStore();
+  const browserReducedMotion = useReducedMotion();
+  const shouldReduceMotion = !!(reduceMotion || browserReducedMotion);
 
   // Charger météo quand popup s'ouvre
   const handleOpenPopup = () => {
@@ -192,42 +196,47 @@ const WeatherNavbar: React.FC<WeatherNavbarProps> = ({ className = '' }) => {
               </div>
 
               {/* Lever/Coucher + Conseil */}
-              <div className="flex gap-3 mt-3">
-                {/* Lever du soleil */}
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className="flex-1 min-w-[120px] p-3 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl border border-orange-200 dark:border-orange-700 text-center text-sm"
-                >
-                  <div className="text-lg mb-1">🌅</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-0.5">LEVER</div>
-                  <div className="font-bold text-gray-900 dark:text-white text-xs">
-                    {new Date(weather.sunrise).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                </motion.div>
+              <div className="space-y-3 mt-3">
+                <div className="flex gap-3">
+                  {/* Lever du soleil */}
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    className="flex-1 min-w-[120px] p-3 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl border border-orange-200 dark:border-orange-700 text-center text-sm"
+                  >
+                    <div className="text-lg mb-1">🌅</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-0.5">LEVER</div>
+                    <div className="font-bold text-gray-900 dark:text-white text-xs">
+                      {new Date(weather.sunrise).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </motion.div>
 
-                {/* Coucher du soleil */}
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className="flex-1 min-w-[120px] p-3 bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20 rounded-xl border border-pink-200 dark:border-pink-700 text-center text-sm"
-                >
-                  <div className="text-lg mb-1">🌇</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-0.5">COUCHER</div>
-                  <div className="font-bold text-gray-900 dark:text-white text-xs">
-                    {new Date(weather.sunset).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                </motion.div>
+                  {/* Coucher du soleil */}
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    className="flex-1 min-w-[120px] p-3 bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20 rounded-xl border border-pink-200 dark:border-pink-700 text-center text-sm"
+                  >
+                    <div className="text-lg mb-1">🌇</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-0.5">COUCHER</div>
+                    <div className="font-bold text-gray-900 dark:text-white text-xs">
+                      {new Date(weather.sunset).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </motion.div>
+                </div>
 
                 {/* Conseil IA Compact */}
                 {advice && (
-                  <motion.button
-                    onClick={handleShowAdvice}
-                    whileHover={{ scale: 1.02, y: -1 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex-1 min-w-[140px] p-3 bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white rounded-xl shadow-md shadow-[#0EA5E9]/20 font-bold text-xs hover:shadow-lg hover:shadow-[#0EA5E9]/30 transition flex items-center justify-center gap-1.5"
-                  >
-                    <span className="text-base">{advice.emoji}</span>
-                    Conseil IA
-                  </motion.button>
+                  <div className="pt-2 border-t border-gray-100 dark:border-gray-700 mt-2">
+                    <motion.button
+                      onClick={handleShowAdvice}
+                      whileHover={shouldReduceMotion ? {} : { scale: 1.01, y: -1 }}
+                      whileTap={shouldReduceMotion ? {} : { scale: 0.99 }}
+                      className="w-full py-4 bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white rounded-2xl shadow-lg shadow-[#0EA5E9]/20 font-bold text-sm hover:shadow-xl hover:shadow-[#0EA5E9]/30 transition-all duration-300 flex items-center justify-center gap-3 group"
+                    >
+                      <span className="text-xl group-hover:scale-110 transition-transform">{advice.emoji}</span>
+                      <span className="tracking-wide uppercase text-[11px]">{t('weather.aiAdvice') || 'Conseil IA DeepSkyn'}</span>
+                      <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                    </motion.button>
+                  </div>
                 )}
               </div>
             </div>

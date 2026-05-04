@@ -5,7 +5,7 @@ import type {
   AnalysisStats,
   AnalysisComparison,
   AnalysisListResponse,
-  GeminiAnalysisResult,
+  RealTimeScanResult,
   RealTimeScanDto,
 } from '../types';
 
@@ -14,11 +14,15 @@ export const analysisService = {
   async uploadAndAnalyze(
     files: File[],
     questionnaire?: Record<string, unknown>,
+    preocupent?: string[],
   ): Promise<Analysis> {
     const formData = new FormData();
     files.forEach((file) => formData.append('images', file));
     if (questionnaire) {
       formData.append('questionnaire', JSON.stringify(questionnaire));
+    }
+    if (preocupent?.length) {
+      formData.append('preocupent', JSON.stringify(preocupent));
     }
     const res = await apiClient.post<Analysis>('/analyses/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -40,8 +44,14 @@ export const analysisService = {
   },
 
   /** Create analysis from existing image URLs */
-  async createFromUrls(imageUrls: string[]): Promise<Analysis> {
-    const res = await apiClient.post<Analysis>('/analyses', { images: imageUrls });
+  async createFromUrls(
+    imageUrls: string[],
+    preocupent?: string[],
+  ): Promise<Analysis> {
+    const res = await apiClient.post<Analysis>('/analyses', {
+      images: imageUrls,
+      ...(preocupent?.length ? { preocupent } : {}),
+    });
     
     // Auto-capture pour Digital Twin
     if (res.data?.id) {
@@ -56,8 +66,8 @@ export const analysisService = {
   },
 
   /** Process a real-time face scan (base64 image → Gemini) */
-  async scan(dto: RealTimeScanDto): Promise<GeminiAnalysisResult> {
-    const res = await apiClient.post<GeminiAnalysisResult>('/analyses/scan', dto, {
+  async scan(dto: RealTimeScanDto): Promise<RealTimeScanResult> {
+    const res = await apiClient.post<RealTimeScanResult>('/analyses/scan', dto, {
       timeout: 120_000,
     });
     

@@ -199,13 +199,13 @@ export function SignTranslationModal({
           >
             <div className="relative rounded-3xl border border-gray-100 shadow-2xl overflow-hidden bg-white max-h-[90vh] flex flex-col">
               {/* Top gradient accent bar */}
-              <div className="h-1.5 w-full bg-gradient-to-r from-[#0EA5E9] via-[#8B5CF6] to-[#EC4899] flex-shrink-0" />
+              <div className="h-1.5 w-full bg-gradient-to-r from-[#0EA5E9] via-[#38BDF8] to-[#06B6D4] flex-shrink-0" />
 
               {/* Decorative glow circles */}
               <div
                 className="absolute -top-24 -right-24 w-48 h-48 rounded-full opacity-10 pointer-events-none"
                 style={{
-                  background: 'radial-gradient(circle, #8B5CF6, transparent)',
+                  background: 'radial-gradient(circle, #38BDF8, transparent)',
                   filter: 'blur(60px)',
                 }}
               />
@@ -236,7 +236,7 @@ export function SignTranslationModal({
                       <div
                         className="p-2.5 rounded-2xl flex-shrink-0"
                         style={{
-                          background: 'linear-gradient(135deg, rgba(14,165,233,0.1), rgba(139,92,246,0.1))',
+                          background: 'linear-gradient(135deg, rgba(14,165,233,0.12), rgba(6,182,212,0.12))',
                           border: '1px solid rgba(14,165,233,0.2)',
                         }}
                       >
@@ -263,7 +263,7 @@ export function SignTranslationModal({
                         border: '1px solid #e2e8f0',
                       }}
                     >
-                      <p className="text-xs font-bold text-[#8B5CF6] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <p className="text-xs font-bold text-[#0EA5E9] uppercase tracking-wider mb-3 flex items-center gap-1.5">
                         {videoUrl ? 'Texte extrait de la vidéo' : 'Texte original'}
                       </p>
                       <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap font-medium">
@@ -305,7 +305,7 @@ export function SignTranslationModal({
                             className={`text-xs px-4 py-2 rounded-xl font-bold transition-all ${
                               isVideoTranscribing
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white shadow-md hover:shadow-lg hover:shadow-[#0EA5E9]/20'
+                                : 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white shadow-md hover:shadow-lg hover:shadow-[#0EA5E9]/20'
                             }`}
                           >
                             Scanner la vidéo
@@ -350,7 +350,7 @@ export function SignTranslationModal({
                                 transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
                                 className="absolute inset-0 rounded-full"
                                 style={{
-                                  background: 'conic-gradient(from 0deg, transparent, #0EA5E9, #8B5CF6, transparent)',
+                                  background: 'conic-gradient(from 0deg, transparent, #0EA5E9, #06B6D4, transparent)',
                                   maskImage: 'radial-gradient(transparent 55%, black 56%)',
                                   WebkitMaskImage: 'radial-gradient(transparent 55%, black 56%)',
                                 }}
@@ -417,7 +417,7 @@ export function SignTranslationModal({
                         whileTap={!(isAvatarLoading || !!activeError) ? { scale: 0.98 } : {}}
                         onClick={handleSpeak}
                         disabled={isAvatarLoading || !!activeError || !textForDisplay.trim()}
-                        className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] text-white shadow-lg shadow-[#0EA5E9]/20 hover:shadow-xl hover:shadow-[#0EA5E9]/30 transition-all disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+                        className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-sm bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] text-white shadow-lg shadow-[#0EA5E9]/20 hover:shadow-xl hover:shadow-[#0EA5E9]/30 transition-all disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
                       >
                         <Volume2 className="w-5 h-5" />
                         Écouter la traduction

@@ -2,17 +2,15 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Badge } from '../app/components/ui/badge';
 import { Button } from '../app/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../app/components/ui/card';
+import { Card, CardContent } from '../app/components/ui/card';
 import { Progress } from '../app/components/ui/progress';
 import { 
-  Brain, 
-  TrendingUp, 
+  Brain,
   Camera, 
-  Sparkles, 
+  Sparkles,
   Target,
-  BarChart3,
-  Zap,
-  Lock
+  Lock,
+  CheckCircle2,
 } from 'lucide-react';
 import type { SkinJourneyResponse } from '../lib/services/digital-twin.service';
 
@@ -21,7 +19,6 @@ interface DigitalTwinDashboardProps {
   onScanMore: () => void;
   onViewTimeline: () => void;
   onCreatePrediction: () => void;
-  onSimulateProduct: () => void;
 }
 
 export const DigitalTwinDashboard: React.FC<DigitalTwinDashboardProps> = ({
@@ -29,7 +26,6 @@ export const DigitalTwinDashboard: React.FC<DigitalTwinDashboardProps> = ({
   onScanMore,
   onViewTimeline,
   onCreatePrediction,
-  onSimulateProduct,
 }) => {
   const { digitalTwin, systemState, latestAnalysis } = journey;
   
@@ -61,8 +57,8 @@ export const DigitalTwinDashboard: React.FC<DigitalTwinDashboardProps> = ({
         };
       case 'PREDICTIONS_UNLOCKED':
         return {
-          title: 'Prédictions Débloquées ✨',
-          subtitle: 'Votre jumeau numérique peut maintenant prédire l\'avenir',
+          title: 'Projection Routine Débloquée ',
+          subtitle: 'Visualisez votre jumeau amélioré après votre routine',
           gradient: 'from-blue-500 to-cyan-600',
           icon: Target,
           action: 'Explorer',
@@ -89,174 +85,136 @@ export const DigitalTwinDashboard: React.FC<DigitalTwinDashboardProps> = ({
   const stateConfig = getStateConfig();
   const IconComponent = stateConfig.icon;
 
-  const confidenceTextClass = digitalTwin.confidence >= 0.8
-    ? 'text-emerald-600'
-    : digitalTwin.confidence >= 0.3
-      ? 'text-sky-600'
-      : 'text-amber-600';
+  const heroInsight = digitalTwin.insights?.[0] || 'Activez votre routine pour révéler votre meilleur potentiel de peau.';
+  const inspirationalImageUrl =
+    'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1200&q=80';
+  const featureList = [
+    'Prédiction peau après routine IA',
+    'Suivi progrès et confiance du twin',
+    'Conseils personnalisés quotidiens',
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Main Twin Status Card */}
-      <Card className="overflow-hidden rounded-2xl border border-[#BAE6FD] bg-gradient-to-br from-[#F0FDFF] via-white to-[#F5FBFF] shadow-[0_14px_30px_rgba(14,165,233,0.14)] dark:border-[#334155] dark:bg-gradient-to-br dark:from-[#132334] dark:via-[#0f172a] dark:to-[#1a2236]">
-        <div className="bg-gradient-to-r from-[#0EA5E9] via-[#22D3EE] to-[#06B6D4] p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                <IconComponent className="h-6 w-6" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold">{stateConfig.title}</h2>
-                <p className="text-white/90 text-sm">{stateConfig.subtitle}</p>
-              </div>
-            </div>
-            
-            {digitalTwin.enabled && (
-              <div className="text-right">
-                <div className="text-2xl font-bold">
-                  {Math.round(digitalTwin.confidence * 100)}%
+    <Card className="relative overflow-hidden rounded-3xl border border-[#cbd5e1] bg-gradient-to-br from-[#f8fafc] via-[#f1f5f9] to-[#eef2ff] shadow-[0_18px_36px_rgba(15,23,42,0.10)] dark:border-[#334155] dark:from-[#111827] dark:via-[#0f172a] dark:to-[#1e293b]">
+      <CardContent className="relative z-10 p-6 md:p-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[0.95fr_1.05fr] items-center">
+          <div className="space-y-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-[#0ea5e9]/15 p-3 ring-1 ring-[#7dd3fc] dark:bg-white/10 dark:ring-white/20">
+                  <IconComponent className="h-6 w-6 text-[#0284c7] dark:text-white" />
                 </div>
-                <div className="text-xs text-white/80">Confiance</div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-[#64748b] dark:text-slate-300/85">Digital Twin IA</p>
+                  <h2 className="text-4xl font-bold leading-tight text-[#0f172a] dark:text-white">{stateConfig.title}</h2>
+                  <p className="text-lg text-[#475569] mt-1 dark:text-slate-200/90">{stateConfig.subtitle}</p>
+                </div>
+              </div>
+              
+            </div>
+
+            <p className="text-base text-[#475569] dark:text-slate-300">{heroInsight}</p>
+
+            {systemState === 'BUILDING_TWIN' && (
+              <div className="rounded-2xl border border-[#cbd5e1] bg-white/80 p-3 dark:border-white/20 dark:bg-white/10">
+                <div className="mb-2 flex justify-between text-xs text-[#64748b] dark:text-slate-200">
+                  <span>Progression</span>
+                  <span className="font-semibold">{digitalTwin.snapshotCount}/3 analyses</span>
+                </div>
+                <Progress value={(digitalTwin.snapshotCount / 3) * 100} className="h-2 bg-slate-200 dark:bg-white/20" />
               </div>
             )}
-          </div>
-        </div>
 
-        <CardContent className="p-6">
-          {/* Progress for building twin */}
-          {systemState === 'BUILDING_TWIN' && (
-            <div className="space-y-2 mb-6">
-              <div className="flex justify-between text-sm text-slate-700 dark:text-slate-200">
-                <span className="font-medium">Progression</span>
-                <span className="font-semibold">{digitalTwin.snapshotCount}/3 analyses</span>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-xl border border-[#cbd5e1] bg-white/80 p-3 dark:border-white/20 dark:bg-white/10">
+                <p className="text-[11px] text-[#64748b] dark:text-slate-200/85">Analyses</p>
+                <p className="text-xl font-bold text-[#0f172a] dark:text-white">{digitalTwin.snapshotCount}</p>
               </div>
-              <Progress value={(digitalTwin.snapshotCount / 3) * 100} className="h-2 bg-sky-100 dark:bg-slate-700" />
-            </div>
-          )}
-
-          {/* Stats Grid */}
-          {digitalTwin.enabled && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="text-center p-3 bg-gradient-to-r from-white to-sky-50 border border-sky-100 rounded-lg dark:from-slate-800 dark:to-slate-700 dark:border-slate-600">
-                <div className="text-2xl font-bold text-blue-600">
-                  {digitalTwin.snapshotCount}
-                </div>
-                <div className="text-xs text-slate-600 dark:text-slate-300">Analyses</div>
+              <div className="rounded-xl border border-[#cbd5e1] bg-white/80 p-3 dark:border-white/20 dark:bg-white/10">
+                <p className="text-[11px] text-[#64748b] dark:text-slate-200/85">Score santé</p>
+                <p className="text-xl font-bold text-[#0f172a] dark:text-white">{latestAnalysis?.healthScore || 0}</p>
               </div>
-              
-              <div className="text-center p-3 bg-gradient-to-r from-white to-sky-50 border border-sky-100 rounded-lg dark:from-slate-800 dark:to-slate-700 dark:border-slate-600">
-                <div className="text-2xl font-bold text-emerald-600">
-                  {latestAnalysis?.healthScore || 0}
-                </div>
-                <div className="text-xs text-slate-600 dark:text-slate-300">Score Santé</div>
-              </div>
-              
-              <div className="text-center p-3 bg-gradient-to-r from-white to-sky-50 border border-sky-100 rounded-lg dark:from-slate-800 dark:to-slate-700 dark:border-slate-600">
-                <div className={`text-2xl font-bold ${confidenceTextClass}`}>
-                  {Math.round(digitalTwin.confidence * 100)}%
-                </div>
-                <div className="text-xs text-slate-600 dark:text-slate-300">Précision</div>
-              </div>
-              
-              <div className="text-center p-3 bg-gradient-to-r from-white to-sky-50 border border-sky-100 rounded-lg dark:from-slate-800 dark:to-slate-700 dark:border-slate-600">
-                <div className="text-2xl font-bold text-purple-600">
-                  {digitalTwin.improvementRate != null 
+              <div className="rounded-xl border border-[#cbd5e1] bg-white/80 p-3 dark:border-white/20 dark:bg-white/10">
+                <p className="text-[11px] text-[#64748b] dark:text-slate-200/85">Amélioration</p>
+                <p className="text-xl font-bold text-[#0f172a] dark:text-white">
+                  {digitalTwin.improvementRate != null
                     ? `${digitalTwin.improvementRate > 0 ? '+' : ''}${Math.round(digitalTwin.improvementRate)}%`
                     : '—'}
-                </div>
-                <div className="text-xs text-slate-600 dark:text-slate-300">Amélioration</div>
+                </p>
               </div>
             </div>
-          )}
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {!digitalTwin.enabled ? (
-              <>
-                <Button onClick={onScanMore} className="col-span-full bg-gradient-to-r from-[#0284C7] via-[#0EA5E9] to-[#06B6D4] text-white border-0 hover:opacity-95 shadow-[0_10px_24px_rgba(14,165,233,0.30)]">
+            <div className="space-y-2">
+              {featureList.map((item) => (
+                <div key={item} className="flex items-center gap-2 text-[#334155] dark:text-slate-200">
+                  <CheckCircle2 className="h-4 w-4 text-[#0ea5e9]" />
+                  <span className="text-sm">{item}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-1">
+              {!digitalTwin.enabled ? (
+                <Button onClick={onScanMore} className="bg-[#0ea5e9] text-white hover:bg-[#0284c7] border-0 shadow-md">
                   <Camera className="h-4 w-4 mr-2" />
                   {stateConfig.action}
                 </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="outline" onClick={onViewTimeline} className="border-sky-200 text-sky-700 hover:bg-sky-50 dark:border-slate-500 dark:text-slate-100 dark:hover:bg-slate-700">
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Chronologie
-                </Button>
-                
-                <Button 
+              ) : (
+                <Button
                   onClick={onCreatePrediction}
                   disabled={!digitalTwin.predictionsUnlocked}
-                  variant={digitalTwin.predictionsUnlocked ? "default" : "outline"}
-                  className={digitalTwin.predictionsUnlocked ? 'bg-gradient-to-r from-[#0284C7] to-[#06B6D4] text-white border-0 hover:opacity-95' : 'border-slate-300 text-slate-500 dark:border-slate-500 dark:text-slate-300'}
+                  className={digitalTwin.predictionsUnlocked
+                    ? 'bg-[#0ea5e9] text-white hover:bg-[#0284c7] border-0 shadow-md'
+                    : 'bg-slate-200 text-slate-500 border border-slate-300 dark:bg-white/10 dark:text-slate-300 dark:border-white/20'}
                 >
                   {!digitalTwin.predictionsUnlocked && <Lock className="h-4 w-4 mr-2" />}
                   <Target className="h-4 w-4 mr-2" />
-                  Prédire
+                  Voir mon jumeau amélioré
                 </Button>
-                
-                <Button 
-                  onClick={onSimulateProduct}
-                  disabled={!digitalTwin.predictionsUnlocked}
-                  variant="outline"
-                  className="border-sky-200 text-sky-700 hover:bg-sky-50 disabled:border-slate-300 disabled:text-slate-400 dark:border-slate-500 dark:text-slate-100 dark:hover:bg-slate-700"
-                >
-                  {!digitalTwin.predictionsUnlocked && <Lock className="h-4 w-4 mr-2" />}
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Simuler
-                </Button>
-                
-                <Button onClick={onScanMore} variant="outline" className="border-sky-200 text-sky-700 hover:bg-sky-50 dark:border-slate-500 dark:text-slate-100 dark:hover:bg-slate-700">
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Améliorer
-                </Button>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              )}
 
-      {/* Insights Cards */}
-      {digitalTwin.insights && digitalTwin.insights.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="font-medium text-slate-700 dark:text-slate-100">Insights Personnalisés</h3>
-          <div className="space-y-2">
-            {digitalTwin.insights.slice(0, 3).map((insight, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="p-3 bg-gradient-to-r from-[#EFF8FF] to-[#ECFEFF] border border-[#BAE6FD] rounded-lg text-sm text-[#0C4A6E] dark:from-slate-800 dark:to-slate-700 dark:border-slate-600 dark:text-slate-100"
-              >
-                💡 {insight}
-              </motion.div>
-            ))}
+              <Button onClick={onViewTimeline} variant="outline" className="border-[#93c5fd] text-[#0369a1] hover:bg-[#e0f2fe] dark:border-white/20 dark:text-slate-100 dark:hover:bg-white/10">
+                Chronologie
+              </Button>
+            </div>
+          </div>
+
+          <div className="relative min-h-[460px] overflow-hidden rounded-3xl border border-[#bfdbfe] bg-[#dbeafe] shadow-[0_14px_30px_rgba(14,165,233,0.18)] dark:border-white/20 dark:bg-[#0b1220]">
+            <div className="absolute inset-0 grid grid-cols-2">
+              <div className="relative overflow-hidden">
+                <img
+                  src={latestAnalysis?.images?.[0] || inspirationalImageUrl}
+                  alt="Avant routine"
+                  className="h-full w-full object-cover brightness-85 saturate-[0.75] contrast-105"
+                />
+                <div className="absolute inset-0 bg-black/30" />
+                <div
+                  className="pointer-events-none absolute inset-0 opacity-70 mix-blend-multiply"
+                  style={{
+                    backgroundImage: [
+                      'radial-gradient(circle at 18% 28%, rgba(174, 35, 35, 0.42) 0 7px, transparent 8px)',
+                      'radial-gradient(circle at 34% 44%, rgba(152, 30, 30, 0.36) 0 5px, transparent 6px)',
+                      'radial-gradient(circle at 57% 36%, rgba(165, 38, 38, 0.40) 0 6px, transparent 7px)',
+                      'radial-gradient(circle at 71% 58%, rgba(138, 24, 24, 0.34) 0 5px, transparent 6px)',
+                      'radial-gradient(circle at 42% 70%, rgba(182, 41, 41, 0.35) 0 6px, transparent 7px)',
+                      'radial-gradient(circle at 78% 30%, rgba(150, 28, 28, 0.32) 0 4px, transparent 5px)',
+                    ].join(','),
+                  }}
+                />
+              </div>
+              <div className="relative overflow-hidden">
+                <img
+                  src={latestAnalysis?.images?.[0] || inspirationalImageUrl}
+                  alt="Après routine"
+                  className="h-full w-full object-cover brightness-105 saturate-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/10 via-transparent to-transparent" />
+              </div>
+            </div>
+            <div className="absolute inset-y-6 left-1/2 w-px -translate-x-1/2 bg-white/75 shadow-[0_0_0_1px_rgba(255,255,255,0.35)]" />
           </div>
         </div>
-      )}
-
-      {/* Badges for twin status */}
-      <div className="flex flex-wrap gap-2">
-        {digitalTwin.enabled && (
-          <Badge variant="outline" className="text-green-700 border-green-300">
-            ✓ Twin Actif
-          </Badge>
-        )}
-        
-        {digitalTwin.predictionsUnlocked && (
-          <Badge variant="outline" className="text-blue-700 border-blue-300">
-            🔮 Prédictions Débloquées
-          </Badge>
-        )}
-        
-        {digitalTwin.confidence >= 0.8 && (
-          <Badge variant="outline" className="text-purple-700 border-purple-300">
-            ⭐ Haute Précision
-          </Badge>
-        )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

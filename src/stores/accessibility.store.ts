@@ -23,11 +23,13 @@ import { Language, translations, TranslationKeys } from '../lib/i18n/translation
 // ── Store interface ─────────────────────────────────────────────────────
 type ContrastMode = 'off' | 'medium' | 'high';
 type ColorBlindFilter = 'none' | 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia';
+type AccentTheme = 'blue' | 'pink';
 
 interface AccessibilityState {
     // State
     language: Language;
     theme: 'light' | 'dark';
+    accentTheme: AccentTheme;
     contrastMode: ContrastMode;
     zoomLevel: number;
     reduceMotion: boolean;
@@ -50,6 +52,7 @@ interface AccessibilityState {
     t: (key: string, params?: Record<string, string | number>) => any;
     toggleTheme: () => void;
     setTheme: (theme: 'light' | 'dark') => void;
+    setAccentTheme: (accentTheme: AccentTheme) => void;
     setContrastMode: (mode: ContrastMode) => void;
     resetContrastMode: () => void;
     toggleReduceMotion: () => void;
@@ -107,6 +110,14 @@ function applyTheme(theme: 'light' | 'dark') {
         root.classList.add('dark');
     } else {
         root.classList.remove('dark');
+    }
+}
+
+function applyAccentTheme(accentTheme: AccentTheme) {
+    const root = document.documentElement;
+    root.classList.remove('theme-pink');
+    if (accentTheme === 'pink') {
+        root.classList.add('theme-pink');
     }
 }
 
@@ -175,6 +186,7 @@ export const useAccessibilityStore = create<AccessibilityState>()(
         (set, get) => ({
             language: 'fr',
             theme: 'light',
+            accentTheme: 'blue',
             contrastMode: 'off',
             zoomLevel: 100,
             reduceMotion: false,
@@ -239,6 +251,12 @@ export const useAccessibilityStore = create<AccessibilityState>()(
             setTheme: (theme) => {
                 applyTheme(theme);
                 set({ theme });
+            },
+
+            setAccentTheme: (accentTheme) => {
+                applyAccentTheme(accentTheme);
+                set({ accentTheme });
+                announce(accentTheme === 'pink' ? 'Thème rose activé' : 'Thème bleu activé');
             },
 
             setContrastMode: (mode) => {
@@ -575,6 +593,7 @@ export const useAccessibilityStore = create<AccessibilityState>()(
             name: 'deepskyn-accessibility',
             partialize: (state) => ({
                 theme: state.theme,
+                accentTheme: state.accentTheme,
                 contrastMode: state.contrastMode,
                 zoomLevel: state.zoomLevel,
                 reduceMotion: state.reduceMotion,
@@ -599,6 +618,7 @@ try {
         const state = parsed?.state;
         if (state) {
             if (state.theme) applyTheme(state.theme);
+            if (state.accentTheme) applyAccentTheme(state.accentTheme);
             if (state.contrastMode) applyContrast(state.contrastMode);
             if (state.zoomLevel) applyZoom(state.zoomLevel);
             if (state.reduceMotion) toggleCssClass('reduce-motion', true);

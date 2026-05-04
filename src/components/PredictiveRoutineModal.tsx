@@ -70,7 +70,7 @@ export const PredictiveRoutineModal: React.FC<PredictiveRoutineModalProps> = ({
             
             <div className="flex gap-2">
               {twinEnhanced && (
-                <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                <Badge variant="secondary" className="bg-sky-100 text-sky-700">
                   <Brain className="h-3 w-3 mr-1" />
                   Digital Twin Enhanced
                 </Badge>
@@ -168,14 +168,14 @@ export const PredictiveRoutineModal: React.FC<PredictiveRoutineModalProps> = ({
 
                           {/* Evening */}
                           <div className="min-w-0">
-                            <h4 className="font-medium text-indigo-700 flex items-center gap-1 mb-2">
+                            <h4 className="font-medium text-sky-700 flex items-center gap-1 mb-2">
                               <Moon className="h-4 w-4" />
                               Soir
                             </h4>
                             <ul className="space-y-2">
                               {day.evening.map((step, stepIndex) => (
                                 <li key={stepIndex} className="text-sm flex items-start gap-2 min-w-0 break-words">
-                                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full mt-2 flex-shrink-0"></div>
+                                  <div className="w-1.5 h-1.5 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
                                   <span>{step}</span>
                                 </li>
                               ))}
@@ -235,7 +235,7 @@ export const PredictiveRoutineModal: React.FC<PredictiveRoutineModalProps> = ({
                               {day.morning.length > 2 && '...'}
                             </div>
                             <div>
-                              <span className="text-indigo-600">Soir:</span> {day.evening.slice(0, 2).join(', ')}
+                              <span className="text-sky-600">Soir:</span> {day.evening.slice(0, 2).join(', ')}
                               {day.evening.length > 2 && '...'}
                             </div>
                           </div>
@@ -270,7 +270,7 @@ export const PredictiveRoutineModal: React.FC<PredictiveRoutineModalProps> = ({
           <div className="flex items-center text-sm text-gray-600">
             {twinEnhanced ? (
               <span className="flex items-center gap-1">
-                <Brain className="h-4 w-4 text-purple-600" />
+                <Brain className="h-4 w-4 text-sky-600" />
                 Routine optimisée par votre Digital Twin
               </span>
             ) : (

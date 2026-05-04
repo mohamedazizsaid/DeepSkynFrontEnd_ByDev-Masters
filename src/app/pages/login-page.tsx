@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Mail, Lock, Shield, ArrowLeft, ArrowRight, Check, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
@@ -27,14 +27,14 @@ type FieldInputProps = {
   errorMessage?: string;
 };
 
-function ValidationMessage({ message, show }: { message?: string; show: boolean }) {
+function ValidationMessage({ message, show, shouldReduceMotion }: { message?: string; show: boolean; shouldReduceMotion: boolean }) {
   return (
     <AnimatePresence mode="wait">
       {show && message && (
         <motion.div
-          initial={{ opacity: 0, y: -8, x: -8 }}
+          initial={shouldReduceMotion ? { opacity: 1, y: 0, x: 0 } : { opacity: 0, y: -8, x: -8 }}
           animate={{ opacity: 1, y: 0, x: 0 }}
-          exit={{ opacity: 0, y: -8, x: -8 }}
+          exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, x: -8 }}
           transition={{ duration: 0.2 }}
           className="flex items-center gap-2 px-3 py-2 mt-2 rounded-lg bg-[#FEF2F2] dark:bg-[#7F1D1D]/20 border border-[#FECACA] dark:border-[#DC2626]/30"
         >
@@ -60,7 +60,8 @@ function FloatingInput({
   invalid,
   required,
   errorMessage,
-}: FieldInputProps) {
+  shouldReduceMotion,
+}: FieldInputProps & { shouldReduceMotion: boolean }) {
   return (
     <div>
       <label
@@ -81,9 +82,8 @@ function FloatingInput({
           inputMode={inputMode}
           maxLength={maxLength}
           required={required}
-          className={`peer w-full rounded-2xl border bg-white/80 dark:bg-[#1e3a5f]/80 py-4 pl-12 pr-12 text-[15px] text-[#1A1A2E] dark:text-white shadow-[0_12px_24px_-20px_rgba(26,26,46,0.55)] dark:shadow-[0_12px_24px_-20px_rgba(0,0,0,0.55)] outline-none transition-all duration-300 placeholder:text-transparent focus:border-[#3BBDF4] focus:bg-white dark:focus:bg-[#1e3a5f] focus:ring-4 focus:ring-[#3BBDF4]/20 dark:focus:ring-[#0EA5E9]/20 ${
-            invalid ? 'border-[#F97316]/70 dark:border-[#EA580C]/70' : 'border-[#D6E6FA] dark:border-gray-600/50'
-          } ${valid ? 'border-[#10B981]/60 dark:border-[#059669]/60' : ''}`}
+          className={`peer w-full rounded-2xl border bg-white/80 dark:bg-[#1e3a5f]/80 py-4 pl-12 pr-12 text-[15px] text-[#1A1A2E] dark:text-white shadow-[0_12px_24px_-20px_rgba(26,26,46,0.55)] dark:shadow-[0_12px_24px_-20px_rgba(0,0,0,0.55)] outline-none transition-all duration-300 placeholder:text-transparent focus:border-[#3BBDF4] focus:bg-white dark:focus:bg-[#1e3a5f] focus:ring-4 focus:ring-[#3BBDF4]/20 dark:focus:ring-[#0EA5E9]/20 ${invalid ? 'border-[#F97316]/70 dark:border-[#EA580C]/70' : 'border-[#D6E6FA] dark:border-gray-600/50'
+            } ${valid ? 'border-[#10B981]/60 dark:border-[#059669]/60' : ''}`}
         />
 
         <span className="pointer-events-none absolute left-11 top-4 origin-left text-[13px] font-medium text-[#64748B] dark:text-gray-400 transition-all duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-[15px] peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-[11px] peer-focus:uppercase peer-focus:tracking-[0.12em] peer-focus:text-[#3BBDF4] dark:peer-focus:text-[#0EA5E9] peer-not-placeholder-shown:top-2 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-[11px] peer-not-placeholder-shown:uppercase peer-not-placeholder-shown:tracking-[0.12em]">
@@ -102,7 +102,11 @@ function FloatingInput({
           </span>
         )}
       </label>
-      <ValidationMessage message={errorMessage} show={invalid && !valid && !!errorMessage} />
+      <ValidationMessage
+        message={errorMessage}
+        show={Boolean(invalid && !valid && errorMessage)}
+        shouldReduceMotion={Boolean(shouldReduceMotion)}
+      />
     </div>
   );
 }
@@ -141,11 +145,10 @@ function PremiumButton({ children, loading, disabled, onClick, type = 'button', 
       disabled={disabled || loading}
       onClick={handleClick}
       whileTap={{ scale: disabled || loading ? 1 : 0.98 }}
-      className={`group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl text-sm font-semibold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60 ${
-        variant === 'primary'
+      className={`group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl text-sm font-semibold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60 ${variant === 'primary'
           ? 'bg-gradient-to-r from-[#3BBDF4] to-[#0EA5E9] text-white shadow-[0_20px_35px_-22px_rgba(59,189,244,0.9)] dark:shadow-[0_20px_35px_-22px_rgba(14,165,233,0.5)] hover:-translate-y-0.5 hover:brightness-105 dark:hover:brightness-125 hover:shadow-[0_22px_40px_-18px_rgba(14,165,233,0.65)]'
           : 'border border-[#BFD7F7] dark:border-gray-600 bg-white/85 dark:bg-[#1e3a5f]/85 text-[#1A1A2E] dark:text-white hover:-translate-y-0.5 hover:border-[#3BBDF4]/60 dark:hover:border-[#0EA5E9]/60 hover:bg-white dark:hover:bg-[#1e3a5f]'
-      } ${className}`}
+        } ${className}`}
     >
       <span className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.35),transparent_55%)]" />
       {ripples.map((ripple) => (
@@ -182,7 +185,9 @@ function FaceIdIcon() {
 }
 
 export function LoginPage() {
-  const { t } = useAccessibilityStore();
+  const { t, reduceMotion } = useAccessibilityStore();
+  const browserReducedMotion = useReducedMotion();
+  const shouldReduceMotion = !!(reduceMotion || browserReducedMotion);
   const navigate = useNavigate();
   const { login, isLoading, requiresTwoFactor, tempCredentials, clearTwoFactor } = useAuthStore();
 
@@ -286,22 +291,12 @@ export function LoginPage() {
       return;
     }
 
-    try {
-      const res = await authService.getUserAvatar(email);
-      if (res.avatar) {
-        setAvatarUrl(res.avatar);
-        setShowFaceScan(true);
-      } else {
-        toast.error(t('auth.faceIdNoAvatar'));
-      }
-    } catch (_error) {
-      toast.error(t('auth.userNotFound'));
-    }
+    setShowFaceScan(true);
   };
 
-  const handleFaceSuccess = async () => {
+  const handleFaceSuccess = async (descriptor?: number[]) => {
     try {
-      const result = await faceLogin(email);
+      const result = await faceLogin(email, descriptor);
       if (result.success) {
         toast.success(t('auth.loginSuccess'));
         const status = await skinProfileService.checkOnboardingStatus();
@@ -310,11 +305,13 @@ export function LoginPage() {
         } else {
           navigate('/dashboard');
         }
+        setShowFaceScan(false);
+        return true;
       }
+      return false;
     } catch (_error) {
       toast.error(t('auth.faceIdError'));
-    } finally {
-      setShowFaceScan(false);
+      return false;
     }
   };
 
@@ -413,6 +410,7 @@ export function LoginPage() {
             invalid={touched.email && !isEmailValid}
             errorMessage={getEmailError()}
             required
+            shouldReduceMotion={shouldReduceMotion}
           />
         </motion.div>
 
@@ -429,6 +427,7 @@ export function LoginPage() {
             invalid={touched.password && !isPasswordValid}
             errorMessage={getPasswordError()}
             required
+            shouldReduceMotion={shouldReduceMotion}
           />
 
           <div className="flex justify-end">
@@ -466,8 +465,8 @@ export function LoginPage() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.3 }} className="relative my-4">
-          
-          
+
+
         </motion.div>
 
       </form>
@@ -521,10 +520,10 @@ export function LoginPage() {
         </button>
       </p>
 
-      {showFaceScan && avatarUrl ? (
+      {showFaceScan ? (
         <FaceIDScanner
           userEmail={email}
-          userAvatarUrl={avatarUrl}
+          userAvatarUrl={avatarUrl || ''}
           onSuccess={handleFaceSuccess}
           onClose={() => setShowFaceScan(false)}
         />

@@ -12,7 +12,7 @@ import { SignAvatar3D } from './sign-avatar-3d';
 import {
   translateTextToGestures,
 } from './lsf-gesture-database';
-import type { Frame } from '../../lib/services/sign-translation.service';
+import type { Frame, SignTranslationMetadata } from '../../lib/services/sign-translation.service';
 
 // Lazy load the Mixamo avatar
 const MixamoAvatar3D = lazy(() => import('./mixamo-avatar-3d'));
@@ -23,7 +23,7 @@ interface ProSignAvatarProps {
   /** Backend frames (from API), takes priority over local gestures */
   frames?: Frame[];
   /** Backend metadata */
-  metadata?: { gloss?: string; fps?: number; total_frames?: number };
+  metadata?: SignTranslationMetadata;
   /** Whether to auto-play on mount */
   autoPlay?: boolean;
   /** Callback when all gestures are complete */
@@ -329,8 +329,9 @@ export function ProSignAvatar({
 
   // Determine gesture sequence
   const gestureSequence = useMemo<{ frames: AvatarFrame[]; duration: number; label: string }[]>(() => {
-    // Priority 1: backend frames only if they contain real motion
-    if (frames && frames.length > 0) {
+    const isMockTranslation = metadata?.translation_quality === 'mock';
+    // Priority 1: backend frames only if they contain real motion and are not mock
+    if (frames && frames.length > 0 && !isMockTranslation) {
       const converted = convertBackendFrames(frames);
       const fps = metadata?.fps || 30;
       const frameDuration = (1000 / fps) / 3;
@@ -343,6 +344,8 @@ export function ProSignAvatar({
         }];
       }
       console.warn('[ProSignAvatar] Backend frames look static. Falling back to local gesture synthesis.');
+    } else if (isMockTranslation) {
+      console.warn('[ProSignAvatar] Mock translation detected. Using local dictionary gestures instead.');
     }
 
     // Priority 2: Local LSF gesture database

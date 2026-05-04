@@ -298,7 +298,7 @@ export function ShareRoutineModal({ routine, isOpen, onClose }: ShareRoutineModa
                         disabled={isLoading}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="w-full px-6 py-3 bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] hover:from-[#0284C7] hover:to-[#7C3AED] text-white rounded-xl font-semibold shadow-lg shadow-[#0EA5E9]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full px-6 py-3 bg-gradient-to-r from-[#0EA5E9] to-[#0EA5E9] hover:from-[#0284C7] hover:to-[#7C3AED] text-white rounded-xl font-semibold shadow-lg shadow-[#0EA5E9]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                       >
                         {isLoading ? (
                           <>

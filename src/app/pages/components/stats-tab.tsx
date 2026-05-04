@@ -144,7 +144,7 @@ export function StatsTab({ stats }: { stats: CommunityStats | null }) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4" />
-        <p className={`${subText} font-medium tracking-wide animate-pulse`}>{t('stats.analyzingData') || 'Analyse de vos données...'}</p>
+        <p className={`${subText} font-medium tracking-wide animate-pulse`}>{t('stats.analyzingData')}</p>
       </div>
     );
   }
@@ -164,15 +164,15 @@ export function StatsTab({ stats }: { stats: CommunityStats | null }) {
             <BarChart3 className={`w-6 h-6 ${isHcHigh ? 'text-yellow-400' : 'text-[#0EA5E9]'}`} />
           </div>
           <div>
-            <h2 className={`text-xl font-bold ${textColor}`}>{t('stats.dashboardTitle') || 'Tableau de bord Analytique'}</h2>
-            <p className={`text-xs ${subText} opacity-80 uppercase tracking-wide font-semibold`}>{t('stats.communityPerformance') || 'Performance communautaire'}</p>
+            <h2 className={`text-xl font-bold ${textColor}`}>{t('stats.dashboardTitle')}</h2>
+            <p className={`text-xs ${subText} opacity-80 uppercase tracking-wide font-semibold`}>{t('stats.communityPerformance')}</p>
           </div>
         </div>
 
         <div className={`flex p-1 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-gray-200'}`}>
           {[
-            { id: 'week', label: t('stats.last7Days') || '7 derniers jours' },
-            { id: 'month', label: t('stats.last30Days') || '30 derniers jours' }
+            { id: 'week', label: t('stats.last7Days') },
+            { id: 'month', label: t('stats.last30Days') }
           ].map((f) => (
             <button
               key={f.id}
@@ -189,10 +189,10 @@ export function StatsTab({ stats }: { stats: CommunityStats | null }) {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={<Eye className="w-5 h-5" />} label={t('stats.postViews') || 'Vues de publications'} value={Math.floor(stats.storyViews * multiplier)} change="+18%" changeType="up" color="#0EA5E9" delay={0} />
-        <StatCard icon={<TrendingUp className="w-5 h-5" />} label={t('stats.impressions') || 'Impressions'} value={Math.floor(stats.impressions * multiplier)} change="+24%" changeType="up" color="#EF4444" delay={0.05} />
-        <StatCard icon={<MessageCircle className="w-5 h-5" />} label={t('stats.commentsCount') || 'Commentaires'} value={Math.floor(stats.totalComments * multiplier)} change="+12%" changeType="up" color="#8B5CF6" delay={0.1} />
-        <StatCard icon={<Share2 className="w-5 h-5" />} label={t('stats.shares') || 'Partages'} value={Math.floor(stats.shares * multiplier)} change="-3%" changeType="down" color="#F97316" delay={0.15} />
+        <StatCard icon={<Eye className="w-5 h-5" />} label={t('stats.postViews')} value={Math.floor(stats.storyViews * multiplier)} change="+18%" changeType="up" color="#0EA5E9" delay={0} />
+        <StatCard icon={<TrendingUp className="w-5 h-5" />} label={t('stats.impressions')} value={Math.floor(stats.impressions * multiplier)} change="+24%" changeType="up" color="#EF4444" delay={0.05} />
+        <StatCard icon={<MessageCircle className="w-5 h-5" />} label={t('stats.commentsCount')} value={Math.floor(stats.totalComments * multiplier)} change="+12%" changeType="up" color="#8B5CF6" delay={0.1} />
+        <StatCard icon={<Share2 className="w-5 h-5" />} label={t('stats.shares')} value={Math.floor(stats.shares * multiplier)} change="-3%" changeType="down" color="#F97316" delay={0.15} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -200,19 +200,19 @@ export function StatsTab({ stats }: { stats: CommunityStats | null }) {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className={`rounded-2xl border shadow-sm p-5 ${cardBg}`}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className={`font-bold text-sm ${textColor}`}>{t('stats.periodActivity') || 'Activité de la période'}</h3>
-              <p className={`text-[11px] ${subText}`}>{t('stats.interactionsPerDay') || 'Interactions par jour'}</p>
+              <h3 className={`font-bold text-sm ${textColor}`}>{t('stats.periodActivity')}</h3>
+              <p className={`text-[11px] ${subText}`}>{t('stats.interactionsPerDay')}</p>
             </div>
             <div className="flex items-center gap-1.5">
               <Activity className={`w-4 h-4 ${isHcHigh ? 'text-yellow-400' : 'text-[#0EA5E9]'}`} />
               <span className={`text-xs font-semibold ${isHcHigh ? 'text-yellow-400' : 'text-[#0EA5E9]'}`}>
-                {currentActivity.reduce((a, b) => a + b, 0)} {t('stats.total') || 'total'}
+                {currentActivity.reduce((a, b) => a + b, 0)} {t('stats.total')}
               </span>
             </div>
           </div>
-          <MiniBarChart data={currentActivity} color={isHcHigh ? '#FACC15' : '#0EA5E9'} />
+          <MiniBarChart data={currentActivity} color={isHcHigh ? '#FACC15' : 'var(--primary)'} />
           <div className="flex justify-between mt-2">
-            {[t('stats.days.mon')||'Lun', t('stats.days.tue')||'Mar', t('stats.days.wed')||'Mer', t('stats.days.thu')||'Jeu', t('stats.days.fri')||'Ven', t('stats.days.sat')||'Sam', t('stats.days.sun')||'Dim'].map((d) => (
+            {[t('stats.days.mon'), t('stats.days.tue'), t('stats.days.wed'), t('stats.days.thu'), t('stats.days.fri'), t('stats.days.sat'), t('stats.days.sun')].map((d) => (
               <span key={d} className={`text-[9px] font-medium ${subText} flex-1 text-center`}>{d}</span>
             ))}
           </div>
@@ -222,8 +222,8 @@ export function StatsTab({ stats }: { stats: CommunityStats | null }) {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className={`rounded-2xl border shadow-sm p-5 ${cardBg}`}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className={`font-bold text-sm ${textColor}`}>{t('stats.engagementRate') || "Taux d'engagement"}</h3>
-              <p className={`text-[11px] ${subText}`}>{t('stats.basedOnFollowers') || 'Basé sur vos abonnés'}</p>
+              <h3 className={`font-bold text-sm ${textColor}`}>{t('stats.engagementRate')}</h3>
+              <p className={`text-[11px] ${subText}`}>{t('stats.basedOnFollowers')}</p>
             </div>
             <TrendingUp className={`w-4 h-4 ${isHcHigh ? 'text-yellow-400' : 'text-green-500'}`} />
           </div>
@@ -238,9 +238,9 @@ export function StatsTab({ stats }: { stats: CommunityStats | null }) {
 
           <div className="space-y-3">
             {[
-              { label: t('stats.organicReach') || 'Portée organique', value: 72, color: '#0EA5E9' },
-              { label: t('stats.clickRate') || 'Taux de clic', value: 45, color: '#8B5CF6' },
-              { label: t('stats.storyRetention') || 'Rétention stories', value: 61, color: '#EC4899' },
+              { label: t('stats.organicReach'), value: 72, color: 'var(--primary)' },
+              { label: t('stats.clickRate'), value: 45, color: '#8B5CF6' },
+              { label: t('stats.storyRetention'), value: 61, color: '#EC4899' },
             ].map((m, i) => (
               <div key={i}>
                 <div className="flex justify-between mb-1">
@@ -267,10 +267,10 @@ export function StatsTab({ stats }: { stats: CommunityStats | null }) {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Eye className={`w-4 h-4 ${isHcHigh ? 'text-yellow-400' : 'text-[#0EA5E9]'}`} />
-            <h3 className={`font-bold text-sm ${textColor}`}>{t('stats.recentInteractions') || 'Interactions Récentes'}</h3>
+            <h3 className={`font-bold text-sm ${textColor}`}>{t('stats.recentInteractions')}</h3>
           </div>
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${isHcHigh ? 'bg-yellow-400/20 text-yellow-400' : 'bg-[#0EA5E9]/10 text-[#0EA5E9]'}`}>
-            {stats.followersDetail.length} {t('stats.newMembers') || 'nouveaux membres'}
+            {stats.followersDetail.length} {t('stats.newMembers')}
           </span>
         </div>
         <div>
@@ -282,9 +282,9 @@ export function StatsTab({ stats }: { stats: CommunityStats | null }) {
 
       {/* Quick Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard icon={<Users className="w-5 h-5" />} label={t('stats.newFollowers') || 'Nouveaux abonnés'} value={`+${Math.floor(stats.followers * 0.05) + 3}`} change={t('stats.thisWeek') || "cette semaine"} changeType="up" color="#10B981" delay={0.25} />
-        <StatCard icon={<TrendingUp className="w-5 h-5" />} label={t('stats.globalEngagement') || 'Engagement global'} value={`${(stats.storyViews > 0 ? (stats.totalLikes/stats.storyViews*100).toFixed(1) : 0)}%`} change={t('stats.all') || "tous"} changeType="neutral" color="#6366F1" delay={0.3} />
-        <StatCard icon={<Eye className="w-5 h-5" />} label={t('stats.profileVisited') || 'Profil visité'} value={Math.floor(stats.storyViews * 0.8)} change="+8%" changeType="up" color="#F59E0B" delay={0.35} />
+        <StatCard icon={<Users className="w-5 h-5" />} label={t('stats.newFollowers')} value={`+${Math.floor(stats.followers * 0.05) + 3}`} change={t('stats.thisWeek')} changeType="up" color="#10B981" delay={0.25} />
+        <StatCard icon={<TrendingUp className="w-5 h-5" />} label={t('stats.globalEngagement')} value={`${(stats.storyViews > 0 ? (stats.totalLikes/stats.storyViews*100).toFixed(1) : 0)}%`} change={t('stats.all')} changeType="neutral" color="#6366F1" delay={0.3} />
+        <StatCard icon={<Eye className="w-5 h-5" />} label={t('stats.profileVisited')} value={Math.floor(stats.storyViews * 0.8)} change="+8%" changeType="up" color="#F59E0B" delay={0.35} />
       </div>
     </div>
   );

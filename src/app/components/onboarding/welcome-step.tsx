@@ -16,14 +16,14 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
       title: 'Analyse de Peau IA',
       description: 'Analyse avancée de votre type de peau unique',
       gradient: 'from-[#0EA5E9] to-[#06B6D4]',
-      bgGlow: '#0EA5E9'
+      bgGlow: 'var(--primary)'
     },
     {
       icon: <Calendar className="w-7 h-7" />,
       title: 'Routine Personnalisée',
       description: 'Un programme de soins adapté à vos besoins',
-      gradient: 'from-[#8B5CF6] to-[#A78BFA]',
-      bgGlow: '#8B5CF6'
+      gradient: 'from-[#0EA5E9] to-[#38BDF8]',
+      bgGlow: 'var(--primary)'
     },
     {
       icon: <TrendingUp className="w-7 h-7" />,
@@ -75,7 +75,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
           transition={{ delay: 0.4, duration: 0.6 }}
         >
           {t('onboarding.welcomeTitle')}{' '}
-          <span className="bg-gradient-to-r from-[#0EA5E9] via-[#06B6D4] to-[#8B5CF6] bg-clip-text text-transparent">
+          <span className="text-[#0EA5E9]">
             DeepSkyn
           </span>
           {' '}! ✨
