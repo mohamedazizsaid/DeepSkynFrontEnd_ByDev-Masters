@@ -41,6 +41,6 @@ describe('WeatherDashboard', () => {
   it('renders weather title and temperature', () => {
     render(<WeatherDashboard />);
     expect(screen.getByText(/Meteo/)).toBeInTheDocument();
-    expect(screen.getByText(/22/)).toBeInTheDocument();
+    expect(screen.getByText('22°')).toBeInTheDocument();
   });
 });

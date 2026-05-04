@@ -1,0 +1,766 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for deepskyn_frontend_salim/src/lib/pdf/analysis-report.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../../../prettify.css" />
+    <link rel="stylesheet" href="../../../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../../../index.html">All files</a> / <a href="index.html">deepskyn_frontend_salim/src/lib/pdf</a> analysis-report.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">10.36% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>20/193</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/0</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/11</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">10.36% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>20/193</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a>
+<a name='L208'></a><a href='#L208'>208</a>
+<a name='L209'></a><a href='#L209'>209</a>
+<a name='L210'></a><a href='#L210'>210</a>
+<a name='L211'></a><a href='#L211'>211</a>
+<a name='L212'></a><a href='#L212'>212</a>
+<a name='L213'></a><a href='#L213'>213</a>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a>
+<a name='L216'></a><a href='#L216'>216</a>
+<a name='L217'></a><a href='#L217'>217</a>
+<a name='L218'></a><a href='#L218'>218</a>
+<a name='L219'></a><a href='#L219'>219</a>
+<a name='L220'></a><a href='#L220'>220</a>
+<a name='L221'></a><a href='#L221'>221</a>
+<a name='L222'></a><a href='#L222'>222</a>
+<a name='L223'></a><a href='#L223'>223</a>
+<a name='L224'></a><a href='#L224'>224</a>
+<a name='L225'></a><a href='#L225'>225</a>
+<a name='L226'></a><a href='#L226'>226</a>
+<a name='L227'></a><a href='#L227'>227</a>
+<a name='L228'></a><a href='#L228'>228</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import jsPDF from 'jspdf';
+import type { Analysis } from '../types/analysis';
+&nbsp;
+const COLOR_PRIMARY = [14, 165, 233] as const; // #0EA5E9
+const COLOR_DARK = [15, 23, 42] as const; // #0F172A
+const COLOR_MUTED = [100, 116, 139] as const; // #64748B
+const COLOR_BORDER = [226, 232, 240] as const; // #E2E8F0
+&nbsp;
+const PAGE_WIDTH = 210;
+const PAGE_HEIGHT = 297;
+const MARGIN_X = 16;
+const MAX_Y = 280;
+&nbsp;
+const safeText = <span class="fstat-no" title="function not covered" >(value: unknown, fallback = '—'): string =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  if (value === null || value === undefined) return fallback;</span>
+<span class="cstat-no" title="statement not covered" >  if (typeof value === 'number' &amp;&amp; Number.isNaN(value)) return fallback;</span>
+<span class="cstat-no" title="statement not covered" >  const text = String(value).trim();</span>
+<span class="cstat-no" title="statement not covered" >  return text.length ? text : fallback;</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+&nbsp;
+const getMinMetricScore = <span class="fstat-no" title="function not covered" >(analysis: Analysis): number | null =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const metrics = analysis.results?.detailedAnalysis;</span>
+<span class="cstat-no" title="statement not covered" >  if (!metrics) return null;</span>
+<span class="cstat-no" title="statement not covered" >  const scores = Object.values(metrics).map((m) =&gt; m?.score).filter((s) =&gt; typeof s === 'number');</span>
+<span class="cstat-no" title="statement not covered" >  if (!scores.length) return null;</span>
+<span class="cstat-no" title="statement not covered" >  return Math.min(...(scores as number[]));</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+&nbsp;
+const getSeverityLabel = <span class="fstat-no" title="function not covered" >(analysis: Analysis): string =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const minScore = getMinMetricScore(analysis);</span>
+<span class="cstat-no" title="statement not covered" >  if (minScore === null) return '—';</span>
+<span class="cstat-no" title="statement not covered" >  if (minScore &lt; 50) return 'SEVERE';</span>
+<span class="cstat-no" title="statement not covered" >  if (minScore &lt; 70) return 'MODEREE';</span>
+<span class="cstat-no" title="statement not covered" >  return 'LEGERE';</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+&nbsp;
+const getProfileLabel = <span class="fstat-no" title="function not covered" >(analysis: Analysis): string =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const score = analysis.healthScore ?? analysis.results?.healthScore;</span>
+<span class="cstat-no" title="statement not covered" >  if (typeof score !== 'number') return 'Profil peau';</span>
+<span class="cstat-no" title="statement not covered" >  if (score &gt;= 80) return 'Peau Saine';</span>
+<span class="cstat-no" title="statement not covered" >  if (score &gt;= 65) return 'Peau Equilibree';</span>
+<span class="cstat-no" title="statement not covered" >  return 'Peau Fragilisee';</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+&nbsp;
+const drawDivider = <span class="fstat-no" title="function not covered" >(pdf: jsPDF, y: number) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setDrawColor(...COLOR_BORDER);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setLineWidth(0.3);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.line(MARGIN_X, y, PAGE_WIDTH - MARGIN_X, y);</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+&nbsp;
+const ensureSpace = <span class="fstat-no" title="function not covered" >(pdf: jsPDF, y: number, needed: number): number =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  if (y + needed &lt;= MAX_Y) return y;</span>
+<span class="cstat-no" title="statement not covered" >  pdf.addPage();</span>
+<span class="cstat-no" title="statement not covered" >  return 20;</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+&nbsp;
+const drawSectionTitle = <span class="fstat-no" title="function not covered" >(pdf: jsPDF, title: string, y: number): number =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  y = ensureSpace(pdf, y, 12);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setFontSize(13);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setTextColor(...COLOR_PRIMARY);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.text(title, MARGIN_X, y);</span>
+<span class="cstat-no" title="statement not covered" >  y += 6;</span>
+<span class="cstat-no" title="statement not covered" >  drawDivider(pdf, y);</span>
+<span class="cstat-no" title="statement not covered" >  return y + 6;</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+&nbsp;
+const drawCard = <span class="fstat-no" title="function not covered" >(pdf: jsPDF, x: number, y: number, w: number, h: number) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setDrawColor(...COLOR_BORDER);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setFillColor(245, 249, 255);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.roundedRect(x, y, w, h, 2, 2, 'FD');</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+&nbsp;
+const addKeyIndicator = <span class="fstat-no" title="function not covered" >(pdf: jsPDF, x: number, y: number, label: string, value: string) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  drawCard(pdf, x, y, 84, 16);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setFontSize(8.5);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setTextColor(...COLOR_MUTED);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.text(label, x + 4, y + 6);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setFontSize(10.5);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setTextColor(...COLOR_DARK);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.text(value, x + 4, y + 12.5);</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+&nbsp;
+const addMetricRow = <span class="fstat-no" title="function not covered" >(pdf: jsPDF, y: number, label: string, score: number | null, description: string) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  y = ensureSpace(pdf, y, 12);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setFontSize(10.5);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setTextColor(...COLOR_DARK);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.text(label, MARGIN_X, y);</span>
+<span class="cstat-no" title="statement not covered" >  const scoreText = typeof score === 'number' ? `${score}/100` : '—';</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setTextColor(...COLOR_MUTED);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.text(scoreText, PAGE_WIDTH - MARGIN_X - 18, y);</span>
+&nbsp;
+  // bar
+<span class="cstat-no" title="statement not covered" >  const barY = y + 2.5;</span>
+<span class="cstat-no" title="statement not covered" >  const barX = MARGIN_X;</span>
+<span class="cstat-no" title="statement not covered" >  const barW = PAGE_WIDTH - MARGIN_X * 2 - 22;</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setDrawColor(...COLOR_BORDER);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setFillColor(236, 244, 255);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.roundedRect(barX, barY, barW, 3.5, 1, 1, 'FD');</span>
+<span class="cstat-no" title="statement not covered" >  if (typeof score === 'number') {</span>
+<span class="cstat-no" title="statement not covered" >    const fillW = Math.max(0, Math.min(barW, (score / 100) * barW));</span>
+<span class="cstat-no" title="statement not covered" >    pdf.setFillColor(...COLOR_PRIMARY);</span>
+<span class="cstat-no" title="statement not covered" >    pdf.roundedRect(barX, barY, fillW, 3.5, 1, 1, 'F');</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  if (description) {</span>
+<span class="cstat-no" title="statement not covered" >    const textY = barY + 6.5;</span>
+<span class="cstat-no" title="statement not covered" >    pdf.setFontSize(9);</span>
+<span class="cstat-no" title="statement not covered" >    pdf.setTextColor(...COLOR_MUTED);</span>
+<span class="cstat-no" title="statement not covered" >    const lines = pdf.splitTextToSize(description, PAGE_WIDTH - MARGIN_X * 2 - 4);</span>
+<span class="cstat-no" title="statement not covered" >    pdf.text(lines, MARGIN_X, textY);</span>
+<span class="cstat-no" title="statement not covered" >    y = textY + lines.length * 4.2 + 3;</span>
+<span class="cstat-no" title="statement not covered" >  } else {</span>
+<span class="cstat-no" title="statement not covered" >    y += 6;</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
+<span class="cstat-no" title="statement not covered" >  return y;</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+&nbsp;
+export const generateAnalysisPdf = <span class="fstat-no" title="function not covered" >(analysis: Analysis, fileName = 'deepskyn-analysis.pdf') =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const pdf = new jsPDF('p', 'mm', 'a4');</span>
+&nbsp;
+  // Header
+<span class="cstat-no" title="statement not covered" >  pdf.setFillColor(...COLOR_PRIMARY);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.roundedRect(MARGIN_X, 10, 24, 24, 3, 3, 'F');</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setTextColor(255, 255, 255);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setFontSize(12);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.text('DS', MARGIN_X + 8, 25);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  pdf.setTextColor(...COLOR_DARK);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setFontSize(10);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.text(`Ref: ${analysis.id}`, PAGE_WIDTH - MARGIN_X - 40, 16);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  pdf.setFontSize(16);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.text('SYNTHESE DE VOTRE ANALYSE', MARGIN_X, 46);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  pdf.setFontSize(10);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setTextColor(...COLOR_MUTED);</span>
+<span class="cstat-no" title="statement not covered" >  const createdAt = analysis.createdAt ? new Date(analysis.createdAt).toLocaleDateString() : '—';</span>
+<span class="cstat-no" title="statement not covered" >  pdf.text(`Date: ${createdAt}`, MARGIN_X, 54);</span>
+&nbsp;
+  // Profile card
+<span class="cstat-no" title="statement not covered" >  drawCard(pdf, MARGIN_X, 60, PAGE_WIDTH - MARGIN_X * 2, 24);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setFontSize(9);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setTextColor(...COLOR_MUTED);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.text('VOTRE PROFIL CUTANE', MARGIN_X + 6, 68);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setFontSize(12);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setTextColor(...COLOR_DARK);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.text(getProfileLabel(analysis), MARGIN_X + 6, 76);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  const severity = getSeverityLabel(analysis);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setFontSize(9);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setTextColor(239, 68, 68);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.text(severity, PAGE_WIDTH - MARGIN_X - 24, 76);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  let y = 92;</span>
+<span class="cstat-no" title="statement not covered" >  y = drawSectionTitle(pdf, 'INDICATEURS CLES', y);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  const skinType = safeText(analysis.results?.skinType || analysis.results?.skinType, '—');</span>
+<span class="cstat-no" title="statement not covered" >  const concerns = analysis.results?.concerns?.length ? analysis.results?.concerns.join(', ') : 'Aucune';</span>
+<span class="cstat-no" title="statement not covered" >  const conditions = analysis.results?.conditions?.length ? analysis.results?.conditions.join(', ') : 'Aucune';</span>
+<span class="cstat-no" title="statement not covered" >  const score = safeText(analysis.healthScore ?? analysis.results?.healthScore, '—');</span>
+<span class="cstat-no" title="statement not covered" >  const skinAge = safeText(analysis.skinAge ?? analysis.results?.skinAge, '—');</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  addKeyIndicator(pdf, MARGIN_X, y, 'Type de peau', skinType);</span>
+<span class="cstat-no" title="statement not covered" >  addKeyIndicator(pdf, MARGIN_X + 90, y, 'Score global', `${score}/100`);</span>
+<span class="cstat-no" title="statement not covered" >  y += 20;</span>
+<span class="cstat-no" title="statement not covered" >  addKeyIndicator(pdf, MARGIN_X, y, 'Age cutane', `${skinAge}`);</span>
+<span class="cstat-no" title="statement not covered" >  addKeyIndicator(pdf, MARGIN_X + 90, y, 'Preoccupations', concerns);</span>
+<span class="cstat-no" title="statement not covered" >  y += 22;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  y = drawSectionTitle(pdf, 'ANALYSE DE VOTRE PROFIL CUTANE', y);</span>
+<span class="cstat-no" title="statement not covered" >  const summary = safeText(analysis.results?.summary, 'Aucune synthese disponible pour le moment.');</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setFontSize(10);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setTextColor(...COLOR_DARK);</span>
+<span class="cstat-no" title="statement not covered" >  const summaryLines = pdf.splitTextToSize(summary, PAGE_WIDTH - MARGIN_X * 2);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.text(summaryLines, MARGIN_X, y);</span>
+<span class="cstat-no" title="statement not covered" >  y += summaryLines.length * 4.5 + 6;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  y = drawSectionTitle(pdf, 'DIAGNOSTIC ZONE PAR ZONE', y);</span>
+<span class="cstat-no" title="statement not covered" >  const detailed = analysis.results?.detailedAnalysis;</span>
+<span class="cstat-no" title="statement not covered" >  if (detailed) {</span>
+<span class="cstat-no" title="statement not covered" >    const orderedKeys = ['hydration','texture','pores','pigmentation','wrinkles','acne','redness','elasticity'];</span>
+<span class="cstat-no" title="statement not covered" >    for (const key of orderedKeys) {</span>
+<span class="cstat-no" title="statement not covered" >      const metric = (detailed as any)[key];</span>
+<span class="cstat-no" title="statement not covered" >      y = addMetricRow(pdf, y, key.charAt(0).toUpperCase() + key.slice(1), metric?.score ?? null, metric?.description ?? '');</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  } else {</span>
+<span class="cstat-no" title="statement not covered" >    pdf.setFontSize(10);</span>
+<span class="cstat-no" title="statement not covered" >    pdf.setTextColor(...COLOR_MUTED);</span>
+<span class="cstat-no" title="statement not covered" >    pdf.text('Aucune donnee detaillee disponible.', MARGIN_X, y + 4);</span>
+<span class="cstat-no" title="statement not covered" >    y += 10;</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  y = drawSectionTitle(pdf, 'RECOMMANDATIONS', y);</span>
+<span class="cstat-no" title="statement not covered" >  const recs = analysis.recommendations || analysis.results?.recommendations;</span>
+<span class="cstat-no" title="statement not covered" >  if (recs) {</span>
+<span class="cstat-no" title="statement not covered" >    const sections = [</span>
+<span class="cstat-no" title="statement not covered" >      { label: 'Produits', items: recs.products },</span>
+<span class="cstat-no" title="statement not covered" >      { label: 'Ingredients', items: recs.ingredients },</span>
+<span class="cstat-no" title="statement not covered" >      { label: 'Lifestyle', items: recs.lifestyle },</span>
+<span class="cstat-no" title="statement not covered" >      { label: 'Alertes', items: recs.warnings },</span>
+<span class="cstat-no" title="statement not covered" >    ];</span>
+<span class="cstat-no" title="statement not covered" >    sections.forEach((section) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      y = ensureSpace(pdf, y, 10);</span>
+<span class="cstat-no" title="statement not covered" >      pdf.setFontSize(10);</span>
+<span class="cstat-no" title="statement not covered" >      pdf.setTextColor(...COLOR_DARK);</span>
+<span class="cstat-no" title="statement not covered" >      pdf.text(section.label + ':', MARGIN_X, y);</span>
+<span class="cstat-no" title="statement not covered" >      const items = section.items?.length ? section.items.join(', ') : '—';</span>
+<span class="cstat-no" title="statement not covered" >      const lines = pdf.splitTextToSize(items, PAGE_WIDTH - MARGIN_X * 2 - 2);</span>
+<span class="cstat-no" title="statement not covered" >      pdf.setFontSize(9.5);</span>
+<span class="cstat-no" title="statement not covered" >      pdf.setTextColor(...COLOR_MUTED);</span>
+<span class="cstat-no" title="statement not covered" >      pdf.text(lines, MARGIN_X, y + 5);</span>
+<span class="cstat-no" title="statement not covered" >      y += lines.length * 4.2 + 6;</span>
+<span class="cstat-no" title="statement not covered" >    });</span>
+<span class="cstat-no" title="statement not covered" >  } else {</span>
+<span class="cstat-no" title="statement not covered" >    pdf.setFontSize(10);</span>
+<span class="cstat-no" title="statement not covered" >    pdf.setTextColor(...COLOR_MUTED);</span>
+<span class="cstat-no" title="statement not covered" >    pdf.text('Aucune recommandation disponible.', MARGIN_X, y + 4);</span>
+<span class="cstat-no" title="statement not covered" >    y += 10;</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
+&nbsp;
+  // Footer
+<span class="cstat-no" title="statement not covered" >  pdf.setFontSize(8);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.setTextColor(...COLOR_MUTED);</span>
+<span class="cstat-no" title="statement not covered" >  pdf.text('Document confidentiel - Ne remplace pas un avis medical', MARGIN_X, PAGE_HEIGHT - 10);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  pdf.save(fileName);</span>
+<span class="cstat-no" title="statement not covered" >};</span>
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-05-04T19:57:12.153Z
+            </div>
+        <script src="../../../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../../../sorter.js"></script>
+        <script src="../../../../block-navigation.js"></script>
+    </body>
+</html>
+    

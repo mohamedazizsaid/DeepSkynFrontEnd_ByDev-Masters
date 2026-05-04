@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
 
   # ── Job 1: Build only ─────────────────────────────────────
@@ -100,7 +103,6 @@ jobs:
         run: npm ci
 
       - name: Run tests with coverage
-        continue-on-error: true
         run: npm run test:cov
 
       - name: Resolve SonarQube URL
@@ -148,35 +150,48 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, sonar]
     if: ${{ always() && github.event_name == 'push' && needs.build.result == 'success' && (needs.sonar.result == 'success' || needs.sonar.result == 'skipped') }}
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME || vars.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN || secrets.DOCKER_TOKEN || secrets.DOCKERHUB_PAT }}
+      DOCKERHUB_REPOSITORY: ${{ secrets.DOCKERHUB_REPOSITORY || vars.DOCKERHUB_REPOSITORY || 'frontend' }}
+      HAS_DOCKER_CREDS: ${{ (secrets.DOCKERHUB_USERNAME != '' || vars.DOCKERHUB_USERNAME != '') && (secrets.DOCKERHUB_TOKEN != '' || secrets.DOCKER_TOKEN != '' || secrets.DOCKERHUB_PAT != '') }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Docker status
+        if: ${{ env.HAS_DOCKER_CREDS != 'true' }}
+        run: echo "Skipping Docker push (missing DOCKERHUB credentials)."
+
       - name: Set image tags
+        if: ${{ env.HAS_DOCKER_CREDS == 'true' }}
         id: tag
         run: |
           SHORT_SHA="${GITHUB_SHA::8}"
           BRANCH_TAG="${GITHUB_REF_NAME//\//-}"
           {
             echo "tags<<EOF"
-            echo "${{ secrets.DOCKERHUB_USERNAME }}/frontend:${BRANCH_TAG}-${SHORT_SHA}"
+            echo "${DOCKERHUB_USERNAME}/${DOCKERHUB_REPOSITORY}:${BRANCH_TAG}-${SHORT_SHA}"
             if [ "$GITHUB_REF_NAME" = "main" ]; then
-              echo "${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest"
+              echo "${DOCKERHUB_USERNAME}/${DOCKERHUB_REPOSITORY}:latest"
             fi
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
       - name: Login to DockerHub
+        if: ${{ env.HAS_DOCKER_CREDS == 'true' }}
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
 
       - name: Set up Docker Buildx
+        if: ${{ env.HAS_DOCKER_CREDS == 'true' }}
         uses: docker/setup-buildx-action@v3
 
       - name: Build and push
+        if: ${{ env.HAS_DOCKER_CREDS == 'true' }}
         uses: docker/build-push-action@v5
         with:
           context: .

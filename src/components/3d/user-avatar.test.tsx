@@ -2,27 +2,34 @@ import { render } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { UserAvatar } from './user-avatar';
 
+const { mockScene, useGLTFMock } = vi.hoisted(() => {
+  const scene = {
+    position: { sub: vi.fn() },
+    traverse: vi.fn((cb: (child: { isMesh: boolean; castShadow?: boolean; receiveShadow?: boolean }) => void) => {
+      cb({ isMesh: true });
+    }),
+    children: [],
+  };
+
+  const gltfMock = vi.fn(() => ({
+    scene,
+    animations: [],
+  }));
+
+  Object.assign(gltfMock, { preload: vi.fn() });
+
+  return {
+    mockScene: scene,
+    useGLTFMock: gltfMock,
+  };
+});
+
 vi.mock('@react-three/fiber', () => ({
   useFrame: () => undefined,
 }));
 
-const mockScene = {
-  position: { sub: vi.fn() },
-  traverse: vi.fn((cb: (child: { isMesh: boolean; castShadow?: boolean; receiveShadow?: boolean }) => void) => {
-    cb({ isMesh: true });
-  }),
-  children: [],
-};
-
-const useGLTF = vi.fn(() => ({
-  scene: mockScene,
-  animations: [],
-}));
-
-useGLTF.preload = vi.fn();
-
 vi.mock('@react-three/drei', () => ({
-  useGLTF,
+  useGLTF: useGLTFMock,
   useAnimations: () => ({
     mixer: {
       stopAllAction: vi.fn(),
