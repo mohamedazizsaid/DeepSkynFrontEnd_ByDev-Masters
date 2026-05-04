@@ -85,24 +85,44 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Resolve SonarQube URL
+        id: sonar-config
+        env:
+          RAW_SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          SONAR_URL="${RAW_SONAR_HOST_URL:-http://192.168.254.128:9000}"
+          echo "sonar_url=$SONAR_URL" >> "$GITHUB_OUTPUT"
+
       - name: SonarQube status
         if: ${{ env.HAS_SONAR_TOKEN != 'true' }}
         run: echo "Skipping SonarQube (missing SONAR_TOKEN)."
 
-      - name: SonarQube Scan
+      - name: Check SonarQube reachability
+        id: sonar-reachability
         if: ${{ env.HAS_SONAR_TOKEN == 'true' }}
+        run: |
+          if curl --silent --fail --show-error --max-time 10 "${{ steps.sonar-config.outputs.sonar_url }}/api/server/version" > /dev/null; then
+            echo "reachable=true" >> "$GITHUB_OUTPUT"
+            echo "SonarQube reachable at ${{ steps.sonar-config.outputs.sonar_url }}."
+          else
+            echo "reachable=false" >> "$GITHUB_OUTPUT"
+            echo "SonarQube unreachable at ${{ steps.sonar-config.outputs.sonar_url }}. Skipping scan."
+          fi
+
+      - name: SonarQube Scan
+        if: ${{ env.HAS_SONAR_TOKEN == 'true' && steps.sonar-reachability.outputs.reachable == 'true' }}
         uses: SonarSource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: http://192.168.254.128:9000
+          SONAR_HOST_URL: ${{ steps.sonar-config.outputs.sonar_url }}
 
       - name: SonarQube Quality Gate
-        if: ${{ env.HAS_SONAR_TOKEN == 'true' }}
+        if: ${{ env.HAS_SONAR_TOKEN == 'true' && steps.sonar-reachability.outputs.reachable == 'true' }}
         uses: SonarSource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: http://192.168.254.128:9000
+          SONAR_HOST_URL: ${{ steps.sonar-config.outputs.sonar_url }}
 
   # ── Job 4: Docker Build + Push (main only) ───────────────
   docker:
