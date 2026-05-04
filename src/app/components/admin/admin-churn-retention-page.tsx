@@ -31,22 +31,21 @@ export function AdminChurnRetentionPage() {
     return Math.min(Math.max(normalized, 0), 1);
   };
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [statsRes, riskRes] = await Promise.all([
-        adminService.getChurnStats(),
-        adminService.getAtRiskUsers(20),
-      ]);
-      setStats(statsRes);
-      setAtRisk(riskRes.users || riskRes || []);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadData();
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, riskRes] = await Promise.all([
+          adminService.getChurnStats(),
+          adminService.getAtRiskUsers(20),
+        ]);
+        setStats(statsRes);
+        setAtRisk(riskRes.users || riskRes || []);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void loadData();
   }, []);
 
   const handleRunAnalysis = async () => {

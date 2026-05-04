@@ -14,32 +14,23 @@ export function AdminUserManagementPage() {
   const [loading, setLoading] = useState(false);
   const lastRequestId = useRef(0);
 
-  const loadUsers = async () => {
-    const requestId = ++lastRequestId.current;
-    setLoading(true);
-    try {
-      const res = await adminService.getUsers({ search, status: (status as any) || undefined, limit: 50 });
-      // Ignore outdated responses when users type quickly.
-      if (requestId === lastRequestId.current) {
-        setUsers(res.users || []);
-      }
-    } finally {
-      if (requestId === lastRequestId.current) {
-        setLoading(false);
-      }
-    }
-  };
-
   useEffect(() => {
-    loadUsers();
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      loadUsers();
-    }, 350);
-
-    return () => clearTimeout(timer);
+    const loadUsers = async () => {
+      const requestId = ++lastRequestId.current;
+      setLoading(true);
+      try {
+        const res = await adminService.getUsers({ search, status: (status as any) || undefined, limit: 50 });
+        // Ignore outdated responses when users type quickly.
+        if (requestId === lastRequestId.current) {
+          setUsers(res.users || []);
+        }
+      } finally {
+        if (requestId === lastRequestId.current) {
+          setLoading(false);
+        }
+      }
+    };
+    void loadUsers();
   }, [search, status]);
 
   const toggleSuspend = async (user: any) => {

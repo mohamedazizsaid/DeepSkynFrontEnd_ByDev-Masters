@@ -14,33 +14,23 @@ export function AdminProductCatalogPage() {
   const [loading, setLoading] = useState(true);
   const [scraping, setScraping] = useState(false);
 
-  const loadFiles = async () => {
-    setLoading(true);
-    try {
-      const res = await adminService.getScrapedFiles();
-      const list = Array.isArray(res) ? res : res.files || [];
-      setFiles(list);
-      if (list.length > 0 && !selectedFile) {
-        setSelectedFile(list[0]);
-        await loadProducts(list[0]);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadProducts = async (fileName: string) => {
-    try {
-      const res = await adminService.getScrapedData(fileName);
-      setProducts(Array.isArray(res) ? res : res.products || []);
-    } catch {
-      setProducts([]);
-    }
-  };
-
   useEffect(() => {
-    loadFiles();
-  }, []);
+    const loadFiles = async () => {
+      setLoading(true);
+      try {
+        const res = await adminService.getScrapedFiles();
+        const list = Array.isArray(res) ? res : res.files || [];
+        setFiles(list);
+        if (list.length > 0 && !selectedFile) {
+          setSelectedFile(list[0]);
+          await loadProducts(list[0]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    void loadFiles();
+  }, [selectedFile]);
 
   const handleFileChange = async (file: string) => {
     setSelectedFile(file);

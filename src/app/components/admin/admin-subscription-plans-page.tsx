@@ -171,21 +171,20 @@ export function AdminSubscriptionPlansPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const loadPlans = async () => {
-    setLoading(true);
-    setError('');
-
-    try {
-      const data = await adminService.getSubscriptionPlans();
-      setPlans(data);
-    } catch (loadError) {
-      setError(extractErrorMessage(loadError, 'Impossible de charger les plans d abonnement.'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const loadPlans = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const data = await adminService.getSubscriptionPlans();
+        setPlans(data);
+      } catch (loadError) {
+        setError(extractErrorMessage(loadError, 'Impossible de charger les plans d abonnement.'));
+      } finally {
+        setLoading(false);
+      }
+    };
     void loadPlans();
   }, []);
 

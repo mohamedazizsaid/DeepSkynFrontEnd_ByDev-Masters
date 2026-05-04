@@ -147,34 +147,33 @@ export function AdminReclamationsPage() {
   const [statusOverrides, setStatusOverrides] = useState<StatusOverrideMap>(() => readStatusOverrides());
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
 
-  const loadRows = async () => {
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch(SHEET_GVIZ_URL);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const payload = await response.text();
-      const parsedRows = parseGvizToRows(payload).map((row) => ({
-        ...row,
-        status: statusOverrides[row.id] || row.status,
-      }));
-      setRows(parsedRows);
-      setLastUpdatedAt(new Date());
-    } catch {
-      setError(adminLocale.reclamations.loadError);
-      setRows([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const loadRows = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const response = await fetch(SHEET_GVIZ_URL);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const payload = await response.text();
+        const parsedRows = parseGvizToRows(payload).map((row) => ({
+          ...row,
+          status: statusOverrides[row.id] || row.status,
+        }));
+        setRows(parsedRows);
+        setLastUpdatedAt(new Date());
+      } catch {
+        setError(adminLocale.reclamations.loadError);
+        setRows([]);
+      } finally {
+        setLoading(false);
+      }
+    };
     void loadRows();
-  }, [statusOverrides]);
+  }, [statusOverrides, adminLocale]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {

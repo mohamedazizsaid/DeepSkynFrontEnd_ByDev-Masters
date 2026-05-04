@@ -23,23 +23,22 @@ export function AdminSubscriptionManagementPage() {
   const [planFilter, setPlanFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [statsRes, subsRes] = await Promise.all([
-        adminService.getSubscriptionsStats(),
-        adminService.getAllSubscriptions({ plan: planFilter || undefined, status: statusFilter || undefined, limit: 50 }),
-      ]);
-      setStats(statsRes);
-      setSubscriptions(Array.isArray(subsRes) ? subsRes : subsRes.subscriptions || []);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadData();
-  }, []);
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, subsRes] = await Promise.all([
+          adminService.getSubscriptionsStats(),
+          adminService.getAllSubscriptions({ plan: planFilter || undefined, status: statusFilter || undefined, limit: 50 }),
+        ]);
+        setStats(statsRes);
+        setSubscriptions(Array.isArray(subsRes) ? subsRes : subsRes.subscriptions || []);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void loadData();
+  }, [planFilter, statusFilter]);
 
   const handleCheckExpired = async () => {
     await adminService.checkExpiredSubscriptions();
