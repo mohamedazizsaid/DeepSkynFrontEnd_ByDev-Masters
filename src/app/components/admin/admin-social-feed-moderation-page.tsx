@@ -26,8 +26,8 @@ export function AdminSocialFeedModerationPage() {
   };
 
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [filter]);
 
   const handleFlag = async (id: string, flagged: boolean) => {
     await adminService.flagPost(id, { flagged, reason: flagged ? adminLocale.moderation.flagged : undefined });

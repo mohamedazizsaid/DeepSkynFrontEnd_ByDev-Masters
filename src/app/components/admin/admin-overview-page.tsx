@@ -15,6 +15,7 @@ export function AdminOverviewPage() {
   const [biData, setBiData] = useState<any>(null);
 
   useEffect(() => {
+    setLoading(true);
     Promise.allSettled([
       adminService.getOverviewStats(),
       adminService.getBiDashboard(),
@@ -26,8 +27,9 @@ export function AdminOverviewPage() {
         if (biResult.status === 'fulfilled') {
           setBiData(biResult.value);
         }
+        setLoading(false);
       })
-      .finally(() => setLoading(false));
+      .catch(() => setLoading(false));
   }, []);
 
   const kpis = useMemo(() => {

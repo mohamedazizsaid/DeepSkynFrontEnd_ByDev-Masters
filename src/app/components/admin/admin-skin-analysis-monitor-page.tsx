@@ -12,26 +12,25 @@ export function AdminSkinAnalysisMonitorPage() {
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({ fromDate: '', toDate: '', skinType: '', minScore: '', maxScore: '' });
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const res = await adminService.getAdminAnalyses({
-        limit: 50,
-        fromDate: filters.fromDate || undefined,
-        toDate: filters.toDate || undefined,
-        skinType: filters.skinType || undefined,
-        minScore: filters.minScore ? Number(filters.minScore) : undefined,
-        maxScore: filters.maxScore ? Number(filters.maxScore) : undefined,
-      });
-      setRows(res.analyses || []);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    load();
-  }, []);
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await adminService.getAdminAnalyses({
+          limit: 50,
+          fromDate: filters.fromDate || undefined,
+          toDate: filters.toDate || undefined,
+          skinType: filters.skinType || undefined,
+          minScore: filters.minScore ? Number(filters.minScore) : undefined,
+          maxScore: filters.maxScore ? Number(filters.maxScore) : undefined,
+        });
+        setRows(res.analyses || []);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void load();
+  }, [filters]);
 
   return (
     <main className="admin-panel p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 bg-[#F8FAFC] dark:bg-[#0F172A] rounded-2xl" aria-labelledby="admin-analysis-title" aria-describedby="admin-analysis-live" aria-busy={loading}>
