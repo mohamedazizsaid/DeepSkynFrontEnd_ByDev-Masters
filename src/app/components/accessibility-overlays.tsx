@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useAccessibilityStore } from '../../stores/accessibility.store';
 
 /**
@@ -9,7 +9,6 @@ import { useAccessibilityStore } from '../../stores/accessibility.store';
  */
 export function AccessibilityOverlays() {
     const readingGuide = useAccessibilityStore((s) => s.readingGuide);
-    const guideRef = useRef<HTMLDivElement>(null);
 
     // Reading guide follows the mouse
     useEffect(() => {

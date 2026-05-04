@@ -14,24 +14,31 @@ import {
   Tooltip,
 } from 'recharts';
 
+interface ChatStats {
+  totalConversations?: number;
+  totalMessages?: number;
+  activeUsers?: number;
+  avgMessagesPerChat?: number;
+  dailyStats?: Array<{ date?: string; count?: number; messages?: number }>;
+}
+
 export function AdminAiChatMonitorPage() {
   const { language } = useAccessibilityStore();
   const adminLocale = getAdminLocale(language);
   const dateLocale = language === 'fr' ? 'fr-FR' : language === 'ar' ? 'ar' : language === 'es' ? 'es-ES' : 'en-US';
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<ChatStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const res = await adminService.getChatStatistics();
-      setStats(res);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await adminService.getChatStatistics();
+        setStats(res);
+      } finally {
+        setLoading(false);
+      }
+    };
     load();
   }, []);
 
@@ -45,7 +52,7 @@ export function AdminAiChatMonitorPage() {
   const dailyData = React.useMemo(() => {
     const source = Array.isArray(stats?.dailyStats) ? stats.dailyStats : [];
     return source
-      .map((d: any) => {
+      .map((d: { date?: string; count?: number; messages?: number }) => {
         const parsedDate = d?.date ? new Date(d.date) : null;
         const safeDate = parsedDate && !Number.isNaN(parsedDate.getTime())
           ? parsedDate.toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })
@@ -55,7 +62,7 @@ export function AdminAiChatMonitorPage() {
           messages: Number(d?.count ?? d?.messages ?? 0),
         };
       })
-      .filter((item: any) => item.date);
+      .filter((item: { date: string; messages: number }) => item.date);
   }, [stats, dateLocale]);
 
   return (

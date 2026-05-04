@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { ContactShadows, Environment } from '@react-three/drei';
@@ -354,20 +353,18 @@ function Hand({
   }, [keypoints, wristAnchor, centered, isRight]);
 
   const maps = useMemo(() => createProceduralHandMaps(skin), [skin]);
+  const hasEnoughPoints = pts.length >= 21;
 
-  // Early return if no keypoints
-  if (pts.length < 21) {
-    return null;
-  }
-
-  const wristToMiddle = new THREE.Vector3().subVectors(pts[9], pts[0]);
-  const palmYaw = Math.atan2(wristToMiddle.x, wristToMiddle.y) * 0.6;
-  const isRightHand = pts[5].x > pts[17].x;
+  const wristToMiddle = hasEnoughPoints ? new THREE.Vector3().subVectors(pts[9], pts[0]) : new THREE.Vector3();
+  const palmYaw = hasEnoughPoints ? Math.atan2(wristToMiddle.x, wristToMiddle.y) * 0.6 : 0;
+  const isRightHand = hasEnoughPoints ? pts[5].x > pts[17].x : false;
   const side = isRightHand ? 1 : -1;
 
-  const wrist = pts[0];
-  const mcp = [pts[5], pts[9], pts[13], pts[17]];
-  const palmCenter = mcp.reduce((acc, p) => acc.add(p), new THREE.Vector3()).multiplyScalar(1 / mcp.length);
+  const wrist = hasEnoughPoints ? pts[0] : new THREE.Vector3();
+  const mcp = hasEnoughPoints ? [pts[5], pts[9], pts[13], pts[17]] : [];
+  const palmCenter = hasEnoughPoints
+    ? mcp.reduce((acc, p) => acc.add(p), new THREE.Vector3()).multiplyScalar(1 / mcp.length)
+    : new THREE.Vector3();
   const palmRadius = isSkeleton ? 0.03 : 0.043;
   const handSkin = isSkeleton ? bone : skin;
   const skinShadow = isSkeleton ? bone : '#d8ad92';
@@ -390,7 +387,7 @@ function Hand({
   ];
 
   useFrame((state) => {
-    if (!groupRef.current || isSkeleton) return;
+    if (!groupRef.current || isSkeleton || !hasEnoughPoints) return;
     const t = state.clock.elapsedTime;
     const sideOffset = isRightHand ? 0 : 0.9;
     const drift = Math.sin(t * 1.25 + sideOffset) * 0.003;
@@ -402,6 +399,10 @@ function Hand({
     groupRef.current.rotation.z = pulse;
     groupRef.current.position.y = verticalMicro;
   });
+
+  if (!hasEnoughPoints) {
+    return null;
+  }
 
   const palmU = new THREE.Vector3().subVectors(pts[5], pts[17]).normalize();
   const palmV = new THREE.Vector3().subVectors(pts[9], pts[0]).normalize();

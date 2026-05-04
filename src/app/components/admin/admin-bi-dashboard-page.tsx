@@ -20,6 +20,22 @@ import { adminService } from '../../../lib/services/admin.service';
 import { useAccessibilityStore } from '../../../stores/accessibility.store';
 import { getAdminLocale } from '../../../lib/i18n/admin-locale';
 
+interface BiDashboardData {
+  kpis: {
+    totalUsers?: number;
+    newUsersLast30?: number;
+    userGrowthRate?: number;
+    activeUsersLast30?: number;
+    conversionRate?: number;
+  };
+  charts?: Record<string, unknown>;
+}
+
+interface TopCondition {
+  name: string;
+  value: number;
+}
+
 const riskColors = ['#10B981', '#F59E0B', '#EF4444', '#7C3AED', '#94A3B8'];
 
 export function AdminBiDashboardPage() {
@@ -27,33 +43,32 @@ export function AdminBiDashboardPage() {
   const adminLocale = getAdminLocale(language);
 
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
-  const [fallbackTopConcerns, setFallbackTopConcerns] = useState<any[]>([]);
-
-  const loadData = async () => {
-    try {
-      const [payloadResult, overviewResult] = await Promise.allSettled([
-        adminService.getBiDashboard(),
-        adminService.getOverviewStats(),
-      ]);
-
-      const payload = payloadResult.status === 'fulfilled' ? payloadResult.value : null;
-      const overview = overviewResult.status === 'fulfilled' ? overviewResult.value : null;
-
-      setData(payload);
-      const normalizedTop = Array.isArray(overview?.analyses?.topConditions)
-        ? overview.analyses.topConditions.map((item: any) => ({
-            name: item?.name || item?.condition || '',
-            value: Number(item?.value ?? item?.count ?? 0),
-          }))
-        : [];
-      setFallbackTopConcerns(normalizedTop);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [data, setData] = useState<BiDashboardData | null>(null);
+  const [fallbackTopConcerns, setFallbackTopConcerns] = useState<TopCondition[]>([]);
 
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [payloadResult, overviewResult] = await Promise.allSettled([
+          adminService.getBiDashboard(),
+          adminService.getOverviewStats(),
+        ]);
+
+        const payload = payloadResult.status === 'fulfilled' ? payloadResult.value : null;
+        const overview = overviewResult.status === 'fulfilled' ? overviewResult.value : null;
+
+        setData(payload);
+        const normalizedTop = Array.isArray(overview?.analyses?.topConditions)
+          ? overview.analyses.topConditions.map((item: { name?: string; condition?: string; value?: number; count?: number }) => ({
+              name: item?.name || item?.condition || '',
+              value: Number(item?.value ?? item?.count ?? 0),
+            }))
+          : [];
+        setFallbackTopConcerns(normalizedTop);
+      } finally {
+        setLoading(false);
+      }
+    };
     void loadData();
   }, []);
 

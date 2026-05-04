@@ -4,7 +4,7 @@ export const VALIDATION = {
   EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   USERNAME_MIN_LENGTH: 3,
   USERNAME_REGEX: /^[a-zA-Z0-9_]+$/,
-  PHONE_REGEX: /^[\d\s\-\+\(\)]+$/,
+  PHONE_REGEX: /^[\d\s+()-]+$/,
   FILE_MAX_SIZE: 5 * 1024 * 1024, // 5MB
   ALLOWED_IMAGE_TYPES: ['image/jpeg', 'image/png', 'image/webp'],
   IMAGE_MAX_WIDTH: 5000,

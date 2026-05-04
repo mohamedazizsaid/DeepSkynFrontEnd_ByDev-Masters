@@ -468,7 +468,11 @@ export function AccessibilityPanel() {
             // Alt+M: toggle voice listening
             if (e.altKey && e.key === 'm') {
                 e.preventDefault();
-                isListening ? stopListening() : startListening();
+                if (isListening) {
+                    stopListening();
+                } else {
+                    startListening();
+                }
             }
             // Escape: close panel
             if (e.key === 'Escape' && isPanelOpen) {

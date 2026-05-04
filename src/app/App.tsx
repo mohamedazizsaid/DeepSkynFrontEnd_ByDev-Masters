@@ -72,7 +72,7 @@ function OnboardingRoute({ children }: { children: React.ReactNode }) {
 
 // App content with routing
 function AppContent() {
-  const { loadUser, logout, isAuthenticated } = useAuthStore();
+  const { loadUser, logout } = useAuthStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -81,7 +81,7 @@ function AppContent() {
     if (token) {
       loadUser().catch(() => { });
     }
-  }, []);
+  }, [loadUser]);
 
   const handleLogout = async () => {
     await logout();

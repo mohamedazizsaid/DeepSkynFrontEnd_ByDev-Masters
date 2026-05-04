@@ -10,8 +10,6 @@ interface FaceTagProps {
 }
 
 export function FaceTag({ zone, matchedProducts, isActive, onClick }: FaceTagProps) {
-  if (matchedProducts.length === 0) return null;
-
   // Prevent events from propagating beyond the tag and causing layout shifts
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -21,6 +19,8 @@ export function FaceTag({ zone, matchedProducts, isActive, onClick }: FaceTagPro
     },
     [onClick]
   );
+
+  if (matchedProducts.length === 0) return null;
 
   return (
     <Html
