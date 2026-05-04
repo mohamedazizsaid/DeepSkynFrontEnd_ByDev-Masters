@@ -80,7 +80,7 @@ jobs:
   # ── Job 3: SonarQube ─────────────────────────────────────
   sonar:
     name: SonarQube Scan · Quality Gate
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: nexus
 
     env:
