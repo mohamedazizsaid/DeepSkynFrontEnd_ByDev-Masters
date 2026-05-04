@@ -15,8 +15,7 @@ jobs:
   # ── Job 1: Build only ─────────────────────────────────────
   build:
     name: Build
-    runs-on: self-hosted
-
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -49,7 +48,7 @@ jobs:
   # ── Job 2: Nexus/Artifactory stage ───────────────────────
   nexus:
     name: Nexus · Artifactory Stage
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: build
     env:
       NEXUS_URL: ${{ secrets.NEXUS_URL || vars.NEXUS_URL }}
@@ -81,8 +80,7 @@ jobs:
   # ── Job 3: SonarQube ─────────────────────────────────────
   sonar:
     name: SonarQube Scan · Quality Gate
-    runs-on: self-hosted
-
+    runs-on: ubuntu-latest
     needs: nexus
 
     env:
@@ -149,8 +147,7 @@ jobs:
   # ── Job 4: Docker Build + Push ────────────────────────────
   docker:
     name: Docker Build · Push
-    runs-on: self-hosted
-
+    runs-on: ubuntu-latest
     needs: [build, sonar]
     if: ${{ always() && github.event_name == 'push' && needs.build.result == 'success' && (needs.sonar.result == 'success' || needs.sonar.result == 'skipped') }}
     env:
