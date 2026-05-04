@@ -21,7 +21,7 @@ interface AuthState {
   requestSignupCode: (data: SignupCodeRequest) => Promise<SignupCodeResponse>;
   verifySignupCode: (email: string, code: string) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
-  faceLogin: (email: string) => Promise<{ success: boolean }>;
+  faceLogin: (email: string, descriptor?: number[], imageBase64?: string) => Promise<{ success: boolean }>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
   setUser: (user: UserProfile | null) => void;
@@ -110,10 +110,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  faceLogin: async (email) => {
+  faceLogin: async (email, descriptor, imageBase64) => {
     set({ isLoading: true });
     try {
-      const result = await authService.faceLogin(email);
+      const result = await authService.faceLogin(email, descriptor, imageBase64);
       if (result.tokens) {
         set({ isAuthenticated: true, isLoading: false });
         await get().loadUser();

@@ -443,11 +443,11 @@ export function CameraScanModal({
     const sequence = (forcedCaptureSequence && forcedCaptureSequence.length === 3)
       ? forcedCaptureSequence
       : (captureSequence.length === 3 ? captureSequence : ['front', 'left', 'right']);
-    const imageByAngle: Record<ScanAngle, string> = {
-      [sequence[0]]: capturedImagesByAngle[sequence[0]] || capturedImage || '',
-      [sequence[1]]: capturedImagesByAngle[sequence[1]] || capturedImage || '',
-      [sequence[2]]: capturedImagesByAngle[sequence[2]] || capturedImage || '',
-    };
+    const imageByAngle = {
+      [sequence[0]]: capturedImagesByAngle[sequence[0] as ScanAngle] || capturedImage || '',
+      [sequence[1]]: capturedImagesByAngle[sequence[1] as ScanAngle] || capturedImage || '',
+      [sequence[2]]: capturedImagesByAngle[sequence[2] as ScanAngle] || capturedImage || '',
+    } as Record<ScanAngle, string>;
     setLoadingCapturedImages({
       front: imageByAngle.front,
       left: imageByAngle.left,
@@ -540,11 +540,11 @@ export function CameraScanModal({
       const sequence = (forcedCaptureSequence && forcedCaptureSequence.length === 3)
         ? forcedCaptureSequence
         : (captureSequence.length === 3 ? captureSequence : ['front', 'left', 'right']);
-      const imageByAngle: Record<ScanAngle, string> = {
-        [sequence[0]]: capturedImagesByAngle[sequence[0]] || capturedImage || '',
-        [sequence[1]]: capturedImagesByAngle[sequence[1]] || capturedImage || '',
-        [sequence[2]]: capturedImagesByAngle[sequence[2]] || capturedImage || '',
-      };
+      const imageByAngle = {
+        [sequence[0]]: capturedImagesByAngle[sequence[0] as ScanAngle] || capturedImage || '',
+        [sequence[1]]: capturedImagesByAngle[sequence[1] as ScanAngle] || capturedImage || '',
+        [sequence[2]]: capturedImagesByAngle[sequence[2] as ScanAngle] || capturedImage || '',
+      } as Record<ScanAngle, string>;
 
       await analysisService.scan({
         frontImage: imageByAngle.front.split(',')[1] || base64,
@@ -921,13 +921,13 @@ export function CameraScanModal({
               className="relative rounded-3xl border border-gray-100 shadow-2xl overflow-hidden bg-white"
             >
               {/* Top gradient accent bar */}
-              <div className="h-1.5 w-full bg-gradient-to-r from-[#0EA5E9] via-[#8B5CF6] to-[#EC4899]" />
+              <div className="h-1.5 w-full bg-gradient-to-r from-[#0EA5E9] via-indigo-400 to-cyan-500" />
 
               {/* Decorative glow circles */}
               <div
                 className="absolute -top-24 -right-24 w-48 h-48 rounded-full opacity-10 pointer-events-none"
                 style={{
-                  background: 'radial-gradient(circle, #8B5CF6, transparent)',
+                  background: 'radial-gradient(circle, #0EA5E9, transparent)',
                   filter: 'blur(60px)',
                 }}
               />
@@ -954,8 +954,8 @@ export function CameraScanModal({
                 <div
                   className="p-2.5 rounded-2xl flex-shrink-0"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(14,165,233,0.1), rgba(139,92,246,0.1))',
-                    border: '1px solid rgba(14,165,233,0.2)',
+                    background: 'linear-gradient(135deg, rgba(14,165,233,0.1), rgba(6,182,212,0.1))',
+                    border: '1px solid rgba(14,165,233,0.1)',
                   }}
                 >
                   <Camera className="w-6 h-6 text-[#0EA5E9]" />
@@ -970,7 +970,7 @@ export function CameraScanModal({
                       {phase === 'verifying' && 'Vérification de votre identité...'}
                     </p>
                     {phase === 'camera' && isAutoCapturing && (
-                      <p className="text-[11px] text-[#8B5CF6] mt-1 font-medium">{autoCaptureHint}</p>
+                      <p className="text-[11px] text-[#0EA5E9] mt-1 font-medium">{autoCaptureHint}</p>
                     )}
                 </div>
               </div>
@@ -1021,7 +1021,7 @@ export function CameraScanModal({
                         <div className="relative w-56 h-56">
                           <div className="absolute inset-0 rounded-full border border-white/25" />
                           <motion.div
-                            className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#22D3EE] border-r-[#8B5CF6]"
+                            className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#22D3EE] border-r-cyan-400"
                             animate={{ rotate: 360 }}
                             transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                           />
@@ -1133,11 +1133,11 @@ export function CameraScanModal({
                   <div
                     className="p-2.5 rounded-2xl flex-shrink-0"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(236,72,153,0.1))',
-                      border: '1px solid rgba(139,92,246,0.2)',
+                      background: 'linear-gradient(135deg, rgba(14,165,233,0.1), rgba(6,182,212,0.1))',
+                      border: '1px solid rgba(14,165,233,0.1)',
                     }}
                   >
-                    <Sparkles className="w-6 h-6 text-[#8B5CF6]" />
+                    <Sparkles className="w-6 h-6 text-[#0EA5E9]" />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-gray-900 font-bold text-xl leading-tight">
@@ -1152,57 +1152,182 @@ export function CameraScanModal({
                 {/* Progress bar */}
                 <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-4">
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-[#0EA5E9] via-[#8B5CF6] to-[#EC4899]"
+                    className="h-full rounded-full bg-gradient-to-r from-[#0EA5E9] via-[#06B6D4] to-[#14B8A6]"
                     initial={{ width: 0 }}
                     animate={{ width: `${analysisProgress}%` }}
                     transition={{ duration: 0.3 }}
                   />
                 </div>
 
-                {/* Image with annotations overlay */}
-                <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-video bg-black">
-                  <div className="absolute top-3 left-3 right-3 z-30 grid grid-cols-3 gap-2">
-                    {(['front', 'left', 'right'] as ScanAngle[]).map((angle) => (
+                {/* Orbital photo layout + annotated face */}
+                <div className="relative rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" style={{ minHeight: 480 }}>
+                  {/* Orbital photo arrangement */}
+                  <div className="relative flex items-center justify-center" style={{ height: 480 }}>
+                    {/* Subtle radial glow behind the center */}
+                    <div
+                      className="absolute rounded-full pointer-events-none"
+                      style={{
+                        width: 260,
+                        height: 260,
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        background: 'radial-gradient(circle, rgba(14,165,233,0.12) 0%, transparent 70%)',
+                        filter: 'blur(20px)',
+                      }}
+                    />
+
+                    {/* Central large circle - main captured image */}
+                    <motion.div
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.1 }}
+                      className="relative z-10"
+                      style={{ width: 200, height: 200 }}
+                    >
                       <div
-                        key={angle}
-                        className={`rounded-xl border p-1.5 backdrop-blur-md shadow-lg ${
-                          loadingCapturedImages[angle]
-                            ? 'border-cyan-200/70 bg-black/50'
-                            : 'border-white/20 bg-black/35'
-                        }`}
+                        className="w-full h-full rounded-full overflow-hidden shadow-2xl"
+                        style={{
+                          border: '3px solid rgba(14,165,233,0.4)',
+                          boxShadow: '0 0 40px rgba(14,165,233,0.15), 0 8px 32px rgba(0,0,0,0.4)',
+                        }}
                       >
-                        <div className="mb-1 flex items-center justify-between">
-                          <div className="text-[10px] font-semibold text-white/90">
-                            {angleDisplayNames[angle]}
-                          </div>
-                          <div
-                            className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
-                              loadingCapturedImages[angle]
-                                ? 'bg-emerald-500/25 text-emerald-100'
-                                : 'bg-white/10 text-white/60'
-                            }`}
-                          >
-                            {loadingCapturedImages[angle] ? 'OK' : '...'}
-                          </div>
-                        </div>
-                        {loadingCapturedImages[angle] ? (
-                          <img
-                            src={loadingCapturedImages[angle]}
-                            alt={angle}
-                            className="h-14 w-full rounded-lg object-cover ring-1 ring-white/30"
-                          />
-                        ) : (
-                          <div className="h-14 w-full animate-pulse rounded-lg bg-gradient-to-r from-white/10 via-white/20 to-white/10" />
-                        )}
+                        <img
+                          src={capturedImage}
+                          alt="Captured face"
+                          className="w-full h-full object-cover"
+                          style={{ transform: 'scaleX(-1)' }}
+                        />
                       </div>
-                    ))}
+                      {/* Scanning ring around center */}
+                      <motion.div
+                        className="absolute inset-[-6px] rounded-full border-2 border-transparent"
+                        style={{
+                          borderTopColor: 'rgba(14,165,233,0.6)',
+                          borderRightColor: 'rgba(6,182,212,0.4)',
+                        }}
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                      />
+                    </motion.div>
+
+                    {/* ── Smooth orbital system ── */}
+                    {/* Invisible pivot that rotates — children orbit with it */}
+                    <motion.div
+                      className="absolute pointer-events-none"
+                      style={{
+                        width: 0,
+                        height: 0,
+                        top: '50%',
+                        left: '50%',
+                      }}
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
+                    >
+                      {(['front', 'left', 'right'] as ScanAngle[]).map((angle, idx) => {
+                        const orbitRadius = 152;
+                        // Start at top (-90°), evenly spread 120° apart
+                        const angleDeg = idx * 120 - 90;
+                        const rad = (angleDeg * Math.PI) / 180;
+                        const x = Math.cos(rad) * orbitRadius;
+                        const y = Math.sin(rad) * orbitRadius;
+                        const hasImage = !!loadingCapturedImages[angle];
+
+                        return (
+                          <motion.div
+                            key={angle}
+                            className="absolute pointer-events-auto"
+                            style={{
+                              width: 90,
+                              height: 90,
+                              left: x - 45,
+                              top: y - 45,
+                            }}
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: 'spring', stiffness: 220, damping: 20, delay: 0.15 + idx * 0.15 }}
+                          >
+                            {/* Counter-rotate so card stays upright */}
+                            <motion.div
+                              className="w-full h-full relative"
+                              animate={{ rotate: -360 }}
+                              transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
+                            >
+                              {/* Thumbnail */}
+                              <div
+                                className="w-full h-full overflow-hidden shadow-2xl"
+                                style={{
+                                  borderRadius: 18,
+                                  border: hasImage
+                                    ? '2px solid rgba(16,185,129,0.55)'
+                                    : '2px solid rgba(255,255,255,0.12)',
+                                  boxShadow: hasImage
+                                    ? '0 4px 24px rgba(16,185,129,0.18), 0 8px 28px rgba(0,0,0,0.35)'
+                                    : '0 8px 28px rgba(0,0,0,0.35)',
+                                }}
+                              >
+                                {hasImage ? (
+                                  <img
+                                    src={loadingCapturedImages[angle]}
+                                    alt={angle}
+                                    className="w-full h-full object-cover"
+                                    style={{ transform: 'scaleX(-1)' }}
+                                  />
+                                ) : (
+                                  <div className="w-full h-full animate-pulse bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700" />
+                                )}
+                              </div>
+
+                              {/* Green checkmark badge */}
+                              {hasImage && (
+                                <motion.div
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  transition={{ type: 'spring', stiffness: 420, damping: 14 }}
+                                  className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center justify-center"
+                                  style={{
+                                    width: 22,
+                                    height: 22,
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #10B981, #059669)',
+                                    boxShadow: '0 2px 10px rgba(16,185,129,0.45)',
+                                    border: '2px solid rgba(255,255,255,0.95)',
+                                  }}
+                                >
+                                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                                    <path d="M2.5 6L5 8.5L9.5 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                </motion.div>
+                              )}
+
+                              {/* Label */}
+                              <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-medium text-white/60">
+                                {angleDisplayNames[angle]}
+                              </p>
+                            </motion.div>
+                          </motion.div>
+                        );
+                      })}
+                    </motion.div>
+
+                    {/* Dashed orbital guide ring */}
+                    <motion.div
+                      className="absolute rounded-full pointer-events-none"
+                      style={{
+                        width: 344,
+                        height: 344,
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        border: '1px dashed rgba(14,165,233,0.15)',
+                      }}
+                      animate={{ rotate: -360 }}
+                      transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+                    />
                   </div>
-                  <img
-                    src={capturedImage}
-                    alt="Captured face"
-                    className="w-full h-full object-cover"
-                    style={{ transform: 'scaleX(-1)' }}
-                  />
+
+                  {/* Annotations overlay on central image area */}
+                  <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 15 }}>
                   
                   {/* Scanning effect overlay */}
                   <motion.div
@@ -1219,7 +1344,7 @@ export function CameraScanModal({
                   <motion.div
                     className="absolute left-0 right-0 h-1 pointer-events-none"
                     style={{
-                      background: 'linear-gradient(90deg, transparent, #0EA5E9, #8B5CF6, transparent)',
+                      background: 'linear-gradient(90deg, transparent, #0EA5E9, #38BDF8, transparent)',
                       boxShadow: '0 0 20px rgba(14,165,233,0.5)',
                     }}
                     animate={{ top: ['0%', '100%', '0%'] }}
@@ -1409,9 +1534,9 @@ export function CameraScanModal({
                         }}
                         animate={{
                           boxShadow: [
-                            '0 10px 40px rgba(139,92,246,0.3)',
-                            '0 10px 60px rgba(14,165,233,0.4)',
-                            '0 10px 40px rgba(139,92,246,0.3)',
+                            '0 10px 40px rgba(14,165,233,0.3)',
+                            '0 10px 60px rgba(6,182,212,0.4)',
+                            '0 10px 40px rgba(14,165,233,0.3)',
                           ],
                         }}
                         transition={{ duration: 2, repeat: Infinity }}
@@ -1443,21 +1568,13 @@ export function CameraScanModal({
                             </motion.p>
                           </div>
                           <Sparkles 
-                            className="w-5 h-5 text-[#8B5CF6]" 
+                            className="w-5 h-5 text-cyan-500" 
                             style={{ opacity: result.healthScore >= 70 ? 1 : 0.3 }} 
                           />
                         </div>
                       </motion.div>
                     </motion.div>
                   )}
-
-                  {/* Center face guide (subtle) */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <motion.div
-                      className="w-40 h-56 border border-white/20 rounded-full"
-                      animate={{ opacity: [0.2, 0.4, 0.2] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
                   </div>
                 </div>
 
@@ -1468,7 +1585,7 @@ export function CameraScanModal({
                       <motion.div
                         key={i}
                         className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: '#8B5CF6' }}
+                        style={{ backgroundColor: '#0EA5E9' }}
                         animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }}
                         transition={{ duration: 1, repeat: Infinity, delay: i * 0.1 }}
                       />
@@ -1499,8 +1616,8 @@ export function CameraScanModal({
                     className="absolute inset-0 rounded-full"
                     style={{
                       border: '3px solid transparent',
-                      borderTopColor: '#8B5CF6',
-                      borderRightColor: '#EC4899',
+                      borderTopColor: '#0EA5E9',
+                      borderRightColor: '#22D3EE',
                     }}
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -1508,7 +1625,7 @@ export function CameraScanModal({
                       animate={{ scale: [1, 1.15, 1] }}
                       transition={{ duration: 1.5, repeat: Infinity }}
                     >
-                      <UserCheck className="w-8 h-8 text-[#8B5CF6]" />
+                      <UserCheck className="w-8 h-8 text-[#0EA5E9]" />
                     </motion.div>
                   </div>
                 </motion.div>
@@ -1523,7 +1640,7 @@ export function CameraScanModal({
                     <motion.div
                       key={i}
                       className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: '#8B5CF6' }}
+                      style={{ backgroundColor: '#0EA5E9' }}
                       animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }}
                       transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
                     />
@@ -1546,8 +1663,8 @@ export function CameraScanModal({
                   className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center"
                   style={{
                     background: localVerificationResult?.needsProfilePhoto 
-                      ? 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(236,72,153,0.1))'
-                      : 'linear-gradient(135deg, rgba(239,68,68,0.1), rgba(236,72,153,0.1))',
+                      ? 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(14,165,233,0.1))'
+                      : 'linear-gradient(135deg, rgba(239,68,68,0.1), rgba(14,165,233,0.1))',
                     border: localVerificationResult?.needsProfilePhoto 
                       ? '2px solid rgba(245,158,11,0.3)'
                       : '2px solid rgba(239,68,68,0.3)',
@@ -1836,7 +1953,7 @@ export function CameraScanModal({
                     disabled={saving || !canSaveAnalysis}
                     className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm text-white shadow-lg transition-all ${
                       canSaveAnalysis
-                        ? 'bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6] shadow-[#0EA5E9]/20 hover:shadow-xl'
+                        ? 'bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] shadow-[#0EA5E9]/20 hover:shadow-xl'
                         : 'bg-gray-400 cursor-not-allowed'
                     }`}
                   >

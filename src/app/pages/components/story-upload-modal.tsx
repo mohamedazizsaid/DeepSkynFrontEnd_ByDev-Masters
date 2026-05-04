@@ -99,13 +99,19 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
   };
 
   const toggleMusicPreview = () => {
-    if (!audioRef.current || !musicPreviewUrl) return;
+    if (!musicPreviewUrl) return;
+    if (!audioRef.current) return;
     if (isMusicPlaying) {
       audioRef.current.pause();
+      setIsMusicPlaying(false);
     } else {
-      audioRef.current.play();
+      // Ensure the src is set before playing
+      if (audioRef.current.src !== musicPreviewUrl) {
+        audioRef.current.src = musicPreviewUrl;
+        audioRef.current.load();
+      }
+      audioRef.current.play().then(() => setIsMusicPlaying(true)).catch(() => {});
     }
-    setIsMusicPlaying(!isMusicPlaying);
   };
 
   // Load free music
@@ -129,7 +135,9 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
   }, [isOpen]);
 
   const handleSelectFreeMusic = (music: any) => {
-    // Create a blob from the music URL and use it as the selected music
+    // Stop any currently playing audio
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
+    setIsMusicPlaying(false);
     setMusicTitle(music.title);
     setMusicPreviewUrl(music.url);
     setMusicFile(null); // Free music doesn't need a file object
@@ -217,7 +225,18 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
                 </div>
               </div>
 
-              {musicFile ? (
+              {/* Always render hidden audio element when a preview URL is set */}
+              {musicPreviewUrl && (
+                <audio
+                  ref={audioRef}
+                  src={musicPreviewUrl}
+                  crossOrigin="anonymous"
+                  loop
+                  onEnded={() => setIsMusicPlaying(false)}
+                />
+              )}
+
+              {(musicFile || (musicPreviewUrl && !musicFile)) ? (
                 <div className={`flex items-center gap-3 p-3 rounded-xl ${isHcHigh ? 'bg-black border border-yellow-400/30' : isDark ? 'bg-[#0f172a] border border-white/10' : 'bg-white border border-gray-200'}`}>
                   <button
                     onClick={toggleMusicPreview}
@@ -227,7 +246,9 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
                   </button>
                   <div className="flex-1 min-w-0">
                     <p className={`text-xs font-bold truncate ${textColor}`}>{musicTitle}</p>
-                    <p className={`text-[10px] ${subText}`}>{(musicFile.size / (1024 * 1024)).toFixed(1)} MB</p>
+                    <p className={`text-[10px] ${subText}`}>
+                      {musicFile ? `${(musicFile.size / (1024 * 1024)).toFixed(1)} MB` : 'Musique libre de droits'}
+                    </p>
                     {isMusicPlaying && (
                       <div className="flex items-center gap-0.5 mt-1">
                         {[...Array(12)].map((_, i) => (
@@ -247,14 +268,6 @@ export function StoryUploadModal({ isOpen, onClose, onUpload, userAvatar, userNa
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  {musicPreviewUrl && (
-                    <audio 
-                      ref={audioRef} 
-                      src={musicPreviewUrl} 
-                      crossOrigin="anonymous"
-                      loop 
-                    />
-                  )}
                 </div>
               ) : (
                 <div className="space-y-3">

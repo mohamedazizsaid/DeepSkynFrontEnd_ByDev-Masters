@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { Settings, Shield, Bell, User, Palette, LogOut, ChevronRight, ArrowLeft, Lock, Globe, HelpCircle, FileText, ReceiptText } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth.store';
 import { useNavigate } from 'react-router-dom';
@@ -22,7 +22,9 @@ interface SettingsPageProps {
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
   const { user, logout } = useAuthStore();
-  const { t } = useAccessibilityStore();
+  const { t, reduceMotion } = useAccessibilityStore();
+  const browserReducedMotion = useReducedMotion();
+  const shouldReduceMotion = !!(reduceMotion || browserReducedMotion);
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<'main' | '2fa' | 'personal' | 'password' | 'language' | 'help' | 'terms' | 'notifications' | 'appearance' | 'payment-history'>('main');
 
@@ -142,12 +144,12 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
       {/* Header */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between mb-8 lg:mb-10"
+        className="flex items-center justify-between mb-8"
       >
         <div className="flex items-center gap-4">
           {onBack && (
@@ -177,9 +179,9 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         <div className="lg:col-span-1 flex flex-col gap-4 sticky top-24">
           {user && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3 }}
               className="bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm overflow-hidden"
             >
               {/* User Banner */}
@@ -221,9 +223,9 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
 
           {/* Desktop Navigation Menu (hidden on mobile) */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
+            transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3, delay: 0.1 }}
             className="hidden lg:block bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm p-4"
           >
             {settingsSections.map((section, si) => (
@@ -261,11 +263,11 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           {/* Logout Button */}
           <motion.button
             onClick={handleLogout}
-            initial={{ opacity: 0, y: 10 }}
+            initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.15 }}
+            transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3, delay: 0.15 }}
             className="w-full flex items-center gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-[#E5E7EB] dark:border-slate-700 shadow-sm hover:bg-[#FEF2F2] dark:hover:bg-red-900/20 hover:border-red-200 transition-all duration-200 group"
-            whileTap={{ scale: 0.99 }}
+            whileTap={shouldReduceMotion ? {} : { scale: 0.99 }}
           >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#EF4444] to-[#DC2626] flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:shadow-red-500/20 transition-shadow duration-200">
               <LogOut className="w-5 h-5" />
@@ -285,9 +287,9 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             {settingsSections.map((section, si) => (
               <motion.div
                 key={si}
-                initial={{ opacity: 0, y: 10 }}
+                initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: si * 0.08 }}
+                transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3, delay: si * 0.08 }}
                 className="mb-6"
               >
                 <h2 className="text-xs font-bold text-[#6B7280] dark:text-gray-400 uppercase tracking-widest mb-3 ml-1">{section.title}</h2>

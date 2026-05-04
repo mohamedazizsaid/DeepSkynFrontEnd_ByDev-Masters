@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   ArrowLeft,
   Camera,
@@ -49,7 +49,9 @@ interface ProfilePageProps {
 
 export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
   const { user, loadUser } = useAuthStore();
-  const { t, language } = useAccessibilityStore();
+  const { t, language, reduceMotion } = useAccessibilityStore();
+  const browserReducedMotion = useReducedMotion();
+  const shouldReduceMotion = reduceMotion || browserReducedMotion;
   const [isEditing, setIsEditing] = useState(false);
   const [skinProfile, setSkinProfile] = useState<SkinProfile | null>(null);
   const [analysisCount, setAnalysisCount] = useState(0);

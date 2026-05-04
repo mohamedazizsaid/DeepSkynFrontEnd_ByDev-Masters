@@ -136,15 +136,18 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
         {/* Days grid */}
         <div className="space-y-4">
           <h4 className="text-md font-semibold text-[#1F2937] mb-4">{t('analysis.predictive.programTitle')}</h4>
-          <div className="overflow-x-auto scrollbar-hide">
-            <div className="flex gap-4 pb-2" style={{ minWidth: 'max-content' }}>
+          <div className="relative">
+            <div className="pointer-events-none absolute left-0 top-0 h-full w-8 bg-gradient-to-r from-white to-transparent" />
+            <div className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white to-transparent" />
+            <div className="overflow-x-auto scroll-smooth pb-3 -mx-2 px-2 snap-x snap-mandatory [scrollbar-width:thin]">
+              <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
               {routine.days.map((day, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.1 }}
-                  className="flex-shrink-0 w-64 rounded-2xl border border-[#E5E7EB] bg-white shadow-sm hover:shadow-md transition-all duration-200"
+                  className="flex-shrink-0 w-64 snap-start rounded-2xl border border-[#E5E7EB] bg-white shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   <div className="p-4">
                     {/* Day header */}
@@ -209,6 +212,7 @@ export function PredictiveRoutineCard({ analysisId, analysisResult, onNavigateTo
                   </div>
                 </motion.div>
               ))}
+              </div>
             </div>
           </div>
         </div>
