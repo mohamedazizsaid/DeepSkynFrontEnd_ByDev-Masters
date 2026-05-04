@@ -46,32 +46,11 @@ jobs:
           path: frontend-dist-*.tar.gz
           if-no-files-found: error
 
-  # ── Job 2: Nexus (self-hosted — needs internal network) ──
-  nexus:
-    name: Nexus · Artifactory Stage
-    runs-on: self-hosted
-    needs: build
-
-    steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist-archive
-          path: .
-
-      - name: Upload package to Nexus
-        run: |
-          FILE="$(ls frontend-dist-*.tar.gz | head -n 1)"
-          curl --fail --show-error --silent \
-            -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" \
-            --upload-file "$FILE" \
-            "http://${{ env.NEXUS_REGISTRY }}/repository/frontend-releases/${FILE}"
-
-  # ── Job 3: SonarQube (self-hosted — needs internal network) ──
+  # ── Job 2: SonarQube (self-hosted — needs internal network) ──
   sonar:
     name: SonarQube Scan · Quality Gate
     runs-on: self-hosted
-    needs: nexus
+    needs: build
 
     steps:
       - name: Checkout
@@ -127,7 +106,7 @@ jobs:
             -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info \
             -Dsonar.sourceEncoding=UTF-8
 
-  # ── Job 4: Docker Build + Push to Nexus (self-hosted) ────
+  # ── Job 3: Docker Build + Push to Nexus (self-hosted) ────
   docker:
     name: Docker Build · Push to Nexus
     runs-on: self-hosted
@@ -162,7 +141,7 @@ jobs:
           docker push ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.short_sha }}
           docker push ${{ env.IMAGE_NAME }}:latest
 
-  # ── Job 5: Trigger Jenkins CD (self-hosted) ──────────────
+  # ── Job 4: Trigger Jenkins CD (self-hosted) ──────────────
   trigger-cd:
     name: Trigger Jenkins CD
     runs-on: self-hosted
