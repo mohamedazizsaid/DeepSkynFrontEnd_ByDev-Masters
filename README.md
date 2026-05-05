@@ -437,14 +437,8 @@ npm run build
 # Preview production build locally
 npm run preview
 
-# Type check
-npm run type-check
-
 # Lint code
 npm run lint
-
-# Format code
-npm run format
 ```
 
 ### Project Structure Deep Dive
@@ -920,11 +914,15 @@ const clean = DOMPurify.sanitize(userInput);
 ### Test Structure
 ```bash
 src/
-├── __tests__/
-│   ├── components/
-│   ├── hooks/
-│   ├── services/
-│   └── stores/
+├── App.test.tsx
+├── hooks/
+│   └── useEyeClick.test.tsx
+└── components/
+    ├── analysis/SkinHealthDashboard.test.tsx
+    ├── location/address-map-picker.test.tsx
+    ├── sign-avatar/animated-hand.test.tsx
+    ├── video/video-accessibility-player.test.tsx
+    └── weather/weather-dashboard.test.tsx
 ```
 
 ### Running Tests
@@ -932,14 +930,11 @@ src/
 # Unit tests
 npm run test
 
-# Integration tests
-npm run test:integration
-
 # Coverage report
-npm run test:coverage
+npm run test:cov
 
-# E2E tests
-npm run test:e2e
+# Single run in CI mode
+npm run test -- --run
 ```
 
 ---

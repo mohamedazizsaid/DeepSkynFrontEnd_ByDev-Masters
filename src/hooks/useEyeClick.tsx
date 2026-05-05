@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, RefObject } from 'react';
+import type { CSSProperties, FC, HTMLAttributes, ReactNode, RefObject } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useEyeTracking } from '../components/EyeTrackingContext';
 
 interface UseEyeClickOptions {
@@ -118,25 +119,27 @@ export const useEyeClick = <T extends HTMLElement>(
   return elementRef;
 };
 
-interface EyeClickableProps {
-  children: React.ReactNode;
+interface EyeClickableProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onClick' | 'children'> {
+  children: ReactNode;
   onClick?: () => void;
   onRightClick?: () => void;
   className?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
   clickDelay?: number;
 }
 
 /**
  * Composant wrapper pour ajouter l'eye click facilement
  */
-export const EyeClickable: React.FC<EyeClickableProps> = ({
+export const EyeClickable: FC<EyeClickableProps> = ({
   children,
   onClick,
   onRightClick,
   className = '',
   style = {},
   clickDelay = 300,
+  onMouseEnter,
+  onMouseLeave,
   ...props
 }) => {
   const ref = useEyeClick<HTMLDivElement>(onClick, onRightClick, { clickDelay });
@@ -152,8 +155,14 @@ export const EyeClickable: React.FC<EyeClickableProps> = ({
         ...style,
       }}
       {...props}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={(event) => {
+        setIsHovered(true);
+        onMouseEnter?.(event);
+      }}
+      onMouseLeave={(event) => {
+        setIsHovered(false);
+        onMouseLeave?.(event);
+      }}
     >
       {children}
     </div>

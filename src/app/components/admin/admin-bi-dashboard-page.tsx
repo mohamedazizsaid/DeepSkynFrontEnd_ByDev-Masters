@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -27,8 +27,39 @@ interface BiDashboardData {
     userGrowthRate?: number;
     activeUsersLast30?: number;
     conversionRate?: number;
+    mrr?: number;
+    revenueGrowthRate?: number;
+    arpu?: number;
   };
-  charts?: Record<string, unknown>;
+  engagement?: {
+    activitySeries?: Array<{
+      date?: string;
+      signups?: number;
+      analyses?: number;
+      chats?: number;
+      posts?: number;
+    }>;
+    analysesLast30?: number;
+    avgAnalysisProcessingTimeMs?: number;
+  };
+  funnel?: {
+    registered?: number;
+    onboarded?: number;
+    analyzed?: number;
+    subscribed?: number;
+    retained30d?: number;
+  };
+  churn?: {
+    riskDistribution?: Array<{ name?: string; value?: number }>;
+    avgRiskScore?: number;
+  };
+  support?: {
+    skinAlertsLast30?: number;
+    unreadAlerts?: number;
+  };
+  insights?: {
+    topConcerns?: Array<{ name?: string; value?: number }>;
+  };
 }
 
 interface TopCondition {
@@ -46,31 +77,33 @@ export function AdminBiDashboardPage() {
   const [data, setData] = useState<BiDashboardData | null>(null);
   const [fallbackTopConcerns, setFallbackTopConcerns] = useState<TopCondition[]>([]);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [payloadResult, overviewResult] = await Promise.allSettled([
-          adminService.getBiDashboard(),
-          adminService.getOverviewStats(),
-        ]);
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [payloadResult, overviewResult] = await Promise.allSettled([
+        adminService.getBiDashboard(),
+        adminService.getOverviewStats(),
+      ]);
 
-        const payload = payloadResult.status === 'fulfilled' ? payloadResult.value : null;
-        const overview = overviewResult.status === 'fulfilled' ? overviewResult.value : null;
+      const payload = payloadResult.status === 'fulfilled' ? payloadResult.value : null;
+      const overview = overviewResult.status === 'fulfilled' ? overviewResult.value : null;
 
-        setData(payload);
-        const normalizedTop = Array.isArray(overview?.analyses?.topConditions)
-          ? overview.analyses.topConditions.map((item: { name?: string; condition?: string; value?: number; count?: number }) => ({
-              name: item?.name || item?.condition || '',
-              value: Number(item?.value ?? item?.count ?? 0),
-            }))
-          : [];
-        setFallbackTopConcerns(normalizedTop);
-      } finally {
-        setLoading(false);
-      }
-    };
-    void loadData();
+      setData(payload);
+      const normalizedTop = Array.isArray(overview?.analyses?.topConditions)
+        ? overview.analyses.topConditions.map((item: { name?: string; condition?: string; value?: number; count?: number }) => ({
+            name: item?.name || item?.condition || '',
+            value: Number(item?.value ?? item?.count ?? 0),
+          }))
+        : [];
+      setFallbackTopConcerns(normalizedTop);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   const kpis = useMemo(() => {
     const k = data?.kpis || {};
@@ -105,18 +138,18 @@ export function AdminBiDashboardPage() {
   }, [data, adminLocale]);
 
   const activitySeriesRaw = data?.engagement?.activitySeries || [];
-  const activitySeries = activitySeriesRaw.map((point: any) => ({
+  const activitySeries = activitySeriesRaw.map((point) => ({
     date: String(point?.date || ''),
     signups: Math.max(0, Number(point?.signups || 0)),
     analyses: Math.max(0, Number(point?.analyses || 0)),
     chats: Math.max(0, Number(point?.chats || 0)),
     posts: Math.max(0, Number(point?.posts || 0)),
-  })).filter((point: any) => point.date);
-  const hasActivity = activitySeries.some((point: any) =>
-    Number(point?.signups || 0) > 0 ||
-    Number(point?.analyses || 0) > 0 ||
-    Number(point?.chats || 0) > 0 ||
-    Number(point?.posts || 0) > 0,
+  })).filter((point) => point.date);
+  const hasActivity = activitySeries.some((point) =>
+    point.signups > 0 ||
+    point.analyses > 0 ||
+    point.chats > 0 ||
+    point.posts > 0,
   );
   const funnelData = useMemo(() => {
     const funnel = data?.funnel || {};
@@ -130,23 +163,23 @@ export function AdminBiDashboardPage() {
   }, [data, adminLocale]);
 
   const riskDistribution = (Array.isArray(data?.churn?.riskDistribution) ? data.churn.riskDistribution : [])
-    .map((item: any) => ({
+    .map((item) => ({
       name: String(item?.name || ''),
       value: Number(item?.value || 0),
     }))
-    .filter((item: any) => item.name);
+    .filter((item) => item.name);
 
   const topConcerns = ((data?.insights?.topConcerns && data.insights.topConcerns.length)
     ? data.insights.topConcerns
     : fallbackTopConcerns)
-    .map((item: any) => ({
+    .map((item) => ({
       name: String(item?.name || ''),
       value: Number(item?.value || 0),
     }))
-    .filter((item: any) => item.name && item.value > 0);
+    .filter((item) => item.name && item.value > 0);
 
-  const hasFunnelData = funnelData.some((item: any) => item.value > 0);
-  const hasRiskData = riskDistribution.some((item: any) => item.value > 0);
+  const hasFunnelData = funnelData.some((item) => item.value > 0);
+  const hasRiskData = riskDistribution.some((item) => item.value > 0);
 
   return (
     <main className="admin-panel p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 bg-[#F8FAFC] dark:bg-[#0F172A] rounded-2xl" aria-labelledby="admin-bi-title" aria-describedby="admin-bi-live" aria-busy={loading}>
@@ -229,7 +262,7 @@ export function AdminBiDashboardPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={riskDistribution} dataKey="value" nameKey="name" outerRadius={88}>
-                    {riskDistribution.map((_: any, index: number) => (
+                    {riskDistribution.map((_, index) => (
                       <Cell key={`risk-${index}`} fill={riskColors[index % riskColors.length]} />
                     ))}
                   </Pie>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Card } from '../card';
 import { Button } from '../button';
 import { adminService } from '../../../lib/services/admin.service';
@@ -20,6 +20,10 @@ interface ChatStats {
   activeUsers?: number;
   avgMessagesPerChat?: number;
   dailyStats?: Array<{ date?: string; count?: number; messages?: number }>;
+  topTopics?: Array<{ topic?: string; name?: string; count?: number }>;
+  avgResponseTime?: number | null;
+  errorRate?: number | null;
+  totalTokens?: number | null;
 }
 
 export function AdminAiChatMonitorPage() {
@@ -29,18 +33,19 @@ export function AdminAiChatMonitorPage() {
   const [stats, setStats] = useState<ChatStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const res = await adminService.getChatStatistics();
-        setStats(res);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await adminService.getChatStatistics();
+      setStats(res);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const kpis = [
     { label: adminLocale.ai.totalConversations, value: stats?.totalConversations ?? 0 },
@@ -116,7 +121,7 @@ export function AdminAiChatMonitorPage() {
           <h3 className="font-bold mb-3">{adminLocale.ai.topTopics}</h3>
           {stats?.topTopics && stats.topTopics.length > 0 ? (
             <ul className="space-y-2">
-              {stats.topTopics.map((t: any, i: number) => (
+              {stats.topTopics.map((t, i) => (
                 <li key={i} className="flex justify-between text-sm">
                   <span className="text-[#1B3A5C]">{t.topic || t.name}</span>
                   <span className="text-[#6B7280]">{t.count} {adminLocale.ai.mentions}</span>
