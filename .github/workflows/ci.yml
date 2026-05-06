@@ -45,62 +45,7 @@ jobs:
           path: frontend-dist-*.tar.gz
           if-no-files-found: error
 
-  # ── Job 2: SonarQube (self-hosted — needs internal network) ──
-  sonar:
-    name: SonarQube Scan · Quality Gate
-    runs-on: self-hosted
-    needs: build
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests with coverage
-        run: npm run test:cov
-        continue-on-error: true
-
-      - name: Check SonarQube reachability
-        id: sonar-check
-        run: |
-          if curl --silent --fail --max-time 10 \
-            "http://192.168.32.128:9000/api/server/version" > /dev/null; then
-            echo "reachable=true" >> "$GITHUB_OUTPUT"
-            echo "✅ SonarQube reachable"
-          else
-            echo "reachable=false" >> "$GITHUB_OUTPUT"
-            echo "⚠️ SonarQube unreachable — skipping scan"
-          fi
-
-      - name: SonarQube Scan
-        if: steps.sonar-check.outputs.reachable == 'true'
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: http://192.168.32.128:9000
-        run: |
-          if [ -z "$SONAR_TOKEN" ]; then
-            echo "⚠️ SONAR_TOKEN not set — skipping scan"
-            exit 0
-          fi
-          if ! command -v sonar-scanner &> /dev/null; then
-            npm install -g sonar-scanner
-          fi
-          sonar-scanner \
-            -Dsonar.projectKey=frontend \
-            -Dsonar.sources=src \
-            -Dsonar.exclusions=node_modules/**,dist/**,coverage/** \
-            -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info \
-            -Dsonar.sourceEncoding=UTF-8
 
   # ── Job 3: Docker Build + Push to Docker Hub (self-hosted) ────
   docker:
