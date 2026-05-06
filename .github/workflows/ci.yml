@@ -1,6 +1,7 @@
 name: CI — React Vite Frontend
 
 on:
+
   push:
     branches: [main, develop, hamzadl, SalimBranch]
   pull_request:
