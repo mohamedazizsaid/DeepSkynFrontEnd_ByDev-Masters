@@ -1,30 +1,31 @@
 name: CI — React Vite Frontend
 
 on:
-  push:
-    branches: [main, develop, hamzadl , SalimBranch ]
 
+  push:
+    branches: [main, develop, hamzadl, SalimBranch]
   pull_request:
     branches: [main]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/frontend
 
 jobs:
 
-  # ── Job 1: Build only ─────────────────────────────────────
+  # ── Job 1: Build (cloud — no internal access needed) ─────
   build:
     name: Build
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # needed for SonarQube blame data
+          fetch-depth: 0
 
       - name: Setup Node 20
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
@@ -45,157 +46,81 @@ jobs:
           path: frontend-dist-*.tar.gz
           if-no-files-found: error
 
-  # ── Job 2: Nexus/Artifactory stage ───────────────────────
-  nexus:
-    name: Nexus · Artifactory Stage
-    runs-on: ubuntu-latest
-    needs: build
-    env:
-      NEXUS_URL: ${{ secrets.NEXUS_URL || vars.NEXUS_URL }}
-      NEXUS_REPOSITORY: ${{ secrets.NEXUS_REPOSITORY || vars.NEXUS_REPOSITORY }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME || secrets.NEXUS_USER || vars.NEXUS_USERNAME || vars.NEXUS_USER }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD || secrets.NEXUS_PASS }}
-      HAS_NEXUS_CREDS: ${{ (secrets.NEXUS_URL != '' || vars.NEXUS_URL != '') && (secrets.NEXUS_REPOSITORY != '' || vars.NEXUS_REPOSITORY != '') && (secrets.NEXUS_USERNAME != '' || secrets.NEXUS_USER != '' || vars.NEXUS_USERNAME != '' || vars.NEXUS_USER != '') && (secrets.NEXUS_PASSWORD != '' || secrets.NEXUS_PASS != '') }}
 
-    steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist-archive
-          path: .
 
-      - name: Upload package to Nexus
-        if: ${{ env.HAS_NEXUS_CREDS == 'true' }}
-        run: |
-          FILE="$(ls frontend-dist-*.tar.gz | head -n 1)"
-          curl --fail --show-error --silent \
-            -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
-            --upload-file "$FILE" \
-            "${NEXUS_URL}/repository/${NEXUS_REPOSITORY}/$FILE"
-
-      - name: Nexus status
-        if: ${{ env.HAS_NEXUS_CREDS != 'true' }}
-        run: echo "Skipping Nexus upload (missing NEXUS_URL/NEXUS_REPOSITORY/NEXUS_USERNAME/NEXUS_PASSWORD)."
-
-  # ── Job 3: SonarQube ─────────────────────────────────────
-  sonar:
-    name: SonarQube Scan · Quality Gate
-    runs-on: self-hosted
-    needs: nexus
-
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN || secrets.SONARQUBE_TOKEN }}
-      HAS_SONAR_TOKEN: ${{ secrets.SONAR_TOKEN != '' || secrets.SONARQUBE_TOKEN != '' }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node 20
-        uses: actions/setup-node@v5
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests with coverage
-        run: npm run test:cov
-
-      - name: Resolve SonarQube URL
-        id: sonar-config
-        env:
-          RAW_SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || vars.SONAR_HOST_URL }}
-        run: |
-          SONAR_URL="${RAW_SONAR_HOST_URL:-http://192.168.254.128:9000}"
-          echo "sonar_url=$SONAR_URL" >> "$GITHUB_OUTPUT"
-
-      - name: SonarQube status
-        if: ${{ env.HAS_SONAR_TOKEN != 'true' }}
-        run: echo "Skipping SonarQube (missing SONAR_TOKEN)."
-
-      - name: Check SonarQube reachability
-        id: sonar-reachability
-        if: ${{ env.HAS_SONAR_TOKEN == 'true' }}
-        run: |
-          if curl --silent --fail --show-error --max-time 10 "${{ steps.sonar-config.outputs.sonar_url }}/api/server/version" > /dev/null; then
-            echo "reachable=true" >> "$GITHUB_OUTPUT"
-            echo "SonarQube reachable at ${{ steps.sonar-config.outputs.sonar_url }}."
-          else
-            echo "reachable=false" >> "$GITHUB_OUTPUT"
-            echo "SonarQube unreachable at ${{ steps.sonar-config.outputs.sonar_url }}. Skipping scan."
-          fi
-
-      - name: SonarQube Scan
-        if: ${{ env.HAS_SONAR_TOKEN == 'true' && steps.sonar-reachability.outputs.reachable == 'true' }}
-        uses: SonarSource/sonarqube-scan-action@master
-        env:
-          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ steps.sonar-config.outputs.sonar_url }}
-
-      - name: SonarQube Quality Gate
-        if: ${{ env.HAS_SONAR_TOKEN == 'true' && steps.sonar-reachability.outputs.reachable == 'true' }}
-        uses: SonarSource/sonarqube-quality-gate-action@master
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ steps.sonar-config.outputs.sonar_url }}
-
-  # ── Job 4: Docker Build + Push ────────────────────────────
+  # ── Job 3: Docker Build + Push to Docker Hub (self-hosted) ────
   docker:
-    name: Docker Build · Push
-    runs-on: ubuntu-latest
-    needs: [build, sonar]
-    if: ${{ always() && github.event_name == 'push' && needs.build.result == 'success' && (needs.sonar.result == 'success' || needs.sonar.result == 'skipped') }}
-    env:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME || vars.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN || secrets.DOCKER_TOKEN || secrets.DOCKERHUB_PAT }}
-      DOCKERHUB_REPOSITORY: ${{ secrets.DOCKERHUB_REPOSITORY || vars.DOCKERHUB_REPOSITORY || 'frontend' }}
-      HAS_DOCKER_CREDS: ${{ (secrets.DOCKERHUB_USERNAME != '' || vars.DOCKERHUB_USERNAME != '') && (secrets.DOCKERHUB_TOKEN != '' || secrets.DOCKER_TOKEN != '' || secrets.DOCKERHUB_PAT != '') }}
+    name: Docker Build · Push to Docker Hub
+    runs-on: self-hosted
+    needs: [build]
+    if: |
+      always() &&
+      github.event_name == 'push' &&
+      needs.build.result == 'success' &&
+      (needs.sonar.result == 'success' || needs.sonar.result == 'skipped')
+
+    outputs:
+      image_tag: ${{ steps.tag.outputs.short_sha }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
-      - name: Docker status
-        if: ${{ env.HAS_DOCKER_CREDS != 'true' }}
-        run: echo "Skipping Docker push (missing DOCKERHUB credentials)."
-
-      - name: Set image tags
-        if: ${{ env.HAS_DOCKER_CREDS == 'true' }}
+      - name: Set image tag
         id: tag
+        run: echo "short_sha=${GITHUB_SHA::8}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Docker Hub
         run: |
-          SHORT_SHA="${GITHUB_SHA::8}"
-          BRANCH_TAG="${GITHUB_REF_NAME//\//-}"
-          {
-            echo "tags<<EOF"
-            echo "${DOCKERHUB_USERNAME}/${DOCKERHUB_REPOSITORY}:${BRANCH_TAG}-${SHORT_SHA}"
-            if [ "$GITHUB_REF_NAME" = "main" ]; then
-              echo "${DOCKERHUB_USERNAME}/${DOCKERHUB_REPOSITORY}:latest"
-            fi
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Login to DockerHub
-        if: ${{ env.HAS_DOCKER_CREDS == 'true' }}
-        uses: docker/login-action@v3
-        with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKERHUB_TOKEN }}
-
-      - name: Set up Docker Buildx
-        if: ${{ env.HAS_DOCKER_CREDS == 'true' }}
-        uses: docker/setup-buildx-action@v3
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | \
+            docker login \
+              -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Build and push
-        if: ${{ env.HAS_DOCKER_CREDS == 'true' }}
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.tag.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          docker build \
+            --build-arg VITE_API_URL=${{ secrets.VITE_API_URL }} \
+            -t ${{ env.DOCKER_IMAGE }}:${{ steps.tag.outputs.short_sha }} \
+            .
+          docker push ${{ env.DOCKER_IMAGE }}:${{ steps.tag.outputs.short_sha }}
+          echo "✅ Pushed ${{ env.DOCKER_IMAGE }}:${{ steps.tag.outputs.short_sha }}"
+
+  # ── Job 4: Trigger Jenkins CD (self-hosted) ──────────────
+  trigger-cd:
+    name: Trigger Jenkins CD
+    runs-on: self-hosted
+    needs: docker
+    if: needs.docker.result == 'success'
+
+    steps:
+      - name: Trigger Jenkins frontend-cd job
+        env:
+          JENKINS_URL: http://192.168.32.128:8080
+          JENKINS_JOB: frontend-cd
+          JENKINS_USER: ${{ secrets.JENKINS_USER }}
+          JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
+          IMAGE_TAG: ${{ needs.docker.outputs.image_tag }}
+        run: |
+          if [ -z "$JENKINS_USER" ] || [ -z "$JENKINS_TOKEN" ]; then
+            echo "❌ Missing JENKINS_USER or JENKINS_TOKEN secret"
+            exit 1
+          fi
+
+          CRUMB=$(curl --silent --show-error --fail \
+            -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
+            "${JENKINS_URL}/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)" || true)
+
+          if [ -n "$CRUMB" ]; then
+            curl --fail --show-error --silent \
+              -X POST \
+              -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
+              -H "$CRUMB" \
+              "${JENKINS_URL}/job/${JENKINS_JOB}/buildWithParameters?IMAGE_TAG=${IMAGE_TAG}"
+          else
+            curl --fail --show-error --silent \
+              -X POST \
+              -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
+              "${JENKINS_URL}/job/${JENKINS_JOB}/buildWithParameters?IMAGE_TAG=${IMAGE_TAG}"
+          fi
+
+          echo "✅ Jenkins CD triggered with IMAGE_TAG=${IMAGE_TAG}"

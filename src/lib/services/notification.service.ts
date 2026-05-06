@@ -39,7 +39,7 @@ export const notificationService = {
 
   // ─── WebSocket ───
   connect(userId: string, onNotification: (n: Notification) => void): void {
-    const baseUrl = 'http://localhost:3000';
+    const baseUrl = import.meta.env.VITE_API_URL || '/api';
     
     socket = io(`${baseUrl}/notifications`, {
       auth: { token: localStorage.getItem('access_token') },
