@@ -8,8 +8,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  NEXUS_REGISTRY: 192.168.32.128:8082
-  IMAGE_NAME: 192.168.32.128:8082/frontend
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/frontend
 
 jobs:
 
@@ -83,8 +82,6 @@ jobs:
             echo "⚠️ SonarQube unreachable — skipping scan"
           fi
 
-      # secrets cannot be used in `if:` conditions in GHA
-      # so we pass the token via env and check it at runtime
       - name: SonarQube Scan
         if: steps.sonar-check.outputs.reachable == 'true'
         env:
@@ -95,7 +92,6 @@ jobs:
             echo "⚠️ SONAR_TOKEN not set — skipping scan"
             exit 0
           fi
-          # Install sonar-scanner if not present
           if ! command -v sonar-scanner &> /dev/null; then
             npm install -g sonar-scanner
           fi
@@ -106,9 +102,9 @@ jobs:
             -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info \
             -Dsonar.sourceEncoding=UTF-8
 
-  # ── Job 3: Docker Build + Push to Nexus (self-hosted) ────
+  # ── Job 3: Docker Build + Push to Docker Hub (self-hosted) ────
   docker:
-    name: Docker Build · Push to Nexus
+    name: Docker Build · Push to Docker Hub
     runs-on: self-hosted
     needs: [build, sonar]
     if: |
@@ -128,21 +124,20 @@ jobs:
         id: tag
         run: echo "short_sha=${GITHUB_SHA::8}" >> "$GITHUB_OUTPUT"
 
-      - name: Login to Nexus registry
+      - name: Login to Docker Hub
         run: |
-          echo "${{ secrets.NEXUS_PASSWORD }}" | \
-            docker login ${{ env.NEXUS_REGISTRY }} \
-              -u "${{ secrets.NEXUS_USERNAME }}" --password-stdin
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | \
+            docker login \
+              -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Build and push
         run: |
           docker build \
             --build-arg VITE_API_URL=${{ secrets.VITE_API_URL }} \
-            -t ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.short_sha }} \
+            -t ${{ env.DOCKER_IMAGE }}:${{ steps.tag.outputs.short_sha }} \
             .
-          docker tag ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.short_sha }} ${{ env.IMAGE_NAME }}:latest
-          docker push ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.short_sha }}
-          docker push ${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.DOCKER_IMAGE }}:${{ steps.tag.outputs.short_sha }}
+          echo "✅ Pushed ${{ env.DOCKER_IMAGE }}:${{ steps.tag.outputs.short_sha }}"
 
   # ── Job 4: Trigger Jenkins CD (self-hosted) ──────────────
   trigger-cd:
