@@ -136,7 +136,10 @@ jobs:
 
       - name: Build and push
         run: |
-          docker build -t ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.short_sha }} .
+          docker build \
+            --build-arg VITE_API_URL=${{ secrets.VITE_API_URL }} \
+            -t ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.short_sha }} \
+            .
           docker tag ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.short_sha }} ${{ env.IMAGE_NAME }}:latest
           docker push ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.short_sha }}
           docker push ${{ env.IMAGE_NAME }}:latest
