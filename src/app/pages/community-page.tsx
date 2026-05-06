@@ -346,7 +346,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
   const handleCoverPhotoUpload = async (base64: string) => {
     try {
       setLoadingCover(true);
-      const response = await fetch('http://localhost:3000/auth/profile/cover', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/auth/profile/cover`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('access_token')}` },
         body: JSON.stringify({ coverPhotoUrl: base64 }),
@@ -364,7 +364,7 @@ export function CommunityPage({ onBack, onViewProfile }: CommunityPageProps) {
   const handleAvatarUpload = async (base64: string) => {
     try {
       setLoadingAvatar(true);
-      const response = await fetch('http://localhost:3000/auth/profile/avatar', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/auth/profile/avatar`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('access_token')}` },
         body: JSON.stringify({ avatarUrl: base64 }),

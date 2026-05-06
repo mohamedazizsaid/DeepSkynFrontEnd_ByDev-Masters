@@ -83,12 +83,12 @@ export const authService = {
   },
 
   getGoogleAuthUrl(): string {
-    const baseUrl = 'http://localhost:3000';
+    const baseUrl = import.meta.env.VITE_API_URL || '/api';
     return `${baseUrl}/auth/google`;
   },
 
   getFacebookAuthUrl(): string {
-    const baseUrl = 'http://localhost:3000';
+    const baseUrl = import.meta.env.VITE_API_URL || '/api';
     return `${baseUrl}/auth/facebook`;
   },
 
