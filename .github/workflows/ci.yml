@@ -52,7 +52,7 @@ jobs:
   docker:
     name: Docker Build · Push to Docker Hub
     runs-on: self-hosted
-    needs: [build, sonar]
+    needs: [build]
     if: |
       always() &&
       github.event_name == 'push' &&
